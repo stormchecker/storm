@@ -3,8 +3,8 @@
 #include <iosfwd>
 #include <memory>
 
+#include "storm/dd/DdType.h"
 #include "storm/logic/ComparisonType.h"
-#include "storm/storage/dd/DdType.h"
 
 namespace storm {
 namespace modelchecker {
@@ -20,6 +20,9 @@ class ExplicitQuantitativeCheckResult;
 
 template<typename ValueType>
 class ExplicitParetoCurveCheckResult;
+
+template<typename ValueType>
+class ExplicitCertificateCheckResult;
 
 template<typename ValueType>
 class LexicographicCheckResult;
@@ -62,6 +65,7 @@ class CheckResult {
     virtual bool isExplicitQualitativeCheckResult() const;
     virtual bool isExplicitQuantitativeCheckResult() const;
     virtual bool isExplicitParetoCurveCheckResult() const;
+    virtual bool isExplicitCertificateCheckResult() const;
     virtual bool isSymbolicQualitativeCheckResult() const;
     virtual bool isSymbolicQuantitativeCheckResult() const;
     virtual bool isSymbolicParetoCurveCheckResult() const;
@@ -94,6 +98,12 @@ class CheckResult {
 
     template<typename ValueType>
     ExplicitParetoCurveCheckResult<ValueType> const& asExplicitParetoCurveCheckResult() const;
+
+    template<typename ValueType>
+    ExplicitCertificateCheckResult<ValueType>& asExplicitCertificateCheckResult();
+
+    template<typename ValueType>
+    ExplicitCertificateCheckResult<ValueType> const& asExplicitCertificateCheckResult() const;
 
     template<typename ValueType>
     LexicographicCheckResult<ValueType>& asLexicographicCheckResult();

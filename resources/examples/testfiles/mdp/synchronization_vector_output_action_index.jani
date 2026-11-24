@@ -1,0 +1,211 @@
+{
+    "actions": [
+        {
+            "name": "a"
+        },
+        {
+            "name": "b"
+        },
+        {
+            "name": "c"
+        },
+        {
+            "name": "d"
+        },
+        {
+            "name": "e"
+        },
+        {
+            "name": "f"
+        }
+    ],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "action": "a",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "ref": "s1",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "exp": {
+                            "left": "s1",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "one",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "action": "b",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "ref": "s2",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "exp": {
+                            "left": "s2",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "two",
+            "variables": []
+        },
+        {
+            "edges": [
+                {
+                    "action": "c",
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "ref": "s3",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "exp": {
+                            "left": "s3",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "three",
+            "variables": []
+        }
+    ],
+    "features": [],
+    "jani-version": 1,
+    "name": "SynchronizationVectorOutputActionIndex",
+    "properties": [],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "one"
+            },
+            {
+                "automaton": "two"
+            },
+            {
+                "automaton": "three"
+            }
+        ],
+        "syncs": [
+            {
+                "result": "d",
+                "synchronise": [
+                    "a",
+                    null,
+                    null
+                ]
+            },
+            {
+                "result": "e",
+                "synchronise": [
+                    null,
+                    "b",
+                    null
+                ]
+            },
+            {
+                "result": "f",
+                "synchronise": [
+                    null,
+                    null,
+                    "c"
+                ]
+            }
+        ]
+    },
+    "type": "mdp",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "s1",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "s2",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "s3",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        }
+    ]
+}

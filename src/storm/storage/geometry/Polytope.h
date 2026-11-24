@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include "storm/expressions/Expressions.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/geometry/Halfspace.h"
 
 namespace storm {

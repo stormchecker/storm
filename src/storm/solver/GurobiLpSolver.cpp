@@ -9,12 +9,9 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/DebugSettings.h"
-#include "storm/settings/modules/GurobiSettings.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/LinearCoefficientVisitor.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -32,7 +29,7 @@ GurobiEnvironment::~GurobiEnvironment() {
 
 #ifdef STORM_HAVE_GUROBI
 GRBenv* GurobiEnvironment::operator*() {
-    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized");
+    STORM_LOG_ASSERT(initialized, "Gurobi Environment has not been initialized.");
     return env;
 }
 #endif
@@ -204,10 +201,10 @@ GurobiConstraint createConstraint(typename GurobiLpSolver<ValueType, RawMode>::C
         }
     } else {
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients leftCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients leftCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(0));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients rightCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(1));
         leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
         gurobiConstraint.rhs = rightCoefficients.getConstantPart();
         relationType = constraint.getBaseExpression().asBinaryRelationExpression().getRelationType();

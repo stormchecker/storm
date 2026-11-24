@@ -1,18 +1,22 @@
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
 
+#include <sstream>
+
+#include "storm/environment/Environment.h"
+#include "storm/environment/exploration/ExplorationEnvironment.h"
 #include "storm/modelchecker/exploration/Bounds.h"
 #include "storm/modelchecker/exploration/ExplorationInformation.h"
 #include "storm/modelchecker/exploration/StateGeneration.h"
 #include "storm/modelchecker/exploration/Statistics.h"
 
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 #include "storm/generator/CompressedState.h"
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/prism/Program.h"
 
 #include "storm/logic/FragmentSpecification.h"
 
@@ -21,10 +25,6 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/settings/modules/ExplorationSettings.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
@@ -38,10 +38,10 @@ namespace storm {
 namespace modelchecker {
 
 template<typename ModelType, typename StateType>
-SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program)
+SparseExplorationModelChecker<ModelType, StateType>::SparseExplorationModelChecker(storm::Environment const& env, storm::prism::Program const& program)
     : program(program.substituteConstantsFormulas()),
       randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()),
-      comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
+      comparator(env.exploration().getPrecision()) {
     // Intentionally left empty.
 }
 
@@ -66,8 +66,8 @@ std::unique_ptr<CheckResult> SparseExplorationModelChecker<ModelType, StateType>
     STORM_LOG_THROW(program.isDeterministicModel() || checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "For nondeterministic systems, an optimization direction (min/max) must be given in the property.");
 
-    ExplorationInformation<StateType, ValueType> explorationInformation(checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection()
-                                                                                                               : storm::OptimizationDirection::Maximize);
+    ExplorationInformation<StateType, ValueType> explorationInformation(
+        env.exploration(), checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize);
 
     // The first row group starts at action 0.
     explorationInformation.newRowGroup(0);
@@ -131,10 +131,9 @@ std::tuple<StateType, typename ModelType::ValueType, typename ModelType::ValueTy
         }
     }
 
-    // Show statistics if required.
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        stats.printToStream(std::cout, explorationInformation);
-    }
+    std::stringstream statsStream;
+    stats.printToStream(statsStream, explorationInformation);
+    STORM_LOG_STATISTICS(statsStream.str());
 
     return std::make_tuple(initialStateIndex, bounds.getLowerBoundForState(initialStateIndex, explorationInformation),
                            bounds.getUpperBoundForState(initialStateIndex, explorationInformation));
@@ -234,7 +233,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::exploreState(StateGene
         STORM_LOG_TRACE("Exploring state.");
 
         // If it needs to be expanded, we use the generator to retrieve the behavior of the new state.
-        storm::generator::StateBehavior<ValueType, StateType> behavior = stateGeneration.expand();
+        storm::generator::StateBehavior<ValueType, StateType> const& behavior = stateGeneration.expand();
         STORM_LOG_TRACE("State has " << behavior.getNumberOfChoices() << " choices.");
 
         // Clumsily check whether we have found a state that forms a trivial BMEC.
@@ -518,7 +517,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
 
     // Set the bounds of the identified states.
     STORM_LOG_ASSERT((statesWithProbability0 & statesWithProbability1).empty(), "States with probability 0 and 1 overlap.");
-    for (auto state : statesWithProbability0) {
+    for (uint64_t state : statesWithProbability0) {
         // Skip the sink state as it is not contained in the original system.
         if (state == sink) {
             continue;
@@ -528,7 +527,7 @@ bool SparseExplorationModelChecker<ModelType, StateType>::performPrecomputation(
         bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
         explorationInformation.addTerminalState(originalState);
     }
-    for (auto state : statesWithProbability1) {
+    for (uint64_t state : statesWithProbability1) {
         // Skip the sink state as it is not contained in the original system.
         if (state == sink) {
             continue;

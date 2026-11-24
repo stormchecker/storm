@@ -1,6 +1,15 @@
 #pragma once
 
+#include <cstddef>
+#include <map>
 #include <memory>
+#include <ostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "storm/storage/BitVector.h"
+#include "storm/storage/sparse/StateType.h"
 
 namespace storm {
 namespace transformer {

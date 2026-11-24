@@ -2,21 +2,20 @@
 
 #include "storm/api/properties.h"
 #include "storm/io/file.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/jani/Constant.h"
-#include "storm/storage/jani/JaniLocationExpander.h"
-#include "storm/storage/jani/JaniScopeChanger.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/localeliminator/AutomaticAction.h"
-#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
-#include "storm/storage/jani/visitor/JSONExporter.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/jani/Constant.h"
+#include "storm/languages/jani/JaniLocationExpander.h"
+#include "storm/languages/jani/JaniScopeChanger.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/jani/localeliminator/AutomaticAction.h"
+#include "storm/languages/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/languages/jani/visitor/JSONExporter.h"
+#include "storm/languages/prism/Program.h"
 
 namespace storm {
 namespace api {
 
-void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
+void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options,
+                   std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory) {
     if (options.replaceUnassignedVariablesWithConstants) {
         janiModel.replaceUnassignedVariablesWithConstants();
     }
@@ -63,13 +62,7 @@ void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Prope
     }
 
     if (options.flatten) {
-        std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
-        if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
-            smtSolverFactory = std::make_shared<storm::utility::solver::SmtSolverFactory>();
-        } else {
-            smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-        }
-        janiModel = janiModel.flattenComposition(smtSolverFactory);
+        janiModel = smtSolverFactory ? janiModel.flattenComposition(smtSolverFactory) : janiModel.flattenComposition();
     }
 
     if (!options.edgeAssignments) {
@@ -149,7 +142,11 @@ void exportPrismToFile(storm::prism::Program const& program, std::vector<storm::
     if (!properties.empty()) {
         storm::io::openFile(filename + ".props", stream);
         for (auto const& prop : properties) {
-            stream << prop.asPrismSyntax() << '\n';
+            prop.asPrismSyntax(stream);
+            if (!prop.getComment().empty()) {
+                stream << " // " << prop.getComment();
+            }
+            stream << '\n';
             STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
         }
         storm::io::closeFile(stream);
@@ -159,7 +156,11 @@ void printPrismToStream(storm::prism::Program const& program, std::vector<storm:
     ostream << program << '\n';
     for (auto const& prop : properties) {
         STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
-        ostream << prop.asPrismSyntax() << '\n';
+        prop.asPrismSyntax(ostream);
+        if (!prop.getComment().empty()) {
+            ostream << " // " << prop.getComment();
+        }
+        ostream << '\n';
     }
 }
 

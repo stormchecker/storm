@@ -1,11 +1,12 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/analysis.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/generator/DftNextStateGenerator.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
 #include "storm-dft/utility/SymmetryFinder.h"
-#include "storm-parsers/api/storm-parsers.h"
 
 namespace {
 
@@ -63,7 +64,7 @@ class DftTraceGeneratorTest : public ::testing::Test {
         return config;
     }
 
-    std::pair<std::shared_ptr<storm::dft::storage::DFT<double>>, storm::dft::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) {
+    std::pair<std::shared_ptr<storm::dft::storage::DFT<double>>, storm::dft::storage::DFTStateGenerationInfo> prepareDFT(std::string const& file) const {
         // Load, build and prepare DFT
         std::shared_ptr<storm::dft::storage::DFT<double>> dft =
             storm::dft::api::prepareForMarkovAnalysis<double>(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
@@ -74,7 +75,7 @@ class DftTraceGeneratorTest : public ::testing::Test {
         if (!config.useDC) {
             relevantNames.push_back("all");
         }
-        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents({}, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents({}, relevantNames, false);
         dft->setRelevantEvents(relevantEvents, false);
 
         // Find symmetries

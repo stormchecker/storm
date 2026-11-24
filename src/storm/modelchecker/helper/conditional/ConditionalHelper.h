@@ -17,11 +17,6 @@ class SparseMatrix;
 namespace modelchecker {
 class CheckResult;
 
-namespace utility {
-template<typename ValueType>
-class BackwardTransitionCache;
-}
-
 template<typename ValueType, typename SolutionType = ValueType>
 std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType, SolutionType>&& goal,
                                                              bool produceSchedulers, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,

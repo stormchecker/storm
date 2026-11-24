@@ -9,9 +9,9 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/expressions/BinaryRelationType.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
+#include "storm/expressions/BinaryRelationType.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/LinearCoefficientVisitor.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -188,10 +188,10 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
                         "Constraint was not built over the proper variables.");
         STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
 
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients leftCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(0));
-        storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients =
-            storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients leftCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(0));
+        storm::expressions::LinearCoefficientVisitor<double>::VariableCoefficients rightCoefficients =
+            storm::expressions::LinearCoefficientVisitor<double>().getLinearCoefficients(constraint.getOperand(1));
         leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
         rhs = rightCoefficients.getConstantPart();
         relationType = constraint.getBaseExpression().asBinaryRelationExpression().getRelationType();
@@ -239,7 +239,8 @@ void GlpkLpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Co
 
 template<typename ValueType, bool RawMode>
 void GlpkLpSolver<ValueType, RawMode>::addIndicatorConstraint(std::string const&, Variable, bool, Constraint const&) {
-    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Indicator constraints are not supported for GLPK.");
+    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                    "Indicator constraints are not supported by GLPK. Use an LP solver that supports them (e.g. via --lpsolver highs or --lpsolver gurobi).");
 }
 
 #ifdef STORM_HAVE_GLPK
@@ -251,7 +252,7 @@ void callback(glp_tree* t, void* info) {
     if (!mipgap.second) {
         // Compute absolute gap
         factor = storm::utility::abs(glp_mip_obj_val(glp_ios_get_prob(t))) + DBL_EPSILON;
-        assert(factor >= 0.0);
+        STORM_LOG_ASSERT(factor >= 0.0, "Expected non-negative factor.");
     }
     if (actualRelativeGap * factor <= mipgap.first) {
         // Terminate early

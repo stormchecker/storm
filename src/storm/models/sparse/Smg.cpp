@@ -23,11 +23,13 @@ Smg<ValueType, RewardModelType>::Smg(storm::storage::sparse::ModelComponents<Val
 template<typename ValueType, typename RewardModelType>
 Smg<ValueType, RewardModelType>::Smg(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
     : NondeterministicModel<ValueType, RewardModelType>(ModelType::Smg, std::move(components)),
+      // NOLINTBEGIN(bugprone-use-after-move) The base constructor only consumes the base-relevant fields of components.
       statePlayerIndications(std::move(components.statePlayerIndications.get())) {
     if (components.playerNameToIndexMap) {
         playerNameToIndexMap = std::move(components.playerNameToIndexMap.get());
     }
     // Otherwise the map remains empty.
+    // NOLINTEND(bugprone-use-after-move)
 }
 
 template<typename ValueType, typename RewardModelType>

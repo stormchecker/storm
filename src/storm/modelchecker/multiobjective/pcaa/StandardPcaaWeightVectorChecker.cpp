@@ -19,8 +19,6 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/transformer/GoalStateMerger.h"
 #include "storm/utility/graph.h"
@@ -64,14 +62,14 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     for (auto const& obj : this->objectives) {
         obj.formula->gatherReferencedRewardModels(relevantRewardModels);
     }
-    storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
+    storm::transformer::GoalStateMerger<typename SparseModelType::ValueType> merger(*preprocessorResult.preprocessedModel);
     auto mergerResult =
         merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
     goalStateMergerInputToReducedStateIndexMapping = std::move(mergerResult.oldToNewStateIndexMapping);
     goalStateMergerReducedToInputChoiceMapping = mergerResult.keptChoices.getNumberOfSetBitsBeforeIndices();
     // Initialize data specific for the considered model type
-    initializeModelTypeSpecificData(*mergerResult.model);
+    initializeModelTypeSpecificData(*mergerResult.model->template as<SparseModelType>());
 
     // Initilize general data of the model
     transitionMatrix = std::move(mergerResult.model->getTransitionMatrix());
@@ -124,21 +122,18 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(
     offsetToWeightedSum = storm::utility::zero<ValueType>();
     optimalChoices.resize(transitionMatrix.getRowGroupCount(), 0);
 
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
-        if (lraMecDecomposition) {
-            STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
-            uint64_t numLraMecStates = 0;
-            for (auto const& mec : this->lraMecDecomposition->mecs) {
-                numLraMecStates += mec.size();
-            }
-            STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component.\n");
+    STORM_LOG_STATISTICS("Weight Vector Checker Statistics:\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states.\n");
+    STORM_LOG_STATISTICS("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions.\n");
+    if (lraMecDecomposition) {
+        STORM_LOG_STATISTICS("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis.\n");
+        uint64_t numLraMecStates = 0;
+        for (auto const& mec : this->lraMecDecomposition->mecs) {
+            numLraMecStates += mec.size();
         }
-        STORM_PRINT_AND_LOG('\n');
+        STORM_LOG_STATISTICS(numLraMecStates << " states lie on such an end component.\n");
     }
+    STORM_LOG_STATISTICS('\n');
 }
 
 template<class SparseModelType>
@@ -158,7 +153,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
     std::vector<ValueType> weightedRewardVector(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
     if (!lraObjectives.empty()) {
         boost::optional<std::vector<ValueType>> weightedStateRewardVector;
-        for (auto objIndex : lraObjectives) {
+        for (uint64_t objIndex : lraObjectives) {
             ValueType weight =
                 storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
             storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weight);
@@ -176,7 +171,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::check(Environment const& 
 
     // Prepare and invoke weighted indefinite horizon (unbounded total reward) phase
     auto totalRewardObjectives = objectivesWithNoUpperTimeBound & ~lraObjectives;
-    for (auto objIndex : totalRewardObjectives) {
+    for (uint64_t objIndex : totalRewardObjectives) {
         if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {
             storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], -weightVector[objIndex]);
         } else {
@@ -305,7 +300,7 @@ template<typename ValueType>
 void computeSchedulerProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions,
                            storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToAvoid,
                            storm::storage::BitVector const& allowedChoices, std::vector<uint64_t>& choices) {
-    for (auto state : consideredStates) {
+    for (uint64_t state : consideredStates) {
         auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
         auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
         bool choiceFound = false;
@@ -767,7 +762,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::computeAndSetBoundsToSolv
                                                                                    std::vector<ValueType> const& rewards) const {
     // Compute the one step target probs
     std::vector<ValueType> oneStepTargetProbs(transitions.getRowCount(), storm::utility::zero<ValueType>());
-    for (auto row : rowsWithSumLessOne) {
+    for (uint64_t row : rowsWithSumLessOne) {
         oneStepTargetProbs[row] = storm::utility::one<ValueType>() - transitions.getRowSum(row);
     }
 
@@ -839,7 +834,7 @@ void StandardPcaaWeightVectorChecker<SparseModelType>::transformEcqSolutionToOri
             if (!ecqStateToOptimalMecMap.empty()) {
                 // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are
                 // performed within this EC.
-                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC.");
                 auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
                 if (lraMec.size() == origStates.size()) {
                     // LRA mec and eliminated EC coincide

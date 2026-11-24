@@ -1,6 +1,7 @@
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -9,8 +10,8 @@ namespace storm {
 namespace modelchecker {
 
 template<typename SparseModelType, typename ConstantType>
-SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(SparseModelType const& parametricModel)
-    : parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
+SparseInstantiationModelChecker<SparseModelType, ConstantType>::SparseInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel)
+    : env(env), parametricModel(parametricModel), instantiationsAreGraphPreserving(false) {
     // Intentionally left empty
 }
 

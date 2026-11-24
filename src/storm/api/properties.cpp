@@ -3,11 +3,11 @@
 #include <boost/algorithm/string.hpp>
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/Property.h"
+#include "storm/languages/prism/Program.h"
 #include "storm/logic/Formulas.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/Property.h"
-#include "storm/storage/prism/Program.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 

@@ -53,6 +53,8 @@ FragmentSpecification pctlstar() {
     pctlstar.setNestedOperatorsAllowed(true);
     pctlstar.setNestedPathFormulasAllowed(true);
     pctlstar.setHOAPathFormulasAllowed(true);
+    pctlstar.setWeakUntilFormulasAllowed(true);
+    pctlstar.setReleaseFormulasAllowed(true);
 
     return pctlstar;
 }
@@ -265,6 +267,8 @@ FragmentSpecification::FragmentSpecification() {
     nextFormula = false;
     untilFormula = false;
     boundedUntilFormula = false;
+    weakUntilFormula = false;
+    releaseFormula = false;
     hoaPathFormula = false;
 
     atomicExpressionFormula = false;
@@ -417,6 +421,24 @@ bool FragmentSpecification::areUntilFormulasAllowed() const {
 
 FragmentSpecification& FragmentSpecification::setUntilFormulasAllowed(bool newValue) {
     this->untilFormula = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::areWeakUntilFormulasAllowed() const {
+    return weakUntilFormula;
+}
+
+FragmentSpecification& FragmentSpecification::setWeakUntilFormulasAllowed(bool newValue) {
+    this->weakUntilFormula = newValue;
+    return *this;
+}
+
+bool FragmentSpecification::areReleaseFormulasAllowed() const {
+    return releaseFormula;
+}
+
+FragmentSpecification& FragmentSpecification::setReleaseFormulasAllowed(bool newValue) {
+    this->releaseFormula = newValue;
     return *this;
 }
 

@@ -8,10 +8,12 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
@@ -24,8 +26,6 @@
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace {
 
@@ -261,8 +261,8 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
     LraCtmcCslModelCheckerTest() : _environment(TestType::createEnvironment()) {}
 
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
         if constexpr (TestType::engine == CtmcEngine::JaniHybrid) {
             TestType::checkLibraryAvailable();
@@ -318,7 +318,7 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
             auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
             janiData.first.substituteFunctions();
             result.second = storm::api::extractFormulasFromProperties(janiData.second);
-            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
         }
         return result;
     }
@@ -369,8 +369,8 @@ class LraCtmcCslModelCheckerTest : public ::testing::Test {
         return result->asQualitativeCheckResult().forallTrue();
     }
 
-    ValueType getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
-                                                  std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    storm::utility::ExtendedValueType<ValueType> getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                                                                     std::unique_ptr<storm::modelchecker::CheckResult>& result) {
         auto filter = getInitialStateFilter(model);
         result->filter(*filter);
         return result->asQuantitativeCheckResult<ValueType>().getMin();

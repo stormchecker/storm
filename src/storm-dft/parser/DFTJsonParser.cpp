@@ -3,7 +3,9 @@
 #include <boost/algorithm/string.hpp>
 
 #include "storm-dft/builder/DFTBuilder.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm-dft/utility/RelevantEvents.h"
+#include "storm-parsers/parser/ValueParser.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/FileIoException.h"
@@ -36,7 +38,6 @@ storm::dft::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json con
     // Initialize DFT builder and value parser
     storm::dft::builder::DFTBuilder<ValueType> builder;
     storm::parser::ValueParser<ValueType> valueParser;
-    std::string toplevelName = "";
     storm::dft::utility::RelevantEvents relevantEvents;
 
     std::string currentLocation;

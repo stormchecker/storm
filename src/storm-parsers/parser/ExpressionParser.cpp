@@ -4,7 +4,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 
 #include "storm-parsers/parser/ExpressionCreator.h"
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 #include "storm/utility/constants.h"
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"

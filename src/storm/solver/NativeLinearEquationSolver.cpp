@@ -211,7 +211,7 @@ void NativeLinearEquationSolver<ValueType>::WalkerChaeData::computeWalkerChaeMat
         }
     }
     ValueType one = storm::utility::one<ValueType>();
-    for (auto column : columnsWithNegativeEntries) {
+    for (uint64_t column : columnsWithNegativeEntries) {
         builder.addNextValue(row, column, one);
         builder.addNextValue(row, originalMatrix.getRowCount() + columnsWithNegativeEntriesBefore[column], one);
         ++row;
@@ -379,9 +379,19 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsPower(Environment cons
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    // Reading the direction of every sweep costs in the innermost loop, so unless the initial vector already carries
+    // a guarantee, only do it where soundness was asked for.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    storm::OptionalRef<storm::solver::SolutionBounds<ValueType>> solutionBoundsRef;
+    if (guarantee != SolverGuarantee::None || env.solver().isForceSoundness()) {
+        solutionBoundsRef.reset(solutionBounds);
+    }
     auto status = viHelper.VI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
                               storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, viCallback,
-                              env.solver().native().getPowerMethodMultiplicationStyle());
+                              env.solver().native().getPowerMethodMultiplicationStyle(), UncertaintyResolutionMode::Unset, solutionBoundsRef, guarantee);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -401,7 +411,7 @@ template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
     ValueType result = storm::utility::zero<ValueType>();
     auto oldValueIt = oldValues.begin();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
     }
     return result;
@@ -411,7 +421,7 @@ template<typename ValueType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues,
                             storm::storage::BitVector const& relevantValues) {
     ValueType result = storm::utility::zero<ValueType>();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
     }
     return result;
@@ -432,8 +442,8 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
     uint64_t numIterations{0};
     auto iiCallback = [&](helper::IIData<ValueType> const& data) {
         this->showProgressIterative(numIterations);
-        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        bool terminateEarly = this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                                        this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
         return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
     std::optional<storm::storage::BitVector> optionalRelevantValues;
@@ -441,8 +451,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsIntervalIteration(Envi
         optionalRelevantValues = this->getRelevantValues();
     }
     this->startMeasureProgress();
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = iiHelper.II(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback, {},
-                              iiCallback, optionalRelevantValues);
+                              iiCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -456,7 +470,7 @@ template<typename ValueType>
 bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(Environment const& env, std::vector<ValueType>& x,
                                                                               std::vector<ValueType> const& b) const {
     // Prepare the solution vectors and the helper.
-    assert(x.size() == this->A->getRowGroupCount());
+    STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
     std::optional<ValueType> lowerBound, upperBound;
     if (this->hasLowerBound()) {
@@ -482,8 +496,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsSoundValueIteration(En
     }
     this->startMeasureProgress();
     helper::SoundValueIterationHelper<ValueType, true> sviHelper(viOperator);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
     auto status = sviHelper.SVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), precision, {}, lowerBound, upperBound,
-                                sviCallback, optionalRelevantValues);
+                                sviCallback, optionalRelevantValues, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -525,7 +543,12 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIterati
         guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
     }
     this->startMeasureProgress();
-    auto status = oviHelper.OVI(x, b, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound, oviCallback);
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    auto status = oviHelper.OVI(x, b, numIterations, env.solver().native().getRelativeTerminationCriterion(), prec, {}, guessingFactor, lowerBound, upperBound,
+                                oviCallback, solutionBounds);
+    if (solutionBounds.hasAny()) {
+        this->setSolutionBounds(std::move(solutionBounds));
+    }
     this->reportStatus(status, numIterations);
 
     if (!this->isCachingEnabled()) {
@@ -553,15 +576,21 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsGuessingValueIteration
     uint64_t numIterations{0};
     auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
         this->showProgressIterative(numIterations);
-        bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                              this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+        bool terminateEarly = this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                                        this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
         return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().native().getMaximalNumberOfIterations());
     };
 
     this->startMeasureProgress();
-    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
-                                        {},  // No optimization dir
+    auto status = helper.solveEquations(*lowerX, *upperX, b, numIterations, env.solver().native().getRelativeTerminationCriterion(),
+                                        storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {},  // No optimization dir
                                         gviCallback);
+    // A verified guess encloses the solution in every iteration.
+    storm::solver::SolutionBounds<ValueType> solutionBounds;
+    solutionBounds.lower = *lowerX;
+    solutionBounds.upper = *upperX;
+    this->setSolutionBounds(std::move(solutionBounds));
+
     auto two = storm::utility::convertNumber<ValueType>(2.0);
     storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
         *lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -599,6 +628,11 @@ bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environ
     };
     this->startMeasureProgress();
     auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()), {}, rsCallback);
+
+    // Convergence here means a sharpened candidate was verified to be an exact fixed point.
+    if (status == SolverStatus::Converged) {
+        this->setSolutionBoundsExact(x);
+    }
 
     this->reportStatus(status, numIterations);
 
@@ -712,8 +746,10 @@ uint64_t NativeLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
-    return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
+std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+    auto solver = std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

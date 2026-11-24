@@ -27,11 +27,6 @@ class DerivativeSettings : public ModuleSettings {
     bool isFeasibleInstantiationSearchSet() const;
 
     /*!
-     * Retrieves whether an extremum should be found by Gradient Descent.
-     */
-    boost::optional<std::string> getDerivativeAtInstantiation() const;
-
-    /*!
      * Retrieves the learning rate for the gradient descent.
      */
     double getLearningRate() const;

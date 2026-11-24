@@ -20,6 +20,15 @@
 #pragma GCC diagnostic pop
 #pragma clang diagnostic pop
 
+// Pin these carl types' visibility: consumers built with hidden visibility would otherwise instantiate them hidden.
+// Must precede any instantiation (GCC rejects a later visibility attribute).
+// Cache<PolynomialFactorizationPair<RawPolynomial>> is intentionally unpinned: it is only ever used via shared_ptr.
+namespace carl {
+extern template class __attribute__((visibility("default"))) MultivariatePolynomial<storm::RationalFunctionCoefficient>;
+extern template class __attribute__((visibility("default"))) FactorizedPolynomial<storm::RawPolynomial>;
+extern template class __attribute__((visibility("default"))) RationalFunction<storm::Polynomial, true>;
+}  // namespace carl
+
 namespace carl {
 // Define hash values for all polynomials and rational function.
 // Needed for boost::hash_combine() and other functions
@@ -47,5 +56,19 @@ typedef carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>> RawPolynom
 typedef carl::Relation CompareRelation;
 
 RationalFunctionVariable createRFVariable(std::string const& name);
+
+/*!
+ * Retrieves the (already existing) rational-function variable with the given name.
+ *
+ * @param name Variable name.
+ * @return Variable with the given name or an invalid variable, if no such variable exists.
+ */
+RationalFunctionVariable findRFVariable(std::string const& name);
+
+/*!
+ * Clears the global pool of rational-function variables.
+ * This is mainly used to reset the global state in-between tests.
+ */
+void clearRFVariablePool();
 
 }  // namespace storm

@@ -9,15 +9,17 @@
 #include <set>
 #include <vector>
 
+#include <boost/functional/hash.hpp>
+
 #include "storm-pars/storage/ParameterRegion.h"
 #include "storm-pars/transformer/BigStep.h"
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/RationalFunctionToExpression.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/solver/Z3SmtSolver.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
+#include "storm/utility/Extremum.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 #include "storm/utility/macros.h"
@@ -38,13 +40,13 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
                                                                            bool useMonotonicity) {
     oldToNewColumnIndexMapping = std::vector<uint64_t>(selectedColumns.size(), selectedColumns.size());
     uint64_t newIndexColumns = 0;
-    for (auto oldColumn : selectedColumns) {
+    for (uint64_t oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndexColumns++;
     }
 
     oldToNewRowIndexMapping = std::vector<uint64_t>(selectedRows.size(), selectedRows.size());
     uint64_t newIndexRows = 0;
-    for (auto oldRow : selectedRows) {
+    for (uint64_t oldRow : selectedRows) {
         oldToNewRowIndexMapping[oldRow] = newIndexRows++;
     }
 
@@ -141,7 +143,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustParameterLifter(storm
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto nonConstVectorEntry : nonConstVectorEntries) {
+    for (uint64_t nonConstVectorEntry : nonConstVectorEntries) {
         for (uint64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;
@@ -187,8 +189,7 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::ze
     RationalFunction function, typename RobustParameterLifter<ParametricType, ConstantType>::VariableType parameter) {
     std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
 
-    utility::solver::Z3SmtSolverFactory factory;
-    auto smtSolver = factory.create(*expressionManager);
+    auto smtSolver = utility::solver::getSmtSolver(*expressionManager);
 
     expressions::RationalFunctionToExpression<storm::RationalFunction> rfte(expressionManager);
 
@@ -279,7 +280,6 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
             continue;
         }
         CoefficientType coefficient = term.coeff();
-        STORM_LOG_ASSERT(term.tdeg() < 4, "Transitions are only allowed to have a maximum degree of four.");
         switch (term.tdeg()) {
             case 0:
                 d = coefficient;
@@ -292,6 +292,9 @@ RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::cu
                 break;
             case 3:
                 a = coefficient;
+                break;
+            default:
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Transitions are only allowed to have have a maximum degree of four.");
                 break;
         }
     }
@@ -461,6 +464,10 @@ void RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuatio
                 zeroes = cubicEquationZeroes(RawPolynomial(derivative.nominator()), p);
             } else {
                 zeroes = zeroesSMT(derivative, p);
+                if (!zeroes) {
+                    // The SMT solver could not find the zeroes, e.g., because of a timeout. Fall back to carl's root finder.
+                    zeroes = zeroesCarl(nominatorAsUnivariate, p);
+                }
             }
             STORM_LOG_ERROR_COND(zeroes, "Zeroes of " << derivative << " could not be found.");
             for (auto const& zero : *zeroes) {
@@ -487,7 +494,7 @@ std::optional<Annotation> const& RobustParameterLifter<ParametricType, ConstantT
 template<typename ParametricType, typename ConstantType>
 std::size_t RobustParameterLifter<ParametricType, ConstantType>::RobustAbstractValuation::getHashValue() const {
     std::size_t seed = 0;
-    carl::hash_add(seed, transition);
+    boost::hash_combine(seed, transition);
     return seed;
 }
 
@@ -514,19 +521,16 @@ Interval evaluateExtremaAnnotations(std::map<UniPoly, std::set<double>> extremaA
             }
         }
 
-        double minValue = utility::infinity<double>();
-        double maxValue = -utility::infinity<double>();
+        utility::Minimum<double> minValue;
+        utility::Maximum<double> maxValue;
 
         for (auto const& potentialExtremum : potentialExtrema) {
             auto value = utility::convertNumber<double>(poly.evaluate(utility::convertNumber<RationalFunctionCoefficient>(potentialExtremum)));
-            if (value > maxValue) {
-                maxValue = value;
-            }
-            if (value < minValue) {
-                minValue = value;
-            }
+            maxValue &= value;
+            minValue &= value;
         }
-        sumOfTerms += Interval(minValue, maxValue);
+        STORM_LOG_ASSERT(!minValue.empty(), "Expected at least one potential extremum.");
+        sumOfTerms += Interval(*minValue, *maxValue);
     }
     return sumOfTerms;
 }
@@ -537,8 +541,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
     std::unordered_map<RobustAbstractValuation, Interval, RobustAbstractValuationHash> insertThese;
     for (auto& [abstrValuation, placeholder] : collectedValuations) {
         // Results of our computations go here, we use different methods
-        ConstantType lowerBound = utility::infinity<ConstantType>();
-        ConstantType upperBound = -utility::infinity<ConstantType>();
+        ConstantType lowerBound = utility::zero<ConstantType>();
+        ConstantType upperBound = utility::zero<ConstantType>();
 
         if (abstrValuation.getExtrema()) {
             // We know the extrema of this abstract valuation => we can get the exact bounds easily
@@ -562,16 +566,17 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     }
                 }
 
+                utility::Minimum<ConstantType> minimum;
+                utility::Maximum<ConstantType> maximum;
                 for (auto const& potentialExtremum : potentialExtrema) {
                     // Possible optimization: evaluate all transitions together, keeping track of intermediate results
                     auto value = maybeAnnotation->evaluate(utility::convertNumber<double>(potentialExtremum));
-                    if (value > upperBound) {
-                        upperBound = value;
-                    }
-                    if (value < lowerBound) {
-                        lowerBound = value;
-                    }
+                    maximum &= value;
+                    minimum &= value;
                 }
+                STORM_LOG_ASSERT(!minimum.empty(), "Expected at least one potential extremum.");
+                lowerBound = *minimum;
+                upperBound = *maximum;
             } else {
                 // We may have multiple parameters, but the derivatives w.r.t. each parameter only contain that parameter
                 // We first figure out the positions of the lower and upper bounds per parameter
@@ -593,8 +598,8 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
 
                     CoefficientType minPosP;
                     CoefficientType maxPosP;
-                    CoefficientType minValue = utility::infinity<CoefficientType>();
-                    CoefficientType maxValue = -utility::infinity<CoefficientType>();
+                    utility::Minimum<CoefficientType> minValue;
+                    utility::Maximum<CoefficientType> maxValue;
 
                     auto instantiation = std::map<VariableType, CoefficientType>(region.getLowerBoundaries());
 
@@ -602,15 +607,14 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                         // We modify the instantiation to have value potentialExtremum at p, keeping other parameters the same
                         instantiation[p] = potentialExtremum;
                         auto value = abstrValuation.getTransition().evaluate(instantiation);
-                        if (value > maxValue) {
-                            maxValue = value;
+                        if (maxValue &= value) {
                             maxPosP = potentialExtremum;
                         }
-                        if (value < minValue) {
-                            minValue = value;
+                        if (minValue &= value) {
                             minPosP = potentialExtremum;
                         }
                     }
+                    STORM_LOG_ASSERT(!minValue.empty(), "Expected at least one potential extremum.");
 
                     lowerPositions[p] = minPosP;
                     upperPositions[p] = maxPosP;
@@ -626,7 +630,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                 return true;
             }
         } else {
-            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes");
+            STORM_LOG_ASSERT(abstrValuation.getAnnotation(), "Needs to have annotation if no zeroes.");
             auto& regionsAndBounds = this->regionsAndBounds.at(abstrValuation);
             auto const& annotation = *abstrValuation.getAnnotation();
 
@@ -641,7 +645,7 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
                     auto const& [region, bound] = regionsAndBounds[i];
                     STORM_LOG_ASSERT(
                         i == 0 ? true : (!(region.upper() < regionsAndBounds[i - 1].first.lower() || region.lower() > regionsAndBounds[i - 1].first.upper())),
-                        "regions next to each other need to intersect");
+                        "Regions next to each other need to intersect.");
                     if (region.upper() <= plaRegion.lower() || region.lower() >= plaRegion.upper()) {
                         if (regionsInPLARegion.empty()) {
                             continue;
@@ -700,16 +704,12 @@ bool RobustParameterLifter<ParametricType, ConstantType>::FunctionValuationColle
             } while (refine);
         }
 
-        // bool graphPreserving = true;
-        // // const ConstantType epsilon =
-        // //     graphPreserving ? utility::convertNumber<ConstantType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision())
-        // //                     : utility::zero<ConstantType>();
         const ConstantType epsilon = 0;
         // We want to check in the realm of feasible instantiations, even if our not our entire parameter space is feasible
         lowerBound = utility::max(utility::min(lowerBound, utility::one<ConstantType>() - epsilon), epsilon);
         upperBound = utility::max(utility::min(upperBound, utility::one<ConstantType>() - epsilon), epsilon);
 
-        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops");
+        STORM_LOG_ASSERT(lowerBound <= upperBound, "Whoops.");
 
         placeholder = Interval(lowerBound, upperBound);
     }

@@ -8,7 +8,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -32,7 +32,7 @@ void ValueParser<ValueType>::addParameter(std::string const& parameter) {
 }
 
 template<>
-void ValueParser<storm::RationalFunction>::addParameter(std::string const& parameter) {
+void STORM_PARSERS_API ValueParser<storm::RationalFunction>::addParameter(std::string const& parameter) {
     storm::expressions::Variable var = data.manager->declareRationalVariable(parameter);
     data.identifierMapping.emplace(var.getName(), var);
     data.parser->setIdentifierMapping(data.identifierMapping);
@@ -40,7 +40,7 @@ void ValueParser<storm::RationalFunction>::addParameter(std::string const& param
 }
 
 template<>
-storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
+STORM_PARSERS_API storm::RationalFunction ValueParser<storm::RationalFunction>::parseValue(std::string const& value) const {
     storm::RationalFunction rationalFunction = data.evaluator->asRational(data.parser->parseFromString(value));
     STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
     return rationalFunction;
@@ -84,19 +84,19 @@ bool parseInterval(std::string const& value, IntervalType& result) {
 
     std::string intermediate = value;
     boost::trim(intermediate);
-    carl::BoundType leftBound;
-    carl::BoundType rightBound;
+    storm::BoundType leftBound;
+    storm::BoundType rightBound;
     if (intermediate.front() == '(') {
-        leftBound = carl::BoundType::STRICT;
+        leftBound = storm::BoundType::STRICT;
     } else if (intermediate.front() == '[') {
-        leftBound = carl::BoundType::WEAK;
+        leftBound = storm::BoundType::WEAK;
     } else {
         return false;  // Expect start with '(' or '['.
     }
     if (intermediate.back() == ')') {
-        rightBound = carl::BoundType::STRICT;
+        rightBound = storm::BoundType::STRICT;
     } else if (intermediate.back() == ']') {
-        rightBound = carl::BoundType::WEAK;
+        rightBound = storm::BoundType::WEAK;
     } else {
         return false;  // Expected end with ')' or ']'.
     }
@@ -125,7 +125,7 @@ bool parseNumber(std::string const& value, NumberType& result) {
     if constexpr (std::is_same_v<NumberType, double>) {
         return parseDouble(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::RationalNumber>) {
-        return carl::try_parse(value, result);
+        return storm::utility::tryParseNumber(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::Interval>) {
         return parseInterval<storm::Interval>(value, result);
     } else if constexpr (std::is_same_v<NumberType, storm::RationalInterval>) {
@@ -135,14 +135,15 @@ bool parseNumber(std::string const& value, NumberType& result) {
     }
 }
 
-// Template instantiations.
-template class ValueParser<double>;
-template class ValueParser<storm::RationalNumber>;
+// Template instantiations. STORM_PARSERS_API for ValueParser<storm::RationalFunction> would trigger a GCC warning because the member
+// specializations above already instantiated the class. The visibility is already ensured through the annotation on the class template.
+template class STORM_PARSERS_API ValueParser<double>;
+template class STORM_PARSERS_API ValueParser<storm::RationalNumber>;
 template class ValueParser<storm::RationalFunction>;
-template class ValueParser<storm::Interval>;
-template class ValueParser<storm::RationalInterval>;
+template class STORM_PARSERS_API ValueParser<storm::Interval>;
+template class STORM_PARSERS_API ValueParser<storm::RationalInterval>;
 
-template std::size_t parseNumber<std::size_t>(std::string const&);
+template STORM_PARSERS_API std::size_t parseNumber<std::size_t>(std::string const&);
 
 }  // namespace parser
 }  // namespace storm

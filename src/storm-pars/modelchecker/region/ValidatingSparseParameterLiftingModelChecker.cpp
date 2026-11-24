@@ -2,15 +2,12 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 
 namespace storm {
 namespace modelchecker {
@@ -23,9 +20,7 @@ ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, Pre
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::~ValidatingSparseParameterLiftingModelChecker() {
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
-    }
+    STORM_LOG_STATISTICS("Validating Parameter Lifting Model Checker detected " << numOfWrongRegions << " regions where the imprecise method was wrong.\n");
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
@@ -38,10 +33,11 @@ template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
 void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::specify(
     Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
     std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-    bool allowModelSimplifications, bool graphPreserving) {
+    bool allowModelSimplifications, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
-    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for validating PLA.");
+    STORM_LOG_THROW(storm::pars::analysis::isGraphPreserving(graphPreservationStatus), storm::exceptions::NotImplementedException,
+                    "Non-graph-preserving regions not implemented for validating PLA.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
 
@@ -54,17 +50,10 @@ void ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType
 
     if (allowModelSimplifications) {
         auto dtmcOrMdp = parametricModel->template as<SparseModelType>();
-        if constexpr (IsMDP) {
-            auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*dtmcOrMdp);
-            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
-            specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
-        } else {
-            auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*dtmcOrMdp);
-            STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
-            auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
-            specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
-        }
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*dtmcOrMdp);
+        STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
+        auto simplifiedTask = checkTask.substituteFormula(*simplifier.getSimplifiedFormula());
+        specifyUnderlyingCheckers(simplifier.getSimplifiedModel(), simplifiedTask);
     } else {
         specifyUnderlyingCheckers(parametricModel, checkTask);
     }
@@ -120,14 +109,14 @@ RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, Impre
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
-typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType
+typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::ExtendedCoefficientType
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getBoundAtInitState(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
     return preciseChecker.getBoundAtInitState(env, region, dirForParameters);
 }
 
 template<typename SparseModelType, typename ImpreciseType, typename PreciseType>
-std::pair<typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::CoefficientType,
+std::pair<typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::ExtendedCoefficientType,
           typename ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::Valuation>
 ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::getAndEvaluateGoodPoint(
     Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {

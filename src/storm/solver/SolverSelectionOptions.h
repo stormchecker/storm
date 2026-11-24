@@ -10,9 +10,9 @@ ExtendEnumsWithSelectionField(MinMaxMethod, ValueIteration, PolicyIteration, Lin
         ExtendEnumsWithSelectionField(LraMethod, LinearProgramming, ValueIteration, GainBiasEquations, LraDistributionEquations)
             ExtendEnumsWithSelectionField(MaBoundedReachabilityMethod, Imca, UnifPlus)
 
-                ExtendEnumsWithSelectionField(LpSolverType, Gurobi, Glpk, Z3, Soplex)
+                ExtendEnumsWithSelectionField(LpSolverType, Glpk, Gurobi, Highs, Soplex, Z3)
                     ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Eigen, Elimination, Topological, Acyclic)
-                        ExtendEnumsWithSelectionField(SmtSolverType, Z3, Mathsat)
+                        ExtendEnumsWithSelectionField(SmtSolverType, Z3, Mathsat, Cvc5)
 
                             ExtendEnumsWithSelectionField(NativeLinearEquationSolverMethod, Jacobi, GaussSeidel, SOR, WalkerChae, Power, SoundValueIteration,
                                                           OptimisticValueIteration, GuessingValueIteration, IntervalIteration, RationalSearch)

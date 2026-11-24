@@ -36,7 +36,7 @@ ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> co
     }
 
     storm::storage::MemoryStructure memory = computeMemoryStructure(model, objectives);
-    assert(memoryStateManager.getMemoryStateCount() == memory.getNumberOfStates());
+    STORM_LOG_ASSERT(memoryStateManager.getMemoryStateCount() == memory.getNumberOfStates(), "Memory state count mismatch.");
     std::vector<MemoryState> memoryStateMap = computeMemoryStateMap(memory);
 
     storm::storage::SparseModelMemoryProduct<ValueType> productBuilder(memory.product(model));
@@ -85,7 +85,8 @@ ProductModel<ValueType>::ProductModel(storm::models::sparse::Model<ValueType> co
                     if (productStateExists(modelState, memoryState)) {
                         uint64_t productState = getProductState(modelState, memoryState);
                         uint64_t productChoice = getProduct().getTransitionMatrix().getRowGroupIndices()[productState] + choiceOffset;
-                        assert(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1]);
+                        STORM_LOG_ASSERT(productChoice < getProduct().getTransitionMatrix().getRowGroupIndices()[productState + 1],
+                                         "Product choice out of range.");
                         steps[productChoice] = step;
                     }
                 }
@@ -122,7 +123,7 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
             objMemStates.push_back(~m);
         }
         objMemStates.push_back(~m);
-        assert(objMemStates.size() == 1ull << dimensionIndexMap.size());
+        STORM_LOG_ASSERT(objMemStates.size() == 1ull << dimensionIndexMap.size(), "Memory states size mismatch.");
 
         // build objective memory
         auto objMemoryBuilder = storm::storage::MemoryStructureBuilder<ValueType>(objMemStates.size(), model);
@@ -131,7 +132,7 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
         storm::storage::BitVector constraintStates(model.getNumberOfStates(), true);
         for (auto dim : objectiveDimensions[objIndex]) {
             auto const& dimension = dimensions[dim];
-            STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type");
+            STORM_LOG_ASSERT(dimension.formula->isBoundedUntilFormula(), "Unexpected Formula type.");
             constraintStates &= (mc.check(dimension.formula->asBoundedUntilFormula().getLeftSubformula())
                                      ->template asExplicitQualitativeCheckResult<ValueType>()
                                      .getTruthValuesVector() |
@@ -176,7 +177,7 @@ storm::storage::MemoryStructure ProductModel<ValueType>::computeMemoryStructure(
                             prob1InitialStates[objIndex] = initialTransitionStates;
                         }
 
-                        for (auto initState : initialTransitionStates) {
+                        for (uint64_t initState : initialTransitionStates) {
                             objMemoryBuilder.setInitialMemoryState(initState, memStatePrime);
                         }
                     }
@@ -263,7 +264,7 @@ void ProductModel<ValueType>::setReachableProductStates(storm::storage::SparseMo
             reachableProductStates[transformedMemoryState].set(initState, true);
             ++memStateIt;
         }
-        assert(memStateIt == memory.getInitialMemoryStates().end());
+        STORM_LOG_ASSERT(memStateIt == memory.getInitialMemoryStates().end(), "Memory state iterator not at end.");
     }
 
     // Find the reachable epoch classes
@@ -399,7 +400,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
 
                 // find out whether objective reward should be earned within this epoch class
                 bool collectRewardInEpoch = true;
-                for (auto subObjIndex : relevantObjectives) {
+                for (uint64_t subObjIndex : relevantObjectives) {
                     if (dimensions[dimensionIndexMap[subObjIndex]].boundType == DimensionBoundType::UpperBound &&
                         epochManager.isBottomDimensionEpochClass(epochClass, dimensionIndexMap[subObjIndex])) {
                         collectRewardInEpoch = false;
@@ -435,7 +436,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
                     storm::storage::BitVector relevantChoices = getProduct().getTransitionMatrix().getRowFilter(relevantStates);
                     storm::storage::BitVector goalStates =
                         mc.check(*goalStatesFormula)->template asExplicitQualitativeCheckResult<ValueType>().getTruthValuesVector();
-                    for (auto choice : relevantChoices) {
+                    for (uint64_t choice : relevantChoices) {
                         objRew[choice] += getProduct().getTransitionMatrix().getConstrainedRowSum(choice, goalStates);
                     }
                 }
@@ -474,7 +475,7 @@ std::vector<std::vector<ValueType>> ProductModel<ValueType>::computeObjectiveRew
 
 template<typename ValueType>
 storm::storage::BitVector const& ProductModel<ValueType>::getInStates(EpochClass const& epochClass) const {
-    STORM_LOG_ASSERT(inStates.find(epochClass) != inStates.end(), "Could not find InStates for the given epoch class");
+    STORM_LOG_ASSERT(inStates.find(epochClass) != inStates.end(), "Could not find InStates for the given epoch class.");
     return inStates.find(epochClass)->second;
 }
 
@@ -575,13 +576,13 @@ void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClas
         }
         STORM_LOG_ASSERT(reachableStates.find(predecessor) != reachableStates.end(), "Could not find reachable states of predecessor epoch class.");
         storm::storage::BitVector predecessorStates = reachableStates.find(predecessor)->second;
-        for (auto predecessorState : predecessorStates) {
+        for (uint64_t predecessorState : predecessorStates) {
             uint64_t predecessorMemoryState = getMemoryState(predecessorState);
             for (uint64_t choice = getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState];
                  choice < getProduct().getTransitionMatrix().getRowGroupIndices()[predecessorState + 1]; ++choice) {
                 bool choiceLeadsToThisClass = false;
                 Epoch const& choiceStep = getSteps()[choice];
-                for (auto dim : positiveStepDimensions) {
+                for (uint64_t dim : positiveStepDimensions) {
                     if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                         choiceLeadsToThisClass = true;
                     }
@@ -611,7 +612,7 @@ void ProductModel<ValueType>::computeReachableStates(EpochClass const& epochClas
              choice != getProduct().getTransitionMatrix().getRowGroupIndices()[currentState + 1]; ++choice) {
             bool choiceLeadsOutsideOfEpoch = false;
             Epoch const& choiceStep = getSteps()[choice];
-            for (auto dim : nonBottomDimensions) {
+            for (uint64_t dim : nonBottomDimensions) {
                 if (epochManager.getDimensionOfEpoch(choiceStep, dim) > 0) {
                     choiceLeadsOutsideOfEpoch = true;
                     break;
@@ -642,13 +643,13 @@ typename ProductModel<ValueType>::MemoryState ProductModel<ValueType>::transform
     MemoryState memoryStatePrime = memoryState;
 
     for (auto const& objDimensions : objectiveDimensions) {
-        for (auto dim : objDimensions) {
+        for (uint64_t dim : objDimensions) {
             auto const& dimension = dimensions[dim];
             if (dimension.memoryLabel) {
                 bool dimUpperBounded = dimension.boundType == DimensionBoundType::UpperBound;
                 bool dimBottom = epochManager.isBottomDimensionEpochClass(epochClass, dim);
                 if (dimUpperBounded && dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {
-                    STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions");
+                    STORM_LOG_ASSERT(objDimensions == dimension.dependentDimensions, "Unexpected set of dependent dimensions.");
                     memoryStateManager.setRelevantDimensions(memoryStatePrime, objDimensions, false);
                     break;
                 } else if (!dimUpperBounded && !dimBottom && memoryStateManager.isRelevantDimension(predecessorMemoryState, dim)) {

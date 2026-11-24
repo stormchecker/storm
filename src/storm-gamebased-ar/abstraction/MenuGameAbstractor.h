@@ -3,12 +3,13 @@
 #include <map>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
+#include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
 #include "storm-gamebased-ar/abstraction/RefinementCommand.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace dd {
@@ -23,19 +24,10 @@ namespace abstraction {
 template<storm::dd::DdType DdType>
 class AbstractionInformation;
 
-struct MenuGameAbstractorOptions {
-    MenuGameAbstractorOptions() = default;
-    MenuGameAbstractorOptions(std::vector<storm::expressions::Expression>&& constraints) : constraints(std::move(constraints)) {
-        // Intentionally left empty.
-    }
-
-    std::vector<storm::expressions::Expression> constraints;
-};
-
 template<storm::dd::DdType DdType, typename ValueType>
 class MenuGameAbstractor {
    public:
-    MenuGameAbstractor();
+    explicit MenuGameAbstractor(AbstractionOptions const& options);
     virtual ~MenuGameAbstractor() = default;
 
     virtual storm::dd::DdManager<DdType> const& getDdManager() const = 0;

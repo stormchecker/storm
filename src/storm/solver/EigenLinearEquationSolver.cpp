@@ -79,7 +79,11 @@ bool EigenLinearEquationSolver<storm::RationalNumber>::internalSolveEquations(En
     solver.compute(*eigenA);
     solver._solve_impl(eigenB, eigenX);
 
-    return solver.info() == Eigen::ComputationInfo::Success;
+    if (solver.info() != Eigen::ComputationInfo::Success) {
+        return false;
+    }
+    this->setSolutionBoundsExact(x);
+    return true;
 }
 
 // Specialization for storm::RationalFunction
@@ -97,7 +101,11 @@ bool EigenLinearEquationSolver<storm::RationalFunction>::internalSolveEquations(
     Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
     solver.compute(*eigenA);
     solver._solve_impl(eigenB, eigenX);
-    return solver.info() == Eigen::ComputationInfo::Success;
+    if (solver.info() != Eigen::ComputationInfo::Success) {
+        return false;
+    }
+    this->setSolutionBoundsExact(x);
+    return true;
 }
 
 template<typename ValueType>
@@ -112,6 +120,10 @@ bool EigenLinearEquationSolver<ValueType>::internalSolveEquations(Environment co
         Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
         solver.compute(*this->eigenA);
         solver._solve_impl(eigenB, eigenX);
+        if (solver.info() != Eigen::ComputationInfo::Success) {
+            return false;
+        }
+        this->setSolutionBoundsExact(x);
     } else {
         bool converged = false;
         uint64_t numberOfIterations = 0;
@@ -258,8 +270,10 @@ uint64_t EigenLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
 }
 
 template<typename ValueType>
-std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const&) const {
-    return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
+std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
+    auto solver = std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

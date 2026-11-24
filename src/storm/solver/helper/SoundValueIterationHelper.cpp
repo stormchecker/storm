@@ -55,7 +55,7 @@ class SVIBackend {
     }
 
     void firstRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
-        assert(currRowValuesIndex == 0);
+        STORM_LOG_ASSERT(currRowValuesIndex == 0, "Expected currRowValuesIndex to be 0.");
         if constexpr (!TrivialRowGrouping) {
             bestValue.reset();
         }
@@ -63,15 +63,15 @@ class SVIBackend {
     }
 
     void nextRow(std::pair<ValueType, ValueType>&& value, [[maybe_unused]] uint64_t rowGroup, [[maybe_unused]] uint64_t row) {
-        assert(!TrivialRowGrouping);
-        assert(currRowValuesIndex < currRowValues.size());
+        STORM_LOG_ASSERT(!TrivialRowGrouping, "Expected non-trivial row grouping.");
+        STORM_LOG_ASSERT(currRowValuesIndex < currRowValues.size(), "CurrRowValuesIndex out of range.");
         if (Stage == SVIStage::Initial && bValue.empty()) {
             if (value.second > best.second || (value.second == best.second && better(value.first, best.first))) {
                 std::swap(value, best);
             }
             currRowValues[currRowValuesIndex++] = std::move(value);
         } else {
-            assert(!bValue.empty());
+            STORM_LOG_ASSERT(!bValue.empty(), "BValue should not be empty.");
             auto const& b = Stage == SVIStage::b_eq_d ? *dValue : *bValue;
             if (bestValue.empty()) {
                 bestValue = best.first + b * best.second;
@@ -106,7 +106,7 @@ class SVIBackend {
                 }
             }
         } else {
-            assert(currRowValuesIndex == 0);
+            STORM_LOG_ASSERT(currRowValuesIndex == 0, "Expected currRowValuesIndex to be 0.");
         }
 
         // keep track of bounds a,b
@@ -177,10 +177,11 @@ class SVIBackend {
     template<SVIStage NewStage>
     auto createBackendForNextStage() const {
         std::optional<ValueType> d;
-        if (NewStage == SVIStage::b_eq_d && !bValue.empty())
+        if (NewStage == SVIStage::b_eq_d && !bValue.empty()) {
             d = *bValue;
-        else if (NewStage != SVIStage::Initial && !dValue.empty())
+        } else if (NewStage != SVIStage::Initial && !dValue.empty()) {
             d = *dValue;
+        }
         return SVIBackend<ValueType, Dir, NewStage, TrivialRowGrouping>(currRowValues, a(), b(), d);
     }
 
@@ -225,8 +226,11 @@ void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetAv
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
-void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetLowerUpper(std::vector<ValueType>& lowerOut,
+bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetLowerUpper(std::vector<ValueType>& lowerOut,
                                                                                          std::vector<ValueType>& upperOut) const {
+    if (!a.has_value() || !b.has_value()) {
+        return false;
+    }
     auto [min, max] = std::minmax(*a, *b);
     uint64_t const size = xy.first.size();
     for (uint64_t i = 0; i < size; ++i) {
@@ -237,6 +241,7 @@ void SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::trySetLo
         lowerOut[i] = xi + min * yi;
         upperOut[i] = xi + max * yi;
     }
+    return true;
 }
 
 template<typename ValueType, bool TrivialRowGrouping>
@@ -248,7 +253,7 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCus
             return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * max; }, storm::solver::SolverGuarantee::GreaterOrEqual);
         } else if (condition.requiresGuarantee(storm::solver::SolverGuarantee::LessOrEqual)) {
             auto min = std::min(*a, *b);
-            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * min; }, storm::solver::SolverGuarantee::GreaterOrEqual);
+            return condition.terminateNow([&](uint64_t const& i) { return xy.first[i] + xy.second[i] * min; }, storm::solver::SolverGuarantee::LessOrEqual);
         }
     }
     return false;
@@ -258,10 +263,12 @@ template<typename ValueType, bool TrivialRowGrouping>
 bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkConvergence(uint64_t& convergenceCheckState,
                                                                                          std::function<void()> const& getNextConvergenceCheckState,
                                                                                          bool relative, ValueType const& precision) const {
-    if (!a.has_value() || !b.has_value())
+    if (!a.has_value() || !b.has_value()) {
         return false;
-    if (*a == *b)
+    }
+    if (*a == *b) {
         return true;
+    }
     if (relative) {
         auto [min, max] = std::minmax(*a, *b);
         if (min >= storm::utility::zero<ValueType>()) {
@@ -282,7 +289,7 @@ bool SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData::checkCon
             for (; convergenceCheckState < xy.first.size(); getNextConvergenceCheckState()) {
                 ValueType l = xy.first[convergenceCheckState] + min * xy.second[convergenceCheckState];
                 ValueType u = xy.first[convergenceCheckState] + max * xy.second[convergenceCheckState];
-                assert(u >= l);
+                STORM_LOG_ASSERT(u >= l, "Upper bound less than lower bound.");
                 if (l > storm::utility::zero<ValueType>()) {
                     if ((u - l) > l * precision) {
                         return false;
@@ -352,7 +359,7 @@ typename SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVIData Sound
                         return SVI(xy, offsets, numIterations, relative, precision, backend.template createBackendForNextStage<SVIStage::b_eq_d>(),
                                    iterationCallback, relevantValues, convergenceCheckState);
                     default:
-                        STORM_LOG_ASSERT(false, "Unexpected next stage");
+                        STORM_LOG_ASSERT(false, "Unexpected next stage.");
                 }
             }
         }
@@ -393,7 +400,8 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, uint64_t& numIterations, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
-    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues) const {
+    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues,
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     // Create two vectors x and y using the given operand plus an auxiliary vector.
     std::pair<std::vector<ValueType>, std::vector<ValueType>> xy;
     auto& auxVector = viOperator->allocateAuxiliaryVector(operand.size());
@@ -404,6 +412,14 @@ SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
         doublePrec -= precision * 1e-6;  // be slightly more precise to avoid a good chunk of floating point issues
     }
     auto res = SVI(xy, offsets, numIterations, relative, doublePrec, dir, lowerBound, upperBound, iterationCallback, relevantValues);
+    if (solutionBounds.has_value()) {
+        // The iteration encloses the solution throughout once both scaling factors are known.
+        std::vector<ValueType>& lower = solutionBounds->lower.emplace(xy.first.size());
+        std::vector<ValueType>& upper = solutionBounds->upper.emplace(xy.first.size());
+        if (!res.trySetLowerUpper(lower, upper)) {
+            solutionBounds->clear();
+        }
+    }
     res.trySetAverage(xy.first);
     // Swap operand and aux vector back to original positions.
     xy.first.swap(operand);
@@ -416,9 +432,10 @@ template<typename ValueType, bool TrivialRowGrouping>
 SolverStatus SoundValueIterationHelper<ValueType, TrivialRowGrouping>::SVI(
     std::vector<ValueType>& operand, std::vector<ValueType> const& offsets, bool relative, ValueType const& precision,
     std::optional<storm::OptimizationDirection> const& dir, std::optional<ValueType> const& lowerBound, std::optional<ValueType> const& upperBound,
-    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues) const {
+    std::function<SolverStatus(SVIData const&)> const& iterationCallback, std::optional<storm::storage::BitVector> const& relevantValues,
+    storm::OptionalRef<SolutionBounds<ValueType>> solutionBounds) const {
     uint64_t numIterations = 0;
-    return SVI(operand, offsets, numIterations, relative, precision, dir, lowerBound, upperBound, iterationCallback, relevantValues);
+    return SVI(operand, offsets, numIterations, relative, precision, dir, lowerBound, upperBound, iterationCallback, relevantValues, solutionBounds);
 }
 
 template class SoundValueIterationHelper<double, true>;

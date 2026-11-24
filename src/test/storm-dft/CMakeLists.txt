@@ -5,7 +5,7 @@ set(STORM_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/src/test/storm-dft")
 include_directories(${GTEST_INCLUDE_DIR})
 include_directories(${GMOCK_INCLUDE_DIR})
 
-foreach (testsuite api bdd simulator storage transformations)
+foreach (testsuite api bdd environment simulator storage transformations)
 
 	file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp ${STORM_TESTS_BASE_PATH}/../storm_gtest.cpp)
 	add_executable (test-dft-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)

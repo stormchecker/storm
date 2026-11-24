@@ -16,8 +16,8 @@
 // A more robust test would take the high-level actions and observations and track on those.
 
 TEST(BeliefSupportTracking, Maze) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
     program = program.preprocess("sl=0.4");

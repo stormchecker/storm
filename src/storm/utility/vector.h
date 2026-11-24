@@ -9,6 +9,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -44,7 +45,7 @@ template<class T>
 std::size_t findOrInsert(std::vector<T>& vector, T&& element) {
     std::size_t position = std::find(vector.begin(), vector.end(), element) - vector.begin();
     if (position == vector.size()) {
-        vector.emplace_back(std::move(element));
+        vector.emplace_back(std::forward<T>(element));
     }
     return position;
 }
@@ -74,14 +75,14 @@ void setAllValues(std::vector<T>& vec, storm::storage::BitVector const& position
  * @param positions The positions at which the values are to be set.
  * @param values The values that are to be set.
  */
-template<class T>
-void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
+template<class T, class S>
+void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<S> const& values) {
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
     STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits()
                                                                                                            << ") exceeds the size of the input vector ("
                                                                                                            << values.size() << ").");
     uint_fast64_t oldPosition = 0;
-    for (auto position : positions) {
+    for (uint64_t position : positions) {
         vector[position] = values[oldPosition++];
     }
 }
@@ -94,17 +95,17 @@ void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& po
  * @param positions The positions at which the value is to be set.
  * @param value The value that is to be set.
  */
-template<class T>
-void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, T value) {
-    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized");
-    for (auto position : positions) {
+template<class T, class S>
+void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, S const& value) {
+    STORM_LOG_ASSERT(positions.size() <= vector.size(), "We cannot set positions that have not been initialized.");
+    for (uint64_t position : positions) {
         vector[position] = value;
     }
 }
 
 template<typename T>
 void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
-    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size");
+    STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size.");
     for (uint64_t i = 0; i < vec.size(); ++i) {
         if (!storm::utility::isZero(vec[i])) {
             bv.set(i, true);
@@ -170,7 +171,7 @@ bool isUnique(std::vector<T> const& v) {
 
 template<typename T, typename Comparator>
 bool compareElementWise(std::vector<T> const& left, std::vector<T> const& right, Comparator comp = std::less<T>()) {
-    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size");
+    STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size.");
     return std::equal(left.begin(), left.end(), right.begin(), comp);
 }
 
@@ -188,7 +189,7 @@ void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const&
     STORM_LOG_ASSERT(positions.size() == values.size(),
                      "Size mismatch of the positions vector (" << positions.size() << ") and the values vector (" << values.size() << ").");
     auto targetIt = vector.begin();
-    for (auto position : positions) {
+    for (uint64_t position : positions) {
         *targetIt = values[position];
         ++targetIt;
     }
@@ -206,7 +207,7 @@ template<class T>
 void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping,
                         std::vector<T> const& values) {
     auto targetIt = vector.begin();
-    for (auto position : positions) {
+    for (uint64_t position : positions) {
         for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i, ++targetIt) {
             *targetIt = values[i];
         }
@@ -261,7 +262,7 @@ template<class T>
 void selectVectorValuesRepeatedly(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<uint_fast64_t> const& rowGrouping,
                                   std::vector<T> const& values) {
     auto targetIt = vector.begin();
-    for (auto position : positions) {
+    for (uint64_t position : positions) {
         for (uint_fast64_t i = rowGrouping[position]; i < rowGrouping[position + 1]; ++i, ++targetIt) {
             *targetIt = values[position];
         }
@@ -284,7 +285,7 @@ template<class T>
 void addFilteredVectorGroupsToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter,
                                             std::vector<uint_fast64_t> const& rowGroupIndices) {
     auto targetIt = target.begin();
-    for (auto group : filter) {
+    for (uint64_t group : filter) {
         auto it = source.cbegin() + rowGroupIndices[group];
         auto ite = source.cbegin() + rowGroupIndices[group + 1];
         for (; it != ite; ++targetIt, ++it) {
@@ -330,7 +331,7 @@ template<class T>
 void addFilteredVectorToGroupedVector(std::vector<T>& target, std::vector<T> const& source, storm::storage::BitVector const& filter,
                                       std::vector<uint_fast64_t> const& rowGroupIndices) {
     auto targetIt = target.begin();
-    for (auto group : filter) {
+    for (uint64_t group : filter) {
         uint_fast64_t current = rowGroupIndices[group];
         uint_fast64_t next = rowGroupIndices[group + 1];
         for (; current < next; ++current, ++targetIt) {
@@ -517,7 +518,7 @@ storm::storage::BitVector filterGreaterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterZero(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isZero<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isZero(value); });
 }
 
 /*!
@@ -528,7 +529,7 @@ storm::storage::BitVector filterZero(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterOne(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isOne<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isOne(value); });
 }
 
 /*!
@@ -539,7 +540,7 @@ storm::storage::BitVector filterOne(std::vector<T> const& values) {
  */
 template<class T>
 storm::storage::BitVector filterInfinity(std::vector<T> const& values) {
-    return filter<T>(values, storm::utility::isInfinity<T>);
+    return filter<T>(values, [](T const& value) { return storm::utility::isInfinity(value); });
 }
 
 /**
@@ -552,7 +553,7 @@ template<typename VT>
 VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
     STORM_LOG_ASSERT(values.size() == filter.size(), "Vector sizes mismatch.");
     VT sum = storm::utility::zero<VT>();
-    for (auto pos : filter) {
+    for (uint64_t pos : filter) {
         sum += values[pos];
     }
     return sum;
@@ -729,8 +730,11 @@ void reduceVectorMinOrMax(storm::solver::OptimizationDirection dir, std::vector<
  */
 template<class T>
 bool equalModuloPrecision(T const& val1, T const& val2, T const& precision, bool relativeError = true) {
+    if (!storm::utility::isFinite(val1) || !storm::utility::isFinite(val2)) {
+        return val1 == val2;
+    }
     if (relativeError) {
-        if (storm::utility::isZero<T>(val1)) {
+        if (storm::utility::isZero(val1)) {
             return storm::utility::isZero(val2);
         }
         T relDiff = (val1 - val2) / val1;
@@ -807,7 +811,7 @@ bool equalModuloPrecision(std::vector<T> const& vectorLeft, std::vector<T> const
                           bool relativeError) {
     STORM_LOG_ASSERT(vectorLeft.size() == vectorRight.size(), "Lengths of vectors does not match.");
 
-    for (auto position : positions) {
+    for (uint64_t position : positions) {
         if (!equalModuloPrecision(vectorLeft[position], vectorRight[position], precision, relativeError)) {
             return false;
         }
@@ -945,7 +949,7 @@ std::vector<T> getConstrainedOffsetVector(std::vector<T> const& offsetVector, st
 
     // Loop over all states that need to be kept and copy the relative indices of the nondeterministic choices over
     // to the resulting vector.
-    for (auto index : constraint) {
+    for (uint64_t index : constraint) {
         subVector[currentIndexCount] = currentRowCount + offsetVector[index + 1] - offsetVector[index];
         currentRowCount += offsetVector[index + 1] - offsetVector[index];
         ++currentIndexCount;
@@ -983,7 +987,7 @@ std::vector<TargetType> convertNumericVector(std::vector<SourceType> const& oldV
  */
 template<typename TargetType, typename SourceType>
 void convertNumericVector(std::vector<SourceType> const& inputVector, std::vector<TargetType>& targetVector) {
-    assert(inputVector.size() == targetVector.size());
+    STORM_LOG_ASSERT(inputVector.size() == targetVector.size(), "Vector size mismatch.");
     applyPointwise(inputVector, targetVector, [](SourceType const& v) { return storm::utility::convertNumber<TargetType>(v); });
 }
 
@@ -1018,21 +1022,26 @@ typename std::enable_if<std::is_same<ValueType, storm::RationalNumber>::value, s
     } else if (occurringNonZeroNumbers.size() == 1) {
         factor = *occurringNonZeroNumbers.begin();
     } else {
+        using IntegerType = typename storm::NumberTraits<ValueType>::IntegerType;
         // Obtain the least common multiple of the denominators of the occurring numbers.
         // We can then multiply the numbers with the lcm to obtain integers.
         auto numberIt = occurringNonZeroNumbers.begin();
-        ValueType lcm = storm::utility::asFraction(*numberIt).second;
+        IntegerType lcm = storm::utility::denominator(*numberIt);
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            lcm = carl::lcm(lcm, storm::utility::asFraction(*numberIt).second);
+            lcm = storm::utility::lcm(lcm, storm::utility::denominator(*numberIt));
         }
         // Multiply all values with the lcm. To reduce the range of considered integers, we also obtain the gcd of the results.
         numberIt = occurringNonZeroNumbers.begin();
-        ValueType gcd = *numberIt * lcm;
+        STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                         "Number '" << *numberIt << "' is not integral.");
+        IntegerType gcd = storm::utility::numerator(ValueType(*numberIt * lcm));
         for (++numberIt; numberIt != occurringNonZeroNumbers.end(); ++numberIt) {
-            gcd = carl::gcd(gcd, static_cast<ValueType>(*numberIt * lcm));
+            STORM_LOG_ASSERT(storm::utility::denominator(ValueType(*numberIt * lcm)) == storm::utility::one<IntegerType>(),
+                             "Number '" << *numberIt << "' is not integral.");
+            gcd = storm::utility::gcd(gcd, storm::utility::numerator(ValueType(*numberIt * lcm)));
         }
 
-        factor = gcd / lcm;
+        factor = storm::utility::convertNumber<ValueType>(gcd) / storm::utility::convertNumber<ValueType>(lcm);
     }
 
     // Build the result
@@ -1060,7 +1069,7 @@ template<typename Type>
 std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitVector const& filter) {
     std::vector<Type> result;
     result.reserve(filter.getNumberOfSetBits());
-    for (auto index : filter) {
+    for (uint64_t index : filter) {
         result.push_back(in[index]);
     }
     STORM_LOG_ASSERT(result.size() == filter.getNumberOfSetBits(), "Result does not match.");
@@ -1069,7 +1078,7 @@ std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitV
 
 template<typename Type>
 void filterVectorInPlace(std::vector<Type>& v, storm::storage::BitVector const& filter) {
-    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector");
+    STORM_LOG_ASSERT(v.size() == filter.size(), "The filter size does not match the size of the input vector.");
     uint_fast64_t size = v.size();
     // we can start our work at the first index where the filter has value zero
     uint_fast64_t firstUnsetIndex = filter.getNextUnsetIndex(0);
@@ -1165,7 +1174,7 @@ std::vector<T> applyInversePermutationToGroupedVector(std::vector<uint64_t> cons
             result.push_back(source[sourceIndex]);
         }
     }
-    STORM_LOG_ASSERT(result.size() == source.size(), "result has unexpected length.");
+    STORM_LOG_ASSERT(result.size() == source.size(), "Result has unexpected length.");
     return result;
 }
 

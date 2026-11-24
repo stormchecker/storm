@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/optional.hpp>
+#include <optional>
 
 #include "storm/logic/BinaryPathFormula.h"
 
@@ -12,13 +12,12 @@ namespace logic {
 class BoundedUntilFormula : public PathFormula {
    public:
     BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                        boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound,
-                        TimeBoundReference const& timeBoundReference);
+                        std::optional<TimeBound> const& lowerBound, std::optional<TimeBound> const& upperBound, TimeBoundReference const& timeBoundReference);
     BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                        std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                        std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                         std::vector<TimeBoundReference> const& timeBoundReferences);
     BoundedUntilFormula(std::vector<std::shared_ptr<Formula const>> const& leftSubformulas, std::vector<std::shared_ptr<Formula const>> const& rightSubformulas,
-                        std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                        std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                         std::vector<TimeBoundReference> const& timeBoundReferences);
 
     virtual bool isBoundedUntilFormula() const override;
@@ -59,6 +58,9 @@ class BoundedUntilFormula : public PathFormula {
     storm::expressions::Expression const& getLowerBound(unsigned i = 0) const;
     storm::expressions::Expression const& getUpperBound(unsigned i = 0) const;
 
+    std::optional<TimeBound> getLowerBoundAsOptionalTimeBound(unsigned i = 0) const;
+    std::optional<TimeBound> getUpperBoundAsOptionalTimeBound(unsigned i = 0) const;
+
     template<typename ValueType>
     ValueType getLowerBound(unsigned i = 0) const;
 
@@ -81,8 +83,8 @@ class BoundedUntilFormula : public PathFormula {
     std::vector<std::shared_ptr<Formula const>> leftSubformula;
     std::vector<std::shared_ptr<Formula const>> rightSubformula;
     std::vector<TimeBoundReference> timeBoundReference;
-    std::vector<boost::optional<TimeBound>> lowerBound;
-    std::vector<boost::optional<TimeBound>> upperBound;
+    std::vector<std::optional<TimeBound>> lowerBound;
+    std::vector<std::optional<TimeBound>> upperBound;
 };
 }  // namespace logic
 }  // namespace storm

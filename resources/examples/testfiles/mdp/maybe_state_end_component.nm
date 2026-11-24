@@ -1,0 +1,15 @@
+// An MDP whose maybe states contain an end component: staying in x=0 or x=1 forever is a choice, so a sound
+// method has to eliminate that end component before it can solve for the maximal probability of reaching x=2.
+mdp
+
+module main
+	x : [0..3];
+
+	[] x=0 -> (x'=0);
+	[] x=0 -> 0.5 : (x'=1) + 0.5 : (x'=3);
+	[] x=1 -> (x'=0);
+	[] x=1 -> 0.5 : (x'=2) + 0.5 : (x'=3);
+	[] x>=2 -> true;
+endmodule
+
+label "target" = x=2;

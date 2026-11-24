@@ -43,6 +43,7 @@ Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::sparse::ModelComponents<V
 template<typename ValueType, typename RewardModelType>
 Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
     : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(components)) {
+    // NOLINTBEGIN(bugprone-use-after-move) The base constructor only consumes the base-relevant fields of components.
     if (components.exitRates) {
         exitRates = std::move(components.exitRates.get());
     } else {
@@ -53,6 +54,7 @@ Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::sparse::ModelComponents<V
     if (!components.rateTransitions) {
         this->getTransitionMatrix().scaleRowsInPlace(exitRates);
     }
+    // NOLINTEND(bugprone-use-after-move)
 }
 
 template<typename ValueType, typename RewardModelType>

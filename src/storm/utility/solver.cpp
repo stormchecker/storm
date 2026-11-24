@@ -1,13 +1,15 @@
 #include "storm/utility/solver.h"
 
+#include <type_traits>
+
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/MissingLibraryException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/solver/Cvc5SmtSolver.h"
 #include "storm/solver/GlpkLpSolver.h"
 #include "storm/solver/GurobiLpSolver.h"
+#include "storm/solver/HighsLpSolver.h"
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/solver/SoplexLpSolver.h"
 #include "storm/solver/Z3LpSolver.h"
@@ -50,6 +52,21 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> SoplexLpSolverFactory<
 template<typename ValueType>
 std::unique_ptr<LpSolverFactory<ValueType>> SoplexLpSolverFactory<ValueType>::clone() const {
     return std::make_unique<SoplexLpSolverFactory<ValueType>>(*this);
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType>> HighsLpSolverFactory<ValueType>::create(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType>>(new storm::solver::HighsLpSolver<ValueType>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<storm::solver::LpSolver<ValueType, true>> HighsLpSolverFactory<ValueType>::createRaw(storm::Environment const&, std::string const& name) const {
+    return std::unique_ptr<storm::solver::LpSolver<ValueType, true>>(new storm::solver::HighsLpSolver<ValueType, true>(name));
+}
+
+template<typename ValueType>
+std::unique_ptr<LpSolverFactory<ValueType>> HighsLpSolverFactory<ValueType>::clone() const {
+    return std::make_unique<HighsLpSolverFactory<ValueType>>(*this);
 }
 
 template<typename ValueType>
@@ -106,14 +123,21 @@ std::unique_ptr<LpSolverFactory<ValueType>> getLpSolverFactory(storm::Environmen
         t = convert(solvType);
     }
     switch (t) {
-        case storm::solver::LpSolverType::Gurobi:
-            return std::unique_ptr<LpSolverFactory<ValueType>>(new GurobiLpSolverFactory<ValueType>());
         case storm::solver::LpSolverType::Glpk:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new GlpkLpSolverFactory<ValueType>());
-        case storm::solver::LpSolverType::Z3:
-            return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Gurobi:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new GurobiLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Highs:
+            if constexpr (std::is_same_v<ValueType, double>) {
+                return std::unique_ptr<LpSolverFactory<ValueType>>(new HighsLpSolverFactory<ValueType>());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "The HiGHS LP solver only supports double precision.");
+            }
+            break;
         case storm::solver::LpSolverType::Soplex:
             return std::unique_ptr<LpSolverFactory<ValueType>>(new SoplexLpSolverFactory<ValueType>());
+        case storm::solver::LpSolverType::Z3:
+            return std::unique_ptr<LpSolverFactory<ValueType>>(new Z3LpSolverFactory<ValueType>());
     }
     return nullptr;
 }
@@ -132,29 +156,43 @@ std::unique_ptr<storm::solver::LpSolver<ValueType, true>> getRawLpSolver(storm::
     return factory->createRaw(env, name);
 }
 
-std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-    storm::solver::SmtSolverType smtSolverType;
-    if (storm::settings::hasModule<storm::settings::modules::CoreSettings>()) {
-        smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
-    } else {
-#ifdef STORM_HAVE_Z3
-        smtSolverType = storm::solver::SmtSolverType::Z3;
-#elif defined STORM_HAVE_MATHSAT
-        smtSolverType = storm::solver::SmtSolverType::Mathsat;
-#else
-        STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
-#endif
-    }
+namespace {
+std::unique_ptr<storm::solver::SmtSolver> createSmtSolver(storm::solver::SmtSolverType smtSolverType, storm::expressions::ExpressionManager& manager) {
     switch (smtSolverType) {
         case storm::solver::SmtSolverType::Z3:
             return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
         case storm::solver::SmtSolverType::Mathsat:
             return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+        case storm::solver::SmtSolverType::Cvc5:
+            return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
     }
-    return nullptr;
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
+}
+}  // namespace
+
+std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+    // Without an environment to consult, we use the SMT solver that was selected at compile time.
+#ifdef STORM_DEFAULT_SMT_SOLVER_Z3
+    return createSmtSolver(storm::solver::SmtSolverType::Z3, manager);
+#elif defined STORM_DEFAULT_SMT_SOLVER_MATHSAT
+    return createSmtSolver(storm::solver::SmtSolverType::Mathsat, manager);
+#elif defined STORM_DEFAULT_SMT_SOLVER_CVC5
+    return createSmtSolver(storm::solver::SmtSolverType::Cvc5, manager);
+#else
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::MissingLibraryException, "Requested an SMT solver but none was installed.");
+#endif
+}
+
+std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::Environment const& env, storm::expressions::ExpressionManager& manager) const {
+    // If an environment is available, we use the SMT solver that was selected in it.
+    return createSmtSolver(env.solver().getSmtSolverType(), manager);
 }
 
 std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+}
+
+std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::Environment const&, storm::expressions::ExpressionManager& manager) const {
     return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
 }
 
@@ -162,9 +200,26 @@ std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm:
     return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
 }
 
+std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm::Environment const&, storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+}
+
+std::unique_ptr<storm::solver::SmtSolver> Cvc5SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
+}
+
+std::unique_ptr<storm::solver::SmtSolver> Cvc5SmtSolverFactory::create(storm::Environment const&, storm::expressions::ExpressionManager& manager) const {
+    return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Cvc5SmtSolver(manager));
+}
+
 std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
-    std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new SmtSolverFactory());
+    std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory = std::make_unique<SmtSolverFactory>();
     return factory->create(manager);
+}
+
+std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::Environment const& env, storm::expressions::ExpressionManager& manager) {
+    std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory = std::make_unique<SmtSolverFactory>();
+    return factory->create(env, manager);
 }
 
 template class LpSolverFactory<double>;
@@ -177,6 +232,7 @@ template class Z3LpSolverFactory<double>;
 template class Z3LpSolverFactory<storm::RationalNumber>;
 template class SoplexLpSolverFactory<double>;
 template class SoplexLpSolverFactory<storm::RationalNumber>;
+template class HighsLpSolverFactory<double>;
 
 template std::unique_ptr<LpSolverFactory<double>> getLpSolverFactory(storm::Environment const& env, storm::solver::LpSolverTypeSelection solvType);
 template std::unique_ptr<LpSolverFactory<storm::RationalNumber>> getLpSolverFactory(storm::Environment const& env,

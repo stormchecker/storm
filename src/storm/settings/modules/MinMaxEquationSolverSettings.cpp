@@ -50,7 +50,9 @@ MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(mo
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build())
                         .build());
 
-    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision used for detecting convergence of iterative methods.")
+    this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false,
+                                                   "The precision used for detecting convergence of iterative methods; for sound methods, this bounds the "
+                                                   "returned midpoint's relative (or absolute) error.")
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.")
                                          .setDefaultValueDouble(1e-06)
@@ -127,8 +129,8 @@ storm::solver::MinMaxMethod MinMaxEquationSolverSettings::getMinMaxEquationSolvi
         return storm::solver::MinMaxMethod::Acyclic;
     }
 
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
 }
 
 bool MinMaxEquationSolverSettings::isMinMaxEquationSolvingMethodSetFromDefaultValue() const {
@@ -172,7 +174,7 @@ storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterati
     } else if (multiplicationStyleString == "regular" || multiplicationStyleString == "r") {
         return storm::solver::MultiplicationStyle::Regular;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException, "Unknown multiplication style '" << multiplicationStyleString << "'.");
 }
 
 bool MinMaxEquationSolverSettings::isForceUniqueSolutionRequirementSet() const {

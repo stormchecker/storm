@@ -1,14 +1,18 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
+#include "storm-dft/modelchecker/DFTASFChecker.h"
+#include "storm-dft/utility/FDEPConflictFinder.h"
+#include "storm-dft/utility/FailureBoundFinder.h"
 
 namespace {
 class DftSmt : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };

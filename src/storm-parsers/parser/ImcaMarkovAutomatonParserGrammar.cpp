@@ -2,17 +2,20 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/io/file.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/utility/builder.h"
 
 namespace storm {
 namespace parser {
 
 template<typename ValueType, typename StateType>
-ImcaParserGrammar<ValueType, StateType>::ImcaParserGrammar()
-    : ImcaParserGrammar<ValueType, StateType>::base_type(start), numStates(0), numChoices(0), numTransitions(0), hasStateReward(false), hasActionReward(false) {
-    buildChoiceLabels = storm::settings::getModule<storm::settings::modules::BuildSettings>().isBuildChoiceLabelsSet();
+ImcaParserGrammar<ValueType, StateType>::ImcaParserGrammar(ExplicitModelParserOptions const& options)
+    : ImcaParserGrammar<ValueType, StateType>::base_type(start),
+      options(options),
+      numStates(0),
+      numChoices(0),
+      numTransitions(0),
+      hasStateReward(false),
+      hasActionReward(false) {
     initialize();
 }
 
@@ -95,7 +98,7 @@ void ImcaParserGrammar<ValueType, StateType>::addChoiceToStateBehavior(StateType
     bool isMarkovian = label == "!";
     storm::generator::Choice<ValueType, StateType> choice(0, isMarkovian);
     STORM_LOG_THROW(!transitions.empty(), storm::exceptions::WrongFormatException, "Empty choice defined for state s" << state << ".");
-    if (buildChoiceLabels && !isMarkovian) {
+    if (options.buildChoiceLabels && !isMarkovian) {
         choice.addLabel(label);
     }
     if (reward && !isMarkovian) {
@@ -135,8 +138,8 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
     stateLabeling.addLabel("goal", std::move(goalStates));
 
     // Fix deadlocks (if required)
-    assert(stateBehaviors.size() == numStates);
-    if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
+    STORM_LOG_ASSERT(stateBehaviors.size() == numStates, "State behavior count mismatch.");
+    if (options.fixDeadlocks) {
         StateType state = 0;
         for (auto& behavior : stateBehaviors) {
             if (!behavior.wasExpanded()) {
@@ -164,7 +167,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
         actionRewards = std::vector<ValueType>(numChoices, storm::utility::zero<ValueType>());
     }
     std::optional<storm::models::sparse::ChoiceLabeling> choiceLabeling;
-    if (buildChoiceLabels) {
+    if (options.buildChoiceLabels) {
         choiceLabeling = storm::models::sparse::ChoiceLabeling(numChoices);
     }
     StateType state = 0;
@@ -172,7 +175,7 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
     for (auto const& behavior : stateBehaviors) {
         matrixBuilder.newRowGroup(row);
         if (!behavior.getStateRewards().empty()) {
-            assert(behavior.getStateRewards().size() == 1);
+            STORM_LOG_ASSERT(behavior.getStateRewards().size() == 1, "Expected single state reward.");
             stateRewards.value()[state] = behavior.getStateRewards().front();
         }
         if (markovianStates.get(state)) {
@@ -184,11 +187,11 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
                                     "Multiple Markovian choices defined for state " << state << ".");
                     markovianChoiceFound = true;
                     if (!choice.getRewards().empty()) {
-                        assert(choice.getRewards().size() == 1);
+                        STORM_LOG_ASSERT(choice.getRewards().size() == 1, "Expected exactly one reward per choice.");
                         actionRewards.value()[row] = choice.getRewards().front();
                     }
-                    if (buildChoiceLabels && choice.hasLabels()) {
-                        assert(choice.getLabels().size() == 1);
+                    if (options.buildChoiceLabels && choice.hasLabels()) {
+                        STORM_LOG_ASSERT(choice.getLabels().size() == 1, "Expected exactly one label per choice.");
                         std::string const& label = *choice.getLabels().begin();
                         if (!choiceLabeling->containsLabel(label)) {
                             choiceLabeling->addLabel(label);
@@ -209,11 +212,11 @@ storm::storage::sparse::ModelComponents<ValueType> ImcaParserGrammar<ValueType, 
         for (auto const& choice : behavior) {
             if (!choice.isMarkovian()) {
                 if (!choice.getRewards().empty()) {
-                    assert(choice.getRewards().size() == 1);
+                    STORM_LOG_ASSERT(choice.getRewards().size() == 1, "Expected exactly one reward per choice.");
                     actionRewards.value()[row] = choice.getRewards().front();
                 }
-                if (buildChoiceLabels && choice.hasLabels()) {
-                    assert(choice.getLabels().size() == 1);
+                if (options.buildChoiceLabels && choice.hasLabels()) {
+                    STORM_LOG_ASSERT(choice.getLabels().size() == 1, "Expected exactly one label per choice.");
                     std::string const& label = *choice.getLabels().begin();
                     if (!choiceLabeling->containsLabel(label)) {
                         choiceLabeling->addLabel(label);

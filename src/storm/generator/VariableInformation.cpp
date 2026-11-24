@@ -1,13 +1,13 @@
 #include "storm/generator/VariableInformation.h"
 
-#include "storm/storage/jani/Model.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/prism/Program.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/AutomatonComposition.h"
-#include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/eliminator/ArrayEliminator.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/languages/jani/Automaton.h"
+#include "storm/languages/jani/AutomatonComposition.h"
+#include "storm/languages/jani/ParallelComposition.h"
+#include "storm/languages/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -143,11 +143,26 @@ VariableInformation::VariableInformation(storm::prism::Program const& program, u
         if (program.getManager().hasVariable(oblab.getName())) {
             obVar = program.getManager().getVariable(oblab.getName());
             auto const& obPredicate = oblab.getStatePredicateExpression();
-            STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
-                            storm::exceptions::NotSupportedException,
-                            "Observation valuations for label '" << oblab << " is not supported since a variable '" << oblab.getName()
-                                                                 << "' is already known and the expression '" << oblab.getStatePredicateExpression()
-                                                                 << "' is not equal to it.");
+            // Reaching this point means that the observation label is already known as a variable.
+            if (program.hasFormula(oblab.getName())) {
+                STORM_LOG_ASSERT(!program.getAllExpressionVariables(true).contains(obVar),
+                                 "There appears to be a formula and a variable with the same name " << obVar.getName() << " which is not expected.");
+                // The variable is actually a formula; We just need to check whether the type matches
+                // If the type doesn't match, we cannot use the expression variable for both, the formula and the observation label.
+                auto const& f = program.getFormula(oblab.getName());
+                STORM_LOG_THROW(f.getType() == obPredicate.getType(), storm::exceptions::NotSupportedException,
+                                "Observation valuations for '"
+                                    << oblab
+                                    << " is not supported since a formula with the same name is already known and its expression has a different type.");
+            } else {
+                // There is already a known variable with the same name as the observation label. The only case we accept is a declaration of the form
+                // `observable "x" = x;`
+                STORM_LOG_THROW(obPredicate.isVariable() && obPredicate.getBaseExpression().asVariableExpression().getVariable() == obVar,
+                                storm::exceptions::NotSupportedException,
+                                "Observation valuations for '" << oblab << " is not supported since a variable '" << oblab.getName()
+                                                               << "' is already known and the expression '" << oblab.getStatePredicateExpression()
+                                                               << "' is not equal to it.");
+            }
         } else {
             obVar = program.getManager().declareVariable(oblab.getName(), oblab.getStatePredicateExpression().getType());
         }
@@ -276,7 +291,7 @@ bool VariableInformation::hasOutOfBoundsBit() const {
 }
 
 uint64_t VariableInformation::getOutOfBoundsBit() const {
-    assert(hasOutOfBoundsBit());
+    STORM_LOG_ASSERT(hasOutOfBoundsBit(), "Expected out-of-bounds bit.");
     return outOfBoundsBit->bitOffset;
 }
 

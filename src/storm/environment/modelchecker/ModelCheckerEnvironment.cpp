@@ -1,12 +1,11 @@
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 
+#include "storm/environment/modelchecker/CertificateModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/CvarModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/IOSettings.h"
-#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/modelchecker/helper/infinitehorizon/SteadyStateDistributionAlgorithm.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidEnvironmentException.h"
@@ -14,17 +13,25 @@
 
 namespace storm {
 
-ModelCheckerEnvironment::ModelCheckerEnvironment() {
-    auto const& mcSettings = storm::settings::getModule<storm::settings::modules::ModelCheckerSettings>();
-    if (mcSettings.isLtl2daToolSet()) {
-        ltl2daTool = mcSettings.getLtl2daTool();
-    }
-    auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-    steadyStateDistributionAlgorithm = ioSettings.getSteadyStateDistributionAlgorithm();
+ModelCheckerEnvironment::ModelCheckerEnvironment()
+    : ltl2daTool(boost::none),
+      steadyStateDistributionAlgorithm(storm::SteadyStateDistributionAlgorithm::Automatic),
+      filterRewZero(false),
+      exportCdfEnabled(false),
+      exportCdfDirectory("") {
+    // Intentionally left empty.
 }
 
 ModelCheckerEnvironment::~ModelCheckerEnvironment() {
     // Intentionally left empty
+}
+
+CertificateModelCheckerEnvironment& ModelCheckerEnvironment::certificate() {
+    return certificateModelCheckerEnvironment.get();
+}
+
+CertificateModelCheckerEnvironment const& ModelCheckerEnvironment::certificate() const {
+    return certificateModelCheckerEnvironment.get();
 }
 
 CvarModelCheckerEnvironment& ModelCheckerEnvironment::cvar() {
@@ -43,20 +50,20 @@ ConditionalModelCheckerEnvironment const& ModelCheckerEnvironment::conditional()
     return conditionalModelCheckerEnvironment.get();
 }
 
-SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
-    return steadyStateDistributionAlgorithm;
-}
-
-void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
-    steadyStateDistributionAlgorithm = value;
-}
-
 MultiObjectiveModelCheckerEnvironment& ModelCheckerEnvironment::multi() {
     return multiObjectiveModelCheckerEnvironment.get();
 }
 
 MultiObjectiveModelCheckerEnvironment const& ModelCheckerEnvironment::multi() const {
     return multiObjectiveModelCheckerEnvironment.get();
+}
+
+SteadyStateDistributionAlgorithm ModelCheckerEnvironment::getSteadyStateDistributionAlgorithm() const {
+    return steadyStateDistributionAlgorithm;
+}
+
+void ModelCheckerEnvironment::setSteadyStateDistributionAlgorithm(SteadyStateDistributionAlgorithm value) {
+    steadyStateDistributionAlgorithm = value;
 }
 
 bool ModelCheckerEnvironment::isLtl2daToolSet() const {
@@ -73,6 +80,30 @@ void ModelCheckerEnvironment::setLtl2daTool(std::string const& value) {
 
 void ModelCheckerEnvironment::unsetLtl2daTool() {
     ltl2daTool = boost::none;
+}
+
+bool ModelCheckerEnvironment::isFilterRewZeroSet() const {
+    return filterRewZero;
+}
+
+void ModelCheckerEnvironment::setFilterRewZero(bool value) {
+    filterRewZero = value;
+}
+
+bool ModelCheckerEnvironment::isExportCdfSet() const {
+    return exportCdfEnabled;
+}
+
+void ModelCheckerEnvironment::setExportCdf(bool value) {
+    exportCdfEnabled = value;
+}
+
+std::string const& ModelCheckerEnvironment::getExportCdfDirectory() const {
+    return exportCdfDirectory;
+}
+
+void ModelCheckerEnvironment::setExportCdfDirectory(std::string const& value) {
+    exportCdfDirectory = value;
 }
 
 }  // namespace storm

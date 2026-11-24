@@ -37,11 +37,11 @@ SparseCbQuery<SparseModelType>::SparseCbQuery(preprocessing::SparseMultiObjectiv
     for (auto const& obj : this->objectives) {
         obj.formula->gatherReferencedRewardModels(relevantRewardModels);
     }
-    storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
+    storm::transformer::GoalStateMerger<typename SparseModelType::ValueType> merger(*preprocessorResult.preprocessedModel);
     auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false),
                                                         std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()));
 
-    preprocessedModel = mergerResult.model;
+    preprocessedModel = mergerResult.model->template as<SparseModelType>();
     reward0EStates = rewardAnalysis.totalReward0EStates % maybeStates;
     if (mergerResult.targetState) {
         // There is an additional state in the result

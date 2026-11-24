@@ -21,6 +21,7 @@
 #include "storm/solver/helper/SoundValueIterationHelper.h"
 #include "storm/solver/helper/ValueIterationHelper.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/OptionalRef.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
@@ -151,7 +152,7 @@ void IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::setUpViOperat
     }
     if (this->choiceFixedForRowGroup) {
         // Ignore those rows that are not selected
-        assert(this->initialScheduler);
+        STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
         auto callback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
             return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
         };
@@ -423,6 +424,14 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::performPolicy
         } while (status == SolverStatus::InProgress);
 
         STORM_LOG_INFO("Number of iterations: " << iterations);
+
+        // Policy iteration stops once no choice improves the values it was handed, which with an inexact inner
+        // solve can already happen at a scheduler that is arbitrarily far from optimal. Only an inner solve that
+        // was exact says anything about the solution.
+        if (status == SolverStatus::Converged && solver->hasExactSolutionBounds()) {
+            this->setSolutionBounds(solver->getSolutionBounds());
+        }
+
         this->reportStatus(status, iterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -540,7 +549,7 @@ template<typename ValueType, typename SolutionType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
     ValueType result = storm::utility::zero<ValueType>();
     auto oldValueIt = oldValues.begin();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
         ++oldValueIt;
     }
@@ -551,7 +560,7 @@ template<typename ValueType, typename SolutionType>
 ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues,
                             storm::storage::BitVector const& relevantValues) {
     ValueType result = storm::utility::zero<ValueType>();
-    for (auto value : relevantValues) {
+    for (uint64_t value : relevantValues) {
         result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
     }
     return result;
@@ -571,6 +580,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(x.size(), 0);
             }
+            this->setSolutionBoundsExact(x);
             return true;
         }
 
@@ -596,8 +606,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             guessingFactor = storm::utility::convertNumber<ValueType>(*env.solver().ovi().getUpperBoundGuessingFactor());
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = oviHelper.OVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, dir, guessingFactor, lowerBound,
-                                    upperBound, oviCallback);
+                                    upperBound, oviCallback, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -632,8 +646,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto gviCallback = [&](helper::GVIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
 
@@ -641,8 +656,14 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         this->createUpperBoundsVector(*upperX);
 
         this->startMeasureProgress();
-        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations,
+        auto statusIters = helper.solveEquations(lowerX, *upperX, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                                  storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, gviCallback);
+        // A verified guess encloses the solution in every iteration.
+        storm::solver::SolutionBounds<SolutionType> solutionBounds;
+        solutionBounds.lower = lowerX;
+        solutionBounds.upper = *upperX;
+        this->setSolutionBounds(std::move(solutionBounds));
+
         auto two = storm::utility::convertNumber<ValueType>(2.0);
         storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(
             lowerX, *upperX, x, [&two](ValueType const& first, ValueType const& second) -> ValueType { return (first + second) / two; });
@@ -669,6 +690,8 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
     setUpViOperator();
     // By default, we can not provide any guarantee
     SolverGuarantee guarantee = SolverGuarantee::None;
+    // Only a guarantee that the initial vector really satisfies may be reported as a bound.
+    SolverGuarantee boundGuarantee = SolverGuarantee::None;
 
     if (this->hasInitialScheduler()) {
         if (!auxiliaryRowGroupVector) {
@@ -702,6 +725,11 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             // If we were given an initial scheduler and are maximizing (minimizing), our current solution becomes
             // always less-or-equal (greater-or-equal) than the actual solution.
             guarantee = maximize(dir) ? SolverGuarantee::LessOrEqual : SolverGuarantee::GreaterOrEqual;
+            // Unless the induced system was solved exactly, the value of the initial scheduler is only approximate
+            // and may already lie on the wrong side of the solution.
+            if (linEqSolver->hasExactSolutionBounds()) {
+                boundGuarantee = guarantee;
+            }
         } else {
             guarantee = SolverGuarantee::None;
         }
@@ -713,6 +741,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             this->createUpperBoundsVector(x);
             guarantee = SolverGuarantee::GreaterOrEqual;
         }
+        boundGuarantee = guarantee;
     } else if (this->hasCustomTerminationCondition()) {
         if (this->getTerminationCondition().requiresGuarantee(SolverGuarantee::LessOrEqual) && this->hasLowerBound()) {
             this->createLowerBoundsVector(x);
@@ -721,6 +750,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             this->createUpperBoundsVector(x);
             guarantee = SolverGuarantee::GreaterOrEqual;
         }
+        boundGuarantee = guarantee;
     }
 
     uint64_t numIterations{0};
@@ -729,14 +759,26 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return this->updateStatus(current, x, guarantee, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
     };
     this->startMeasureProgress();
+    // A guarantee that holds for the initial vector survives the iteration, whereas the direction of the sweeps
+    // only places the iterate relative to the unique fixed point. Reading that direction costs in the innermost
+    // loop, so only do it where soundness was asked for.
+    storm::solver::SolutionBounds<SolutionType> solutionBounds;
+    storm::OptionalRef<storm::solver::SolutionBounds<SolutionType>> solutionBoundsRef;
+    if (boundGuarantee != SolverGuarantee::None || (this->hasUniqueSolution() && env.solver().isForceSoundness())) {
+        solutionBoundsRef.reset(solutionBounds);
+    }
     // This code duplication is necessary because the helper class is different for the two cases.
     if (this->A->hasTrivialRowGrouping()) {
         storm::solver::helper::ValueIterationHelper<ValueType, true, SolutionType> viHelper(viOperatorTriv);
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef, boundGuarantee);
         this->reportStatus(status, numIterations);
+
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
@@ -753,8 +795,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
 
         auto status = viHelper.VI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(),
                                   storm::utility::convertNumber<SolutionType>(env.solver().minMax().getPrecision()), dir, viCallback,
-                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode());
+                                  env.solver().minMax().getMultiplicationStyle(), this->getUncertaintyResolutionMode(), solutionBoundsRef, boundGuarantee);
         this->reportStatus(status, numIterations);
+
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
@@ -797,8 +843,9 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         uint64_t numIterations{0};
         auto iiCallback = [&](helper::IIData<ValueType> const& data) {
             this->showProgressIterative(numIterations);
-            bool terminateEarly = this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) &&
-                                  this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual);
+            bool terminateEarly =
+                this->hasCustomTerminationCondition() && (this->getTerminationCondition().terminateNow(data.x, SolverGuarantee::LessOrEqual) ||
+                                                          this->getTerminationCondition().terminateNow(data.y, SolverGuarantee::GreaterOrEqual));
             return this->updateStatus(data.status, terminateEarly, numIterations, env.solver().minMax().getMaximalNumberOfIterations());
         };
         std::optional<storm::storage::BitVector> optionalRelevantValues;
@@ -806,8 +853,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
             optionalRelevantValues = this->getRelevantValues();
         }
         this->startMeasureProgress();
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = iiHelper.II(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), prec, lowerBoundsCallback, upperBoundsCallback,
-                                  dir, iiCallback, optionalRelevantValues);
+                                  dir, iiCallback, optionalRelevantValues, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
         this->reportStatus(status, numIterations);
 
         // If requested, we store the scheduler for retrieval.
@@ -832,7 +883,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         return false;
     } else {
         // Prepare the solution vectors and the helper.
-        assert(x.size() == this->A->getRowGroupCount());
+        STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Solution vector size mismatch.");
 
         std::optional<ValueType> lowerBound, upperBound;
         if (this->hasLowerBound()) {
@@ -858,8 +909,12 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         if (this->hasRelevantValues()) {
             optionalRelevantValues = this->getRelevantValues();
         }
+        storm::solver::SolutionBounds<ValueType> solutionBounds;
         auto status = sviHelper.SVI(x, b, numIterations, env.solver().minMax().getRelativeTerminationCriterion(), precision, dir, lowerBound, upperBound,
-                                    sviCallback, optionalRelevantValues);
+                                    sviCallback, optionalRelevantValues, solutionBounds);
+        if (solutionBounds.hasAny()) {
+            this->setSolutionBounds(std::move(solutionBounds));
+        }
 
         // If requested, we store the scheduler for retrieval.
         if (this->isTrackSchedulerSet()) {
@@ -925,7 +980,7 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         std::function<bool(uint64_t, uint64_t)> fixedChoicesCallback;
         if (this->choiceFixedForRowGroup) {
             // Ignore those rows that are not selected
-            assert(this->initialScheduler);
+            STORM_LOG_ASSERT(this->initialScheduler, "Expected initial scheduler.");
             fixedChoicesCallback = [&](uint64_t groupIndex, uint64_t localRowIndex) {
                 return this->choiceFixedForRowGroup->get(groupIndex) && this->initialScheduler->at(groupIndex) != localRowIndex;
             };
@@ -955,6 +1010,11 @@ bool IterativeMinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquation
         };
         this->startMeasureProgress();
         auto status = rsHelper.RS(x, b, numIterations, storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()), dir, rsCallback);
+
+        // Convergence here means a sharpened candidate was verified to be an exact fixed point.
+        if (status == SolverStatus::Converged) {
+            this->setSolutionBoundsExact(x);
+        }
 
         this->reportStatus(status, numIterations);
 

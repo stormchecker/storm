@@ -11,14 +11,13 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/storage/BitVector.h"
 #include "storm/transformer/DAProductBuilder.h"
 
 TEST(DAProductBuilderTest_aUb, Dtmc) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
@@ -88,8 +87,8 @@ TEST(DAProductBuilderTest_aUb, Dtmc) {
 }
 
 TEST(DAProductBuilderTest_aWb, Dtmc) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 

@@ -2,8 +2,11 @@
 
 #include "storm/settings/modules/ModuleSettings.h"
 
-#include "storm/storage/dd/bisimulation/QuotientFormat.h"
-#include "storm/storage/dd/bisimulation/SignatureMode.h"
+#include "storm/transformer/bisimulation/dd/InitialPartitionMode.h"
+#include "storm/transformer/bisimulation/dd/QuotientFormat.h"
+#include "storm/transformer/bisimulation/dd/RefinementMode.h"
+#include "storm/transformer/bisimulation/dd/ReuseMode.h"
+#include "storm/transformer/bisimulation/dd/SignatureMode.h"
 
 namespace storm {
 namespace settings {
@@ -16,12 +19,6 @@ class BisimulationSettings : public ModuleSettings {
    public:
     // An enumeration of all available bisimulation types.
     enum class BisimulationType { Strong, Weak };
-
-    enum class ReuseMode { None, BlockNumbers };
-
-    enum class InitialPartitionMode { Regular, Finer };
-
-    enum class RefinementMode { Full, ChangedStates };
 
     /*!
      * Creates a new set of bisimulation settings.
@@ -83,17 +80,34 @@ class BisimulationSettings : public ModuleSettings {
     /*!
      * Retrieves the selected reuse mode.
      */
-    ReuseMode getReuseMode() const;
+    storm::dd::bisimulation::ReuseMode getReuseMode() const;
 
     /*!
      * Retrieves the initial partition mode.
      */
-    InitialPartitionMode getInitialPartitionMode() const;
+    storm::dd::bisimulation::InitialPartitionMode getInitialPartitionMode() const;
 
     /*!
      * Retrieves the refinement mode to use.
      */
-    RefinementMode getRefinementMode() const;
+    storm::dd::bisimulation::RefinementMode getRefinementMode() const;
+
+    /*!
+     * Retrieves whether the tolerance to use for (approximate) bisimulation minimization has been set explicitly (as opposed to using its default value).
+     */
+    bool isToleranceSet() const;
+
+    /*!
+     * Retrieves the tolerance to use for bisimulation minimization.
+     * @note: only applies to sparse bisimulation.
+     */
+    double getTolerance() const;
+
+    /*!
+     * Retrieves whether action-sensitive bisimulation is to be used, i.e., choices are only lumped together if they belong to the same action.
+     * NOTE: only applies to sparse bisimulation.
+     */
+    bool isActionSensitiveSet() const;
 
     virtual bool check() const override;
 
@@ -112,6 +126,8 @@ class BisimulationSettings : public ModuleSettings {
     static const std::string refinementModeOptionName;
     static const std::string parallelismModeOptionName;
     static const std::string exactArithmeticDdOptionName;
+    static const std::string toleranceOptionName;
+    static const std::string actionSensitiveOptionName;
 };
 }  // namespace modules
 }  // namespace settings

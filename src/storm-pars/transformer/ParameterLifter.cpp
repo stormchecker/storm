@@ -15,7 +15,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     // get a mapping from old column indices to new ones
     oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
     uint_fast64_t newIndex = 0;
-    for (auto oldColumn : selectedColumns) {
+    for (uint64_t oldColumn : selectedColumns) {
         oldToNewColumnIndexMapping[oldColumn] = newIndex++;
     }
 
@@ -33,7 +33,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
     rowGroupToStateNumber = std::vector<uint_fast64_t>();
     uint_fast64_t newRowIndex = 0;
-    for (auto rowIndex : selectedRows) {
+    for (uint64_t rowIndex : selectedRows) {
         builder.newRowGroup(newRowIndex);
         rowGroupToStateNumber.push_back(rowIndex);
 
@@ -97,7 +97,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
                 AbstractValuation vectorVal(val);
                 for (auto const& vectorVar : vectorEntryVariables) {
                     if (occurringVariables.find(vectorVar) == occurringVariables.end()) {
-                        assert(!generateRowLabels);
+                        STORM_LOG_ASSERT(!generateRowLabels, "Row labels should not be generated yet.");
                         vectorVal.addParameterUnspecified(vectorVar);
                     }
                 }
@@ -142,7 +142,7 @@ ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::S
     STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
 
     auto vectorAssignmentIt = vectorAssignment.begin();
-    for (auto nonConstVectorEntry : nonConstVectorEntries) {
+    for (uint64_t nonConstVectorEntry : nonConstVectorEntries) {
         for (uint_fast64_t vectorIndex = matrix.getRowGroupIndices()[nonConstVectorEntry]; vectorIndex != matrix.getRowGroupIndices()[nonConstVectorEntry + 1];
              ++vectorIndex) {
             vectorAssignmentIt->first = vector.begin() + vectorIndex;
@@ -267,13 +267,13 @@ template<typename ParametricType, typename ConstantType>
 std::size_t ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getHashValue() const {
     std::size_t seed = 0;
     for (auto const& p : lowerPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     for (auto const& p : upperPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     for (auto const& p : unspecifiedPars) {
-        carl::hash_add(seed, p);
+        boost::hash_combine(seed, std::hash<VariableType>()(p));
     }
     return seed;
 }

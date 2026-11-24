@@ -10,8 +10,6 @@
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/SolverSelectionOptions.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
@@ -48,7 +46,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
         if (formula.getSubformula().isTotalRewardFormula()) {
             if (rewModel.hasStateRewards()) {
                 // Note that state rewards are earned over time and thus play no role for probabilistic states
-                for (auto markovianState : markovianStates) {
+                for (uint64_t markovianState : markovianStates) {
                     this->actionRewards[objIndex][model.getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                         rewModel.getStateReward(markovianState) / exitRates[markovianState];
                 }
@@ -71,10 +69,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initializeModelTypeSp
                              << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
         }
     }
-    // Print some statistics (if requested)
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
-    }
+    STORM_LOG_STATISTICS("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states.\n");
 }
 
 template<class SparseMdpModelType>
@@ -184,17 +179,17 @@ typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::SubModel Standard
     result.states = createMS ? markovianStates : probabilisticStates;
     result.choices = this->transitionMatrix.getRowFilter(result.states);
     STORM_LOG_ASSERT(!createMS || result.states.getNumberOfSetBits() == result.choices.getNumberOfSetBits(),
-                     "row groups for Markovian states should consist of exactly one row");
+                     "Row groups for Markovian states should consist of exactly one row.");
 
     // We need to add diagonal entries for selfloops on Markovian states.
     result.toMS = this->transitionMatrix.getSubmatrix(true, result.states, markovianStates, createMS);
     result.toPS = this->transitionMatrix.getSubmatrix(true, result.states, probabilisticStates, false);
     STORM_LOG_ASSERT(result.getNumberOfStates() == result.states.getNumberOfSetBits() && result.getNumberOfStates() == result.toMS.getRowGroupCount() &&
                          result.getNumberOfStates() == result.toPS.getRowGroupCount(),
-                     "Invalid state count for subsystem");
+                     "Invalid state count for subsystem.");
     STORM_LOG_ASSERT(result.getNumberOfChoices() == result.choices.getNumberOfSetBits() && result.getNumberOfChoices() == result.toMS.getRowCount() &&
                          result.getNumberOfChoices() == result.toPS.getRowCount(),
-                     "Invalid choice count for subsystem");
+                     "Invalid choice count for subsystem.");
 
     result.weightedRewardVector.resize(result.getNumberOfChoices());
     storm::utility::vector::selectVectorValues(result.weightedRewardVector, result.choices, weightedRewardVector);
@@ -265,7 +260,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
     VT delta = smallestNonZeroBound / smallestStepBound;
     while (true) {
         bool deltaValid = true;
-        for (auto objIndex : objectivesWithTimeBound) {
+        for (uint64_t objIndex : objectivesWithTimeBound) {
             auto const& timeBound = timeBounds[objIndex];
             if (timeBound / delta != std::floor(timeBound / delta)) {
                 deltaValid = false;
@@ -289,7 +284,7 @@ VT StandardMaPcaaWeightVectorChecker<SparseMaModelType>::getDigitizationConstant
             break;
         }
         ++smallestStepBound;
-        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration");
+        STORM_LOG_ASSERT(delta > smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration.");
         delta = smallestNonZeroBound / smallestStepBound;
     }
     STORM_LOG_DEBUG("Found digitization constant: " << delta << ". At least " << smallestStepBound << " digitization steps will be necessarry");
@@ -432,7 +427,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEp
     std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
     if (upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
         consideredObjectives |= upperTimeBoundIt->second;
-        for (auto objIndex : upperTimeBoundIt->second) {
+        for (uint64_t objIndex : upperTimeBoundIt->second) {
             // This objective now plays a role in the weighted sum
             ValueType factor =
                 storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
@@ -485,7 +480,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(Environ
         // Get the results for the individual objectives.
         // Note that we do not consider an estimate for each objective (as done in the unbounded phase) since the results from the previous epoch are already
         // pretty close
-        for (auto objIndex : consideredObjectives) {
+        for (uint64_t objIndex : consideredObjectives) {
             auto const& objectiveRewardVectorPS = PS.objectiveRewardVectors[objIndex];
             auto const& objectiveSolutionVectorMS = MS.objectiveSolutionVectors[objIndex];
             // compute rhs of equation system, i.e., PS.toMS * x + Rewards
@@ -521,7 +516,7 @@ void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performMSStep(Environ
             storm::utility::vector::scaleVectorInPlace(MS.objectiveSolutionVectors[*consideredObjectives.begin()], -storm::utility::one<ValueType>());
         }
     } else {
-        for (auto objIndex : consideredObjectives) {
+        for (uint64_t objIndex : consideredObjectives) {
             MS.toMS.multiplyWithVector(MS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);
             storm::utility::vector::addVectors(MS.objectiveRewardVectors[objIndex], MS.auxChoiceValues, MS.objectiveSolutionVectors[objIndex]);
             MS.toPS.multiplyWithVector(PS.objectiveSolutionVectors[objIndex], MS.auxChoiceValues);

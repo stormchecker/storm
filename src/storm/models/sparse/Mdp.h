@@ -1,5 +1,8 @@
 #pragma once
 
+#include "storm/adapters/IntervalForward.h"
+#include "storm/adapters/RationalFunctionForward.h"
+#include "storm/adapters/RationalNumberForward.h"
 #include "storm/models/sparse/NondeterministicModel.h"
 
 namespace storm {
@@ -49,6 +52,15 @@ class Mdp : public NondeterministicModel<ValueType, RewardModelType> {
 
     virtual ~Mdp() = default;
 };
+
+// Instantiated in Mdp.cpp; prevents hidden consumers from duplicating the vtable/RTTI.
+extern template class Mdp<double>;
+extern template class Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+extern template class Mdp<storm::RationalNumber>;
+extern template class Mdp<storm::RationalNumber, storm::models::sparse::StandardRewardModel<storm::RationalInterval>>;
+extern template class Mdp<storm::Interval>;
+extern template class Mdp<storm::RationalInterval>;
+extern template class Mdp<storm::RationalFunction>;
 
 }  // namespace sparse
 }  // namespace models

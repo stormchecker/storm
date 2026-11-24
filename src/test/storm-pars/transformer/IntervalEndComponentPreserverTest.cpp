@@ -1,12 +1,6 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wthread-safety-negative"
-#pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
-#pragma clang diagnostic ignored "-Wunused-template"
-#include <carl/formula/Constraint.h>
-#pragma clang diagnostic pop
 #include <string>
 
 #include "storm-pars/api/region.h"
@@ -22,8 +16,8 @@
 class IntervalEndComponentPreserverTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };

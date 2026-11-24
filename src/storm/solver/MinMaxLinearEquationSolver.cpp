@@ -12,7 +12,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/macros.h"
 
 namespace storm::solver {
@@ -40,7 +40,13 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::solveEquations(Environ
     STORM_LOG_WARN_COND_DEBUG(this->isRequirementsCheckedSet(),
                               "The requirements of the solver have not been marked as checked. Please provide the appropriate check or mark the requirements "
                               "as checked (if applicable).");
-    return internalSolveEquations(env, d, x, b);
+    // A reused solver must not report bounds that a previous call computed.
+    this->clearSolutionBounds();
+    bool const result = internalSolveEquations(env, d, x, b);
+    if (result) {
+        this->finalizeSolutionBounds(x);
+    }
+    return result;
 }
 
 template<typename ValueType, typename SolutionType>
@@ -177,7 +183,7 @@ bool MinMaxLinearEquationSolver<ValueType, SolutionType>::isRequirementsCheckedS
 
 template<typename ValueType, typename SolutionType>
 void MinMaxLinearEquationSolver<ValueType, SolutionType>::setSchedulerFixedForRowGroup(storm::storage::BitVector&& schedulerFixedForRowGroup) {
-    STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed");
+    STORM_LOG_ASSERT(this->hasInitialScheduler(), "Expecting an initial scheduler to be set before setting the states for which the choices are fixed.");
     this->choiceFixedForRowGroup = std::move(schedulerFixedForRowGroup);
 }
 
@@ -273,6 +279,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<ValueType, SolutionType>> GeneralMinM
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 
@@ -296,6 +303,7 @@ std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMax
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
     }
     result->setRequirementsChecked(this->isRequirementsCheckedSet());
+    result->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
     return result;
 }
 

@@ -11,8 +11,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - uses: DoozyX/clang-format-lint-action@v0.20
-      with:
-        source: './src'
-        clangFormatVersion: 20
-        style: file
+    - name: Read pinned clang versions
+      id: clang-versions
+      run: |
+        echo "FORMAT_VERSION=$(grep '^CLANG_FORMAT_VERSION=' resources/scripts/clang-versions | cut -d= -f2)" >> "$GITHUB_OUTPUT"
+    - name: Install clang-format
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-${{ steps.clang-versions.outputs.FORMAT_VERSION }}
+    - name: Check code format
+      run: bash resources/scripts/auto-format.sh --check

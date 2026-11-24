@@ -4,7 +4,9 @@
 #include <bit>
 #include <bitset>
 #include <boost/functional/hash.hpp>
+#include <cstddef>
 #include <iostream>
+#include <utility>
 
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/macros.h"
@@ -228,8 +230,9 @@ BitVector& BitVector::operator=(BitVector&& other) {
 
 bool BitVector::operator==(BitVector const& other) const {
     // If the lengths of the vectors do not match, they are considered unequal.
-    if (this->bitCount != other.bitCount)
+    if (this->bitCount != other.bitCount) {
         return false;
+    }
 
     // If the lengths match, we compare the buckets one by one.
     return std::equal(this->buckets, this->buckets + this->bucketCount(), other.buckets);
@@ -331,7 +334,7 @@ void BitVector::expandSize(bool init) {
     // size_t oldBitCount = bitCount;
     bitCount = bucketCount() * 64;
     if (init) {
-        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need");
+        STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need.");
     }
 }
 
@@ -382,8 +385,14 @@ BitVector BitVector::operator^(BitVector const& other) const {
     BitVector result(bitCount);
     std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, result.buckets,
                    [](uint64_t const& a, uint64_t const& b) { return a ^ b; });
-    result.truncateLastBucket();
     return result;
+}
+
+BitVector& BitVector::operator^=(BitVector const& other) {
+    STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
+    std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, this->buckets,
+                   [](uint64_t const& a, uint64_t const& b) { return a ^ b; });
+    return *this;
 }
 
 BitVector BitVector::operator%(BitVector const& filter) const {
@@ -395,7 +404,7 @@ BitVector BitVector::operator%(BitVector const& filter) const {
     // over its elements.
     if (filter.getNumberOfSetBits() / 10 < this->getNumberOfSetBits()) {
         uint64_t position = 0;
-        for (auto bit : filter) {
+        for (uint64_t bit : filter) {
             if ((*this)[bit]) {
                 result.set(position);
             }
@@ -404,7 +413,7 @@ BitVector BitVector::operator%(BitVector const& filter) const {
     } else {
         // If the given bit vector had much fewer elements, we iterate over its elements and accept calling the
         // more costly operation getNumberOfSetBitsBeforeIndex on the current bit vector.
-        for (auto bit : (*this)) {
+        for (uint64_t bit : (*this)) {
             if (filter[bit]) {
                 result.set(filter.getNumberOfSetBitsBeforeIndex(bit));
             }
@@ -714,7 +723,7 @@ std::vector<uint64_t> BitVector::getNumberOfSetBitsBeforeIndices() const {
     bitsSetBeforeIndices.reserve(this->size());
     uint64_t lastIndex = 0;
     uint64_t currentNumberOfSetBits = 0;
-    for (auto index : *this) {
+    for (uint64_t index : *this) {
         while (lastIndex <= index) {
             bitsSetBeforeIndices.push_back(currentNumberOfSetBits);
             ++lastIndex;
@@ -1105,7 +1114,7 @@ bool BitVector::compareAndSwap(uint64_t start1, uint64_t start2, uint64_t length
             check.set(i + start1, check.get(i + start2));
             check.set(i + start2, tmp);
         }
-        STORM_LOG_ASSERT(*this == check, "Swapping not correct");
+        STORM_LOG_ASSERT(*this == check, "Swapping not correct.");
 
         // Check that sorted
         for (uint64_t i = 0; i < length; ++i) {
@@ -1128,7 +1137,7 @@ void BitVector::truncateLastBucket() {
 
 std::ostream& operator<<(std::ostream& out, BitVector const& bitvector) {
     out << "bit vector(" << bitvector.getNumberOfSetBits() << "/" << bitvector.bitCount << ") [";
-    for (auto index : bitvector) {
+    for (uint64_t index : bitvector) {
         out << index << " ";
     }
     out << "]";
@@ -1208,6 +1217,8 @@ inline __attribute__((always_inline)) uint32_t getblock64(uint64_t const* p, int
     return p[i];
 }
 
+// Murmur3 hash functions.
+// based on https://github.com/aappleby/smhasher/blob/master/src/MurmurHash3.cpp
 template<>
 uint32_t Murmur3BitVectorHash<uint32_t>::operator()(storm::storage::BitVector const& bv) const {
     uint8_t const* data = reinterpret_cast<uint8_t const*>(bv.buckets);
@@ -1223,7 +1234,7 @@ uint32_t Murmur3BitVectorHash<uint32_t>::operator()(storm::storage::BitVector co
     //----------
     // body
 
-    const uint32_t* blocks = reinterpret_cast<uint32_t const*>(data + nblocks * 4);
+    const uint32_t* blocks = reinterpret_cast<uint32_t const*>(data + static_cast<std::ptrdiff_t>(nblocks) * 4);
 
     for (int i = -nblocks; i; i++) {
         uint32_t k1 = getblock32(blocks, i);
@@ -1290,7 +1301,7 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
     //----------
     // tail
 
-    uint8_t const* tail = reinterpret_cast<uint8_t const*>(data + nblocks * 16);
+    uint8_t const* tail = reinterpret_cast<uint8_t const*>(data + static_cast<std::ptrdiff_t>(nblocks) * 16);
 
     uint64_t k1 = 0;
     uint64_t k2 = 0;
@@ -1351,6 +1362,10 @@ uint64_t Murmur3BitVectorHash<uint64_t>::operator()(storm::storage::BitVector co
             k1 = rotl64(k1, 31);
             k1 *= c2;
             h1 ^= k1;
+            [[fallthrough]];
+        default:
+            // Intentionally left empty
+            break;
     }
 
     //----------
@@ -1385,12 +1400,13 @@ BitVector BitVector::load(std::string const& description) {
     std::string field;
     char ws_delim;
     while (true) {
-        if (ss >> field)
+        if (ss >> field) {
             splitted.push_back(field);
-        else if (ss.eof())
+        } else if (ss.eof()) {
             break;
-        else
+        } else {
             splitted.push_back(std::string());
+        }
         ss.clear();
         ss >> ws_delim;
     }

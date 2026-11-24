@@ -72,7 +72,7 @@ storm::storage::SparseMatrix<ValueType> PomdpMemoryUnfolder<ValueType>::transfor
             builder.newRowGroup(row);
             for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1];
                  ++origRow) {
-                for (auto memStatePrime : memory.getTransitions(memState)) {
+                for (uint64_t memStatePrime : memory.getTransitions(memState)) {
                     for (auto const& entry : origTransitions.getRow(origRow)) {
                         builder.addNextValue(row, getUnfoldingState(entry.getColumn(), memStatePrime), entry.getValue());
                     }

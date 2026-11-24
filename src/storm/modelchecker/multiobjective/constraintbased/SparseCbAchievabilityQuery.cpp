@@ -1,16 +1,15 @@
 #include "storm/modelchecker/multiobjective/constraintbased/SparseCbAchievabilityQuery.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/solver.h"
@@ -22,11 +21,11 @@ namespace multiobjective {
 
 template<class SparseModelType>
 SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(
-    preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
+    Environment const& env, preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult)
     : SparseCbQuery<SparseModelType>(preprocessorResult) {
     STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability,
-                     "Invalid query Type");
-    solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
+                     "Invalid query Type.");
+    solver = storm::utility::solver::getSmtSolver(env, *this->expressionManager);
 }
 
 template<class SparseModelType>
@@ -51,10 +50,8 @@ bool SparseCbAchievabilityQuery<SparseModelType>::checkAchievability() {
     storm::solver::SmtSolver::CheckResult result = solver->check();
     swCheck.stop();
 
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        STORM_PRINT_AND_LOG("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck
-                                                                  << " seconds.\n");
-    }
+    STORM_LOG_STATISTICS("Building the constraintsystem took " << swInitialization << " seconds and checking the SMT formula took " << swCheck
+                                                               << " seconds.\n");
 
     switch (result) {
         case storm::solver::SmtSolver::CheckResult::Sat:
@@ -132,7 +129,7 @@ void SparseCbAchievabilityQuery<SparseModelType>::initializeConstraintSystem() {
         }
         solver->add(storm::expressions::sum(valueSummands) == zero);
     }
-    assert(bottomStateVariableIt == bottomStateVariables.end());
+    STORM_LOG_ASSERT(bottomStateVariableIt == bottomStateVariables.end(), "Unexpected bottom state variable.");
 }
 
 template<class SparseModelType>
@@ -196,7 +193,7 @@ std::vector<double> SparseCbAchievabilityQuery<storm::models::sparse::MarkovAuto
                                      : std::vector<double>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
     if (rewModel.hasStateRewards()) {
         // Note that state rewards are earned over time and thus play no role for probabilistic states
-        for (auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+        for (uint64_t markovianState : this->preprocessedModel->getMarkovianStates()) {
             result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                 rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
         }
@@ -214,7 +211,7 @@ std::vector<storm::RationalNumber> SparseCbAchievabilityQuery<storm::models::spa
                                          : std::vector<storm::RationalNumber>(this->preprocessedModel->getNumberOfChoices(), storm::utility::zero<ValueType>());
     if (rewModel.hasStateRewards()) {
         // Note that state rewards are earned over time and thus play no role for probabilistic states
-        for (auto markovianState : this->preprocessedModel->getMarkovianStates()) {
+        for (uint64_t markovianState : this->preprocessedModel->getMarkovianStates()) {
             result[this->preprocessedModel->getTransitionMatrix().getRowGroupIndices()[markovianState]] +=
                 rewModel.getStateReward(markovianState) / this->preprocessedModel->getExitRate(markovianState);
         }

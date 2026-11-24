@@ -1,10 +1,10 @@
 #include "storm/modelchecker/helper/ltl/internal/SparseLTLSchedulerHelper.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/storage/dd/sylvan/InternalSylvanBdd.h"
+#include "storm/dd/sylvan/InternalSylvanBdd.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
+#include "storm/storage/scheduler/SchedulerChoice.h"
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/utility/graph.h"
 
@@ -29,7 +29,7 @@ uint_fast64_t SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool:
 
 template<typename ValueType, bool Nondeterministic>
 storm::storage::BitVector const& SparseLTLSchedulerHelper<ValueType, Nondeterministic>::InfSetPool::get(uint_fast64_t index) const {
-    STORM_LOG_ASSERT(index < size(), "inf set index " << index << " is invalid.");
+    STORM_LOG_ASSERT(index < size(), "Inf set index " << index << " is invalid.");
     return _storage[index];
 }
 
@@ -82,7 +82,7 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices
                                                                  mecScheduler);
 
         // Extract scheduler choices
-        for (auto pState : remainingMecStates) {
+        for (uint64_t pState : remainingMecStates) {
             this->_producedChoices.insert(
                 {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), DEFAULT_INFSET), mecScheduler.getChoice(pState)});
         }
@@ -114,8 +114,8 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices
     }
 
     //  Save the InfSets into the _accInfSets for states in this MEC
-    for (auto mecState : acceptingEcStates) {
-        STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "accepting inf sets were already defined for a MEC state which is not expected.");
+    for (uint64_t mecState : acceptingEcStates) {
+        STORM_LOG_ASSERT(!_accInfSets[mecState].is_initialized(), "Accepting inf sets were already defined for a MEC state which is not expected.");
         _accInfSets[mecState].emplace(infSetIds);
     }
 
@@ -132,14 +132,14 @@ void SparseLTLSchedulerHelper<ValueType, Nondeterministic>::saveProductEcChoices
                                                                  mecScheduler);
 
         // States that already reached the InfSet
-        for (auto pState : infStatesWithinMec) {
+        for (uint64_t pState : infStatesWithinMec) {
             // Prob1E sets an arbitrary choice for the psi states, but we want to stay in this accepting MEC.
             mecScheduler.setChoice(
                 *acceptingEc.getChoicesForState(pState).begin() - product->getProductModel().getTransitionMatrix().getRowGroupIndices()[pState], pState);
         }
 
         // Extract scheduler choices
-        for (auto pState : acceptingEcStates) {
+        for (uint64_t pState : acceptingEcStates) {
             // We want to reach the InfSet, save choice:  <s, q, InfSetID> --->  choice
             this->_producedChoices.insert(
                 {std::make_tuple(product->getModelState(pState), product->getAutomatonState(pState), id), mecScheduler.getChoice(pState)});
@@ -326,8 +326,8 @@ storm::storage::Scheduler<ValueType> SparseLTLSchedulerHelper<ValueType, Nondete
     }
 
     // Sanity check for created scheduler.
-    STORM_LOG_ASSERT(scheduler.isDeterministicScheduler(), "Expected a deterministic scheduler");
-    STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler");
+    STORM_LOG_ASSERT(scheduler.isDeterministicScheduler(), "Expected a deterministic scheduler.");
+    STORM_LOG_ASSERT(!scheduler.isPartialScheduler(), "Expected a fully defined scheduler.");
 
     return scheduler;
 }

@@ -16,6 +16,7 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
 
     using ParametricType = typename SparseModelType::ValueType;
     using CoefficientType = typename RegionModelChecker<ParametricType>::CoefficientType;
+    using ExtendedCoefficientType = typename RegionModelChecker<ParametricType>::ExtendedCoefficientType;
     using VariableType = typename RegionModelChecker<ParametricType>::VariableType;
     using Valuation = typename RegionModelChecker<ParametricType>::Valuation;
 
@@ -26,11 +27,11 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
 
-    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) override;
+    virtual void specify(
+        Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+        std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+        std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving) override;
 
     /*!
      * Analyzes the given region. Assumes that a property with a threshold was specified.
@@ -53,8 +54,8 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    virtual CoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                storm::solver::OptimizationDirection const& dirForParameters) override;
+    virtual ExtendedCoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                        storm::solver::OptimizationDirection const& dirForParameters) override;
 
     /*!
      * Heuristically finds a point within the region and computes the value at the initial state for that point.
@@ -64,8 +65,8 @@ class ValidatingSparseParameterLiftingModelChecker : public RegionModelChecker<t
      * @param dirForParameters whether the heuristic tries to find a point with a high or low value
      * @return a pair of the value at the initial state and the point at which the value was computed
      */
-    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                                          storm::solver::OptimizationDirection const& dirForParameters) override;
+    virtual std::pair<ExtendedCoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                                  storm::solver::OptimizationDirection const& dirForParameters) override;
 
     /*!
      * Returns whether this region model checker can work together with the given monotonicity backend.

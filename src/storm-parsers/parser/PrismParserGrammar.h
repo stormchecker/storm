@@ -7,8 +7,8 @@
 
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm-parsers/parser/SpiritParserDefinitions.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/prism/Program.h"
+#include "storm/expressions/Expression.h"
+#include "storm/languages/prism/Program.h"
 
 namespace storm {
 namespace expressions {
@@ -203,7 +203,8 @@ class PrismParserGrammar : public qi::grammar<Iterator, storm::prism::Program(),
     // (and harmlessly) try identifiers that collide with keywords while exploring grammar alternatives.
     std::string lastRejectedKeywordIdentifier;
 
-    mutable std::set<std::string> observables;
+    // Collects the observable variables and maps them to true, if they are actually declared.
+    mutable std::map<std::string, bool> observables;
 
     // Store the expressions of formulas. They have to be parsed after the first and before the second run
     std::vector<std::string> formulaExpressions;

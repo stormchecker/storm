@@ -1,4 +1,7 @@
 #include "storm/solver/Z3SmtSolver.h"
+
+#include <memory>
+
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
@@ -71,9 +74,14 @@ Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager)
 #ifdef STORM_HAVE_Z3
     z3::config config;
     config.set("model", true);
-    context = std::unique_ptr<z3::context>(new z3::context(config));
-    solver = std::unique_ptr<z3::solver>(new z3::solver(*context));
-    expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(this->getManager(), *context));
+    context = std::make_unique<z3::context>(config);
+    solver = std::make_unique<z3::solver>(*context);
+    // Do not let z3 install its own SIGINT handler (the "ctrl_c" parameter): if we did, z3 would swallow interrupts
+    // during check() and just return "unknown" instead of letting Storm's signal handler abort the computation.
+    z3::params params(*context);
+    params.set("ctrl_c", false);
+    solver->set(params);
+    expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(this->getManager(), *context);
 #endif
 }
 
@@ -385,23 +393,21 @@ std::vector<storm::expressions::Expression> Z3SmtSolver::getUnsatAssumptions() {
 #endif
 }
 
-bool Z3SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+void Z3SmtSolver::setTimeout(uint_fast64_t milliseconds) {
 #ifdef STORM_HAVE_Z3
     z3::params paramObject(*context);
     paramObject.set(":timeout", static_cast<unsigned>(milliseconds));
     solver->set(paramObject);
-    return true;
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif
 }
 
-bool Z3SmtSolver::unsetTimeout() {
+void Z3SmtSolver::unsetTimeout() {
 #ifdef STORM_HAVE_Z3
     z3::params paramObject(*context);
     paramObject.set(":timeout", 0u);
     solver->set(paramObject);
-    return true;
 #else
     STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException, "Storm is compiled without Z3 support.");
 #endif

@@ -2,21 +2,23 @@
 #include "test/storm_gtest.h"
 
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
+#include "storm/environment/Environment.h"
+
 #include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/expressions/Expression.h"
+#include "storm/languages/SymbolicModelDescription.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/solver.h"
 
@@ -69,7 +71,7 @@ TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameDieSmall) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
     storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
@@ -230,7 +232,7 @@ TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameTwoDice) {
     initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
     storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 
@@ -418,7 +420,7 @@ TYPED_TEST(GraphTestAR, SymbolicProb01StochasticGameWlan) {
     initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
 
     auto smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(storm::Environment(), program, smtSolverFactory);
     storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
     refiner.refine(initialPredicates);
 

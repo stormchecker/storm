@@ -6,11 +6,12 @@
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Type.h"
 #include "storm/io/file.h"
 #include "storm/solver/SmtSolver.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Type.h"
 #include "storm/utility/bitoperations.h"
+#include "storm/utility/solver.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -331,7 +332,7 @@ void DFTASFChecker::generateSpareConstraint(size_t i, std::vector<uint64_t> chil
     constraints.back()->setDescription("Last child & claimed -> SPARE fails");
 
     // Construct constraint for trying to claim next child
-    STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child");
+    STORM_LOG_ASSERT(children.size() >= 2, "Spare has only one child.");
     for (uint64_t currChild = 0; currChild < children.size() - 1; ++currChild) {
         uint64_t timeCurrChild = childVarIndices.at(currChild);  // Moment when current child fails
         // If i-th child fails after being claimed, then try to claim next child (constraint 6)
@@ -542,7 +543,7 @@ void DFTASFChecker::toSolver() {
     convert();
 
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
-    solver = storm::utility::solver::SmtSolverFactory().create(*manager);
+    solver = storm::utility::solver::getSmtSolver(*manager);
     // Add variables to manager
     for (auto const &timeVarEntry : timePointVariables) {
         manager->declareIntegerVariable(varNames[timeVarEntry.second]);
@@ -568,7 +569,7 @@ void DFTASFChecker::toSolver() {
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_t bound) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
 
     // Set backtracking marker to check several properties without reconstructing DFT encoding
     solver->push();
@@ -582,7 +583,7 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithEq(uint64_
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64_t bound) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
 
     // Set backtracking marker to check several properties without reconstructing DFT encoding
     solver->push();
@@ -596,22 +597,22 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleFailsWithLeq(uint64
 }
 
 void DFTASFChecker::setSolverTimeout(uint_fast64_t milliseconds) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be set.");
     solver->setTimeout(milliseconds);
 }
 
 void DFTASFChecker::unsetSolverTimeout() {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be unset");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, timeout cannot be unset.");
     solver->unsetTimeout();
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkTleNeverFailed() {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     return checkTleFailsWithEq(notFailed);
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     std::vector<uint64_t> markovianIndices;
     checkbound = std::min<int>(checkbound, markovianVariables.size());
     // Get Markovian variable indices up until given timepoint
@@ -633,7 +634,7 @@ storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsLeqWithEqNonMarko
 }
 
 storm::solver::SmtSolver::CheckResult DFTASFChecker::checkFailsAtTimepointWithEqNonMarkovianState(uint64_t timepoint, uint64_t nrNonMarkovian) {
-    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries");
+    STORM_LOG_ASSERT(solver, "SMT Solver was not initialized, call toSolver() before checking queries.");
     std::vector<uint64_t> markovianIndices;
     timepoint = std::min<int>(timepoint, markovianVariables.size());
     // Get Markovian variable indices up until given timepoint

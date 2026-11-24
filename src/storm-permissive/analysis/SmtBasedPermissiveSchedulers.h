@@ -1,6 +1,16 @@
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "storm-permissive/analysis/PermissiveSchedulerComputation.h"
 #include "storm/solver/SmtSolver.h"
+#include "storm/storage/StateActionPair.h"
+#include "storm/storage/StateActionTargetTuple.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace ps {
@@ -106,7 +116,6 @@ class SmtPermissiveSchedulerComputation : public PermissiveSchedulerComputation<
             solver.add(mProbVariables[initialStateIndex] <= manager.rational(boundary));
         }
         for (uint_fast64_t s : relevantStates) {
-            std::string stateString = std::to_string(s);
             std::vector<storm::expressions::Expression> expressions;
             // (2)
             for (uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
@@ -123,8 +132,6 @@ class SmtPermissiveSchedulerComputation : public PermissiveSchedulerComputation<
 
             // (3) For the relevant states.
             for (uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
-                std::string sastring(stateString + "_" + std::to_string(a));
-
                 for (auto const& entry : this->mdp.getTransitionMatrix().getRow(this->mdp.getNondeterministicChoiceIndices()[s] + a)) {
                     if (entry.getValue() != 0 && relevantStates.get(entry.getColumn())) {
                         expressions.push_back(manager.rational(entry.getValue()) * mProbVariables[entry.getColumn()]);

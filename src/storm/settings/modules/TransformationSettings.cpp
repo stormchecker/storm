@@ -17,6 +17,7 @@ const std::string TransformationSettings::chainEliminationOptionName = "eliminat
 const std::string TransformationSettings::labelBehaviorOptionName = "ec-label-behavior";
 const std::string TransformationSettings::toNondetOptionName = "to-nondet";
 const std::string TransformationSettings::toDiscreteTimeOptionName = "to-discrete";
+const std::string TransformationSettings::mergeEquivalentStatesOptionName = "merge-equivalent-states";
 const std::string TransformationSettings::permuteModelOptionName = "permute";
 
 TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
@@ -48,6 +49,11 @@ TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
                                                    "If set, CTMCs/MAs are converted to DTMCs/MDPs (which might or might not preserve the provided properties).")
                         .setIsAdvanced()
                         .build());
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, mergeEquivalentStatesOptionName, false,
+                                       "If set, merges states that are equivalent w.r.t. the considered property into a single state before model checking.")
+            .setIsAdvanced()
+            .build());
 
     this->addOption(
         storm::settings::OptionBuilder(moduleName, permuteModelOptionName, false, "Permutes the build model w.r.t. the given order.")
@@ -76,8 +82,8 @@ storm::transformer::EliminationLabelBehavior TransformationSettings::getLabelBeh
     } else if (labelBehaviorAsString == "delete") {
         return storm::transformer::EliminationLabelBehavior::DeleteLabels;
     }
-    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
-                    "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::IllegalArgumentValueException,
+                                    "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
 }
 
 bool TransformationSettings::isToNondeterministicModelSet() const {
@@ -86,6 +92,10 @@ bool TransformationSettings::isToNondeterministicModelSet() const {
 
 bool TransformationSettings::isToDiscreteTimeModelSet() const {
     return this->getOption(toDiscreteTimeOptionName).getHasOptionBeenSet();
+}
+
+bool TransformationSettings::isMergeEquivalentStatesSet() const {
+    return this->getOption(mergeEquivalentStatesOptionName).getHasOptionBeenSet();
 }
 
 std::optional<storm::utility::permutation::OrderKind> TransformationSettings::getModelPermutation() const {

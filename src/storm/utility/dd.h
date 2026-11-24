@@ -4,7 +4,7 @@
 #include <set>
 #include <vector>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 namespace storm {
 namespace expressions {

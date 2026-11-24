@@ -8,15 +8,16 @@
 #include "storm/environment/modelchecker/ConditionalModelCheckerEnvironment.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/solver/SolveGoal.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/utility/Extremum.h"
 #include "storm/utility/NumberTraits.h"
@@ -52,7 +53,7 @@ std::optional<typename storm::transformer::EndComponentEliminator<ValueType>::En
         auto const columnIndex = ecElimResult.oldToNewStateMapping[*representativeRowEntry];
         for (auto representativeRowIndex : ecElimResult.sinkRows) {
             auto row = matrix.getRow(representativeRowIndex);
-            STORM_LOG_ASSERT(row.getNumberOfEntries() == 1, "unexpected number of entries in representative row.");
+            STORM_LOG_ASSERT(row.getNumberOfEntries() == 1, "Unexpected number of entries in representative row.");
             auto& entry = *row.begin();
             entry.setColumn(columnIndex);
         }
@@ -207,14 +208,14 @@ struct NormalFormData {
         schedulerChoicesForReachingConditionStates;  // Scheduler choices for reaching condition states, used for constructing the resulting scheduler
 
     ValueType getTargetValue(uint64_t state) const {
-        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state");
+        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get target value for non-terminal state.");
         auto const it = nonZeroTargetStateValues.find(state);
         return it == nonZeroTargetStateValues.end() ? storm::utility::zero<ValueType>() : it->second;
     }
 
     ValueType failProbability(uint64_t state) const {
-        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state");
-        STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state");
+        STORM_LOG_ASSERT(terminalStates.get(state), "Tried to get fail probability for non-terminal state.");
+        STORM_LOG_ASSERT(!conditionStates.get(state), "Tried to get fail probability for a condition state.");
         // condition states have fail probability zero
         return storm::utility::one<ValueType>() - getTargetValue(state);
     }
@@ -290,7 +291,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     storm::storage::BitVector initialComponentStates(transitionMatrix.getRowGroupCount(), false);
 
     // compute initial component states and all choices that stay within a given EC
-    for (auto state : maybeStates) {
+    for (uint64_t state : maybeStates) {
         auto ecIndex = stateToFinalEc[state];
         if (ecIndex == initialComponentIndex) {
             initialComponentStates.set(state, true);
@@ -370,7 +371,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
 
     storm::storage::BitVector goodInitialComponentStates = initialComponentStates;
     bool progress = false;
-    for (auto state : initialComponentExitStates) {
+    for (uint64_t state : initialComponentExitStates) {
         auto const groupStart = transitionMatrix.getRowGroupIndices()[state];
         auto const groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
         bool const allChoicesAreDisallowed = disallowedInitialComponentExits.getNextUnsetIndex(groupStart) >= groupEnd;
@@ -381,7 +382,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
     }
     while (progress) {
         progress = false;
-        for (auto state : goodInitialComponentStates) {
+        for (uint64_t state : goodInitialComponentStates) {
             bool allChoicesAreDisallowed = true;
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 auto row = transitionMatrix.getRow(choiceIndex);
@@ -408,7 +409,7 @@ void finalizeSchedulerForMaybeStates(storm::storage::Scheduler<SolutionType>& sc
 
     // fill the choices of initial component states that do not have a choice yet
     // these states should not reach the condition or target states under the constructed scheduler
-    for (auto state : initialComponentStates) {
+    for (uint64_t state : initialComponentStates) {
         if (!scheduler.isChoiceSelected(state)) {
             for (auto choiceIndex : transitionMatrix.getRowGroupIndices(state)) {
                 if (choicesAllowedForInitialComponent.get(choiceIndex)) {
@@ -709,7 +710,7 @@ class WeightedReachabilityHelper {
                 bool rowSumIsLess1 = false;
                 for (auto const& entry : transitionMatrix.getRow(origRowIndex)) {
                     if (normalForm.terminalStates.get(entry.getColumn())) {
-                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero");
+                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Transition probability must be non-zero.");
                         rowSumIsLess1 = true;
                         ValueType const scaledTargetValue = normalForm.getTargetValue(entry.getColumn()) * entry.getValue();
                         targetProbability += scaledTargetValue;
@@ -734,7 +735,7 @@ class WeightedReachabilityHelper {
             };
             // invoke the lambda
             if (state == initialState) {
-                for (auto origRowIndex : initialComponentExitRows) {
+                for (uint64_t origRowIndex : initialComponentExitRows) {
                     processRow(origRowIndex);
                     reducedToOriginalRowIndexMap.push_back(origRowIndex);
                 }
@@ -850,7 +851,7 @@ class WeightedReachabilityHelper {
     }
 
     SolutionType evaluateScheduler(storm::Environment const& env, std::vector<uint64_t> const& scheduler) {
-        STORM_LOG_ASSERT(scheduler.size() == submatrix.getRowGroupCount(), "Scheduler size does not match number of row groups");
+        STORM_LOG_ASSERT(scheduler.size() == submatrix.getRowGroupCount(), "Scheduler size does not match number of row groups.");
         auto solver = getScheduledSolver(env, scheduler);
         cachedB.resize(submatrix.getRowGroupCount());
         cachedX.resize(submatrix.getRowGroupCount());
@@ -935,7 +936,7 @@ class WeightedReachabilityHelper {
    private:
     void createScaledVector(std::vector<ValueType>& out, ValueType const& w1, std::vector<ValueType> const& v1, ValueType const& w2,
                             std::vector<ValueType> const& v2) const {
-        STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match");
+        STORM_LOG_ASSERT(v1.size() == v2.size(), "Vector sizes must match.");
         out.resize(v1.size());
         storm::utility::vector::applyPointwise(v1, v2, out, [&w1, &w2](ValueType const& a, ValueType const& b) -> ValueType { return w1 * a + w2 * b; });
     }
@@ -1252,7 +1253,7 @@ std::optional<SolutionType> handleTrivialCases(uint64_t const initialState, Norm
         if (normalForm.conditionStates.get(initialState)) {
             return normalForm.getTargetValue(initialState);  // The value is already known, nothing to do.
         } else {
-            STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::NotSupportedException,
+            STORM_LOG_THROW(!normalForm.universalObservationFailureStates.get(initialState), storm::exceptions::InvalidPropertyException,
                             "Trying to compute undefined conditional probability: the condition has probability 0 under all policies.");
             // The last case for a terminal initial state is that it is already target and the condition is reachable with non-zero probability.
             // In this case, all schedulers induce a conditional probability of 1 (or do not reach the condition, i.e., have undefined value)
@@ -1330,7 +1331,7 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         }
         STORM_LOG_DEBUG("Initial state has trivial value " << initialStateValue);
     } else {
-        STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state");
+        STORM_LOG_ASSERT(normalFormData.maybeStates.get(initialState), "Initial state must be a maybe state if it is not a terminal state.");
         auto alg = analysisEnv.modelchecker().conditional().getAlgorithm();
         if (alg == ConditionalAlgorithmSetting::Default) {
             alg = ConditionalAlgorithmSetting::BisectionPolicyTracking;
@@ -1403,14 +1404,14 @@ std::unique_ptr<CheckResult> computeConditionalProbabilities(Environment const& 
         storm::storage::BitVector conditionExitTransitions(transitionMatrix.getEntryCount(), false);
         storm::storage::BitVector targetExitTransitions(transitionMatrix.getEntryCount(), false);
 
-        for (auto state : conditionStates) {
+        for (uint64_t state : conditionStates) {
             for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
                 for (auto entryIt = transitionMatrix.getRow(choice).begin(); entryIt < transitionMatrix.getRow(choice).end(); ++entryIt) {
                     conditionExitTransitions.set(entryIt - transitionMatrix.begin(), true);
                 }
             }
         }
-        for (auto state : targetStates) {
+        for (uint64_t state : targetStates) {
             for (auto choice : transitionMatrix.getRowGroupIndices(state)) {
                 for (auto entryIt = transitionMatrix.getRow(choice).begin(); entryIt < transitionMatrix.getRow(choice).end(); ++entryIt) {
                     targetExitTransitions.set(entryIt - transitionMatrix.begin(), true);

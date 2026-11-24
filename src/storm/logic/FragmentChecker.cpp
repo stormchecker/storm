@@ -83,7 +83,7 @@ boost::any FragmentChecker::visit(BoundedUntilFormula const& f, boost::any const
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedUntilFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();
@@ -144,7 +144,7 @@ boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any c
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();
@@ -205,7 +205,7 @@ boost::any FragmentChecker::visit(GloballyFormula const& f, boost::any const& da
     if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
         result = result && !f.getSubformula().isPathFormula();
     }
-    result&& boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
     return result;
 }
 
@@ -274,7 +274,7 @@ boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) 
     if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
         result = result && !f.getSubformula().isPathFormula();
     }
-    result&& boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
     return result;
 }
 
@@ -343,6 +343,30 @@ boost::any FragmentChecker::visit(UntilFormula const& f, boost::any const& data)
     return result;
 }
 
+boost::any FragmentChecker::visit(WeakUntilFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    bool result = inherited.getSpecification().areWeakUntilFormulasAllowed();
+    if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+        result = result && !f.getLeftSubformula().isPathFormula();
+        result = result && !f.getRightSubformula().isPathFormula();
+    }
+    result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+    return result;
+}
+
+boost::any FragmentChecker::visit(ReleaseFormula const& f, boost::any const& data) const {
+    InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+    bool result = inherited.getSpecification().areReleaseFormulasAllowed();
+    if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+        result = result && !f.getLeftSubformula().isPathFormula();
+        result = result && !f.getRightSubformula().isPathFormula();
+    }
+    result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+    result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+    return result;
+}
+
 boost::any FragmentChecker::visit(HOAPathFormula const& f, boost::any const& data) const {
     InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
     bool result = inherited.getSpecification().areHOAPathFormulasAllowed();
@@ -365,7 +389,7 @@ boost::any FragmentChecker::visit(DiscountedCumulativeRewardFormula const& f, bo
         } else if (tbr.isTimeBound()) {
             result = result && inherited.getSpecification().areTimeBoundedCumulativeRewardFormulasAllowed();
         } else {
-            assert(tbr.isRewardBound());
+            STORM_LOG_ASSERT(tbr.isRewardBound(), "Expected reward bound.");
             result = result && inherited.getSpecification().areRewardBoundedCumulativeRewardFormulasAllowed();
             if (tbr.hasRewardAccumulation()) {
                 result = result && inherited.getSpecification().isRewardAccumulationAllowed();

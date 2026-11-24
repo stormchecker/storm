@@ -1,6 +1,7 @@
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -11,7 +12,6 @@
 #include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/FilteredRewardModel.h"
 
 namespace storm {
@@ -109,14 +109,12 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
                     "Currently step-bounded and reward-bounded properties on MarkovAutomatons are not supported.");
     double lowerBound = 0;
-    double upperBound = 0;
+    std::optional<double> upperBound;
     if (pathFormula.hasLowerBound()) {
         lowerBound = pathFormula.getLowerBound<double>();
     }
     if (pathFormula.hasUpperBound()) {
         upperBound = pathFormula.getNonStrictUpperBound<double>();
-    } else {
-        upperBound = storm::utility::infinity<double>();
     }
 
     return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(
@@ -134,7 +132,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
 
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, true> helper(
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, true> helper(
         this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
@@ -146,7 +144,7 @@ std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::co
     STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException,
                     "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, true> helper(
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, true> helper(
         this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageRewards(env, rewardModel.get());

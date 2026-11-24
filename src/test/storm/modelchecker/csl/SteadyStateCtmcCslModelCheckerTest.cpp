@@ -104,7 +104,7 @@ class SteadyStateCtmcCslModelCheckerTest : public ::testing::Test {
     template<typename MT = typename TestType::ModelType>
     typename std::enable_if<std::is_same<MT, SparseModelType>::value, std::shared_ptr<MT>>::type buildJaniModel(
         std::string const& pathToJaniModel, std::string const& constantDefinitionString = "") const {
-        auto janiDescr = storm::storage::SymbolicModelDescription(storm::api::parseJaniModel(pathToJaniModel).first);
+        auto janiDescr = storm::languages::SymbolicModelDescription(storm::api::parseJaniModel(pathToJaniModel).first);
         janiDescr = janiDescr.preprocess(constantDefinitionString);
         return storm::api::buildSparseModel<ValueType>(janiDescr, storm::builder::BuilderOptions())->template as<MT>();
     }

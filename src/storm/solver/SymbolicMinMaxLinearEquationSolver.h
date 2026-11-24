@@ -14,8 +14,8 @@
 #include "storm/utility/NumberTraits.h"
 
 #include "SolverSelectionOptions.h"
-#include "storm/storage/dd/DdType.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/dd/DdType.h"
+#include "storm/expressions/Variable.h"
 
 namespace storm {
 

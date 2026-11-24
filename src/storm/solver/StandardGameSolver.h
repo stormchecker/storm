@@ -79,21 +79,17 @@ class StandardGameSolver : public GameSolver<ValueType> {
     /// The factory used to obtain linear equation solvers.
     std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
 
-    // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
+    // If the solver takes possession of the matrix, we store the moved matrix in this member, so it gets deleted
     // when the solver is destructed.
     std::unique_ptr<std::vector<uint64_t>> localPlayer1Grouping;
     std::unique_ptr<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> localPlayer1Matrix;
     std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localPlayer2Matrix;
 
-    // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
+    // A reference to the original sparse matrix given to this solver. If the solver takes possession of the matrix
     // the reference refers to localA.
     std::vector<uint64_t> const* player1Grouping;
     storm::storage::SparseMatrix<storm::storage::sparse::state_type> const* player1Matrix;
     storm::storage::SparseMatrix<ValueType> const& player2Matrix;
-
-    /// A flag indicating whether the linear equation solver is exact. This influences how choices are updated
-    /// in policy iteration.
-    bool linearEquationSolverIsExact;
 };
 }  // namespace solver
 }  // namespace storm

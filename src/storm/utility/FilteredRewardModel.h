@@ -1,8 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
+#include <utility>
 
 #include "storm/exceptions/NotSupportedException.h"
+#include "storm/logic/RewardAccumulation.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -40,12 +43,12 @@ class FilteredRewardModel {
     }
 
     bool isDifferentFromUnfilteredModel() const {
-        STORM_LOG_ASSERT(rewardModel, "tried to check if the filtered reward model is different. Was it extracted before?");
+        STORM_LOG_ASSERT(rewardModel, "Tried to check if the filtered reward model is different. Was it extracted before?");
         return localRewardModel.get() != nullptr;
     }
 
     RewardModelType const& get() const {
-        STORM_LOG_ASSERT(rewardModel, "tried to get a reward model but none is available. Was it extracted before?");
+        STORM_LOG_ASSERT(rewardModel, "Tried to get a reward model but none is available. Was it extracted before?");
         return *rewardModel;
     }
 
@@ -54,7 +57,7 @@ class FilteredRewardModel {
      * @return
      */
     RewardModelType extract() {
-        STORM_LOG_ASSERT(rewardModel, "tried to extract a reward model but none is available. Was it extracted already before?");
+        STORM_LOG_ASSERT(rewardModel, "Tried to extract a reward model but none is available. Was it extracted already before?");
         RewardModelType result;
         if (localRewardModel) {
             result = std::move(*localRewardModel);

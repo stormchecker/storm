@@ -2,14 +2,15 @@
 
 #include "storm/modelchecker/prctl/helper/SymbolicMdpPrctlHelper.h"
 
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Odd.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/Odd.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/vector.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -39,6 +40,18 @@ struct SolverRequirementsData {
     storm::storage::BitVector properMaybeStates;
     boost::optional<std::vector<ValueType>> oneStepTargetProbabilities;
 };
+
+/*!
+ * Lifts the solution of an equation system in which end components have been eliminated back to the proper maybe states.
+ * @param x Contains the solution for the system after EC elimination on input and the values for the proper maybe states on output.
+ */
+template<typename ValueType>
+void expandSolutionAfterEndComponentElimination(SolverRequirementsData<ValueType>& solverRequirementsData, std::vector<ValueType>& x) {
+    // The EC information refers to the state indices of the extended state space (properMaybeStates is a subset thereof).
+    std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.size());
+    solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
+    x = storm::utility::vector::filterVector(extendedVector, solverRequirementsData.properMaybeStates);
+}
 
 template<typename ValueType>
 std::vector<uint64_t> computeValidInitialSchedulerForUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
@@ -79,7 +92,7 @@ void eliminateExtendedStatesFromExplicitRepresentation(std::pair<storm::storage:
     if (scheduler) {
         // Eliminate superfluous entries from the scheduler.
         uint64_t position = 0;
-        for (auto state : properMaybeStates) {
+        for (uint64_t state : properMaybeStates) {
             scheduler.get()[position] = scheduler.get()[state];
             position++;
         }
@@ -121,9 +134,9 @@ void eliminateEndComponentsAndExtendedStatesUntilProbabilities(
     if (doDecomposition && !endComponentDecomposition.empty()) {
         STORM_LOG_DEBUG("Eliminating " << endComponentDecomposition.size() << " EC(s).");
         std::vector<ValueType> subvector;
-        SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(endComponentDecomposition, transitionMatrix,
-                                                                            solverRequirementsData.properMaybeStates, &targetStates, nullptr, nullptr,
-                                                                            explicitRepresentation.first, &subvector, nullptr);
+        solverRequirementsData.ecInformation = SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(
+            endComponentDecomposition, transitionMatrix, solverRequirementsData.properMaybeStates, &targetStates, nullptr, nullptr,
+            explicitRepresentation.first, &subvector, nullptr);
         oneStepProbabilities = std::move(subvector);
     } else {
         STORM_LOG_DEBUG("Not eliminating ECs as there are none.");
@@ -272,11 +285,9 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeUnt
             solver->setRequirementsChecked();
             solver->solveEquations(env, dir, x, explicitRepresentation.second);
 
-            // If we included some target and non-filter states in the ODD, we need to expand the result from the solver.
+            // If we eliminated end components, we need to expand the result from the solver.
             if (requirements.uniqueSolution() && solverRequirementsData.ecInformation) {
-                std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
-                solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
-                x = std::move(extendedVector);
+                expandSolutionAfterEndComponentElimination(solverRequirementsData, x);
             }
 
             // If we extended the maybe states, we create a new ODD containing only the propery maybe states.
@@ -300,7 +311,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeGlo
     Environment const& env, OptimizationDirection dir, storm::models::symbolic::NondeterministicModel<DdType, ValueType> const& model,
     storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& psiStates, bool qualitative) {
     std::unique_ptr<CheckResult> result =
-        computeUntilProbabilities(env, dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Maximize, model,
+        computeUntilProbabilities(env, dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Minimize, model,
                                   transitionMatrix, model.getReachableStates(), !psiStates && model.getReachableStates(), qualitative);
     result->asQuantitativeCheckResult<ValueType>().oneMinus();
     return result;
@@ -545,7 +556,7 @@ void eliminateEndComponentsAndTargetStatesReachabilityRewards(
         }
 
         std::vector<ValueType> subvector(solverRequirementsData.properMaybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-        SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(
+        solverRequirementsData.ecInformation = SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(
             endComponentDecomposition, transitionMatrix, solverRequirementsData.properMaybeStates, computeOneStepTargetProbabilities ? &targetStates : nullptr,
             nullptr, &rewardVector, transitionMatrix, computeOneStepTargetProbabilities ? &solverRequirementsData.oneStepTargetProbabilities.get() : nullptr,
             &subvector);
@@ -754,9 +765,7 @@ std::unique_ptr<CheckResult> HybridMdpPrctlHelper<DdType, ValueType>::computeRea
 
             // If we eliminated end components, we need to extend the solution vector.
             if (requirements.uniqueSolution() && solverRequirementsData.ecInformation) {
-                std::vector<ValueType> extendedVector(solverRequirementsData.properMaybeStates.getNumberOfSetBits());
-                solverRequirementsData.ecInformation.get().setValues(extendedVector, solverRequirementsData.properMaybeStates, x);
-                x = std::move(extendedVector);
+                expandSolutionAfterEndComponentElimination(solverRequirementsData, x);
             }
 
             // If we extended the maybe states, we create a new ODD that only contains proper maybe states.

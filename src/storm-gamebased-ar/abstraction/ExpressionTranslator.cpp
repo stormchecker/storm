@@ -2,10 +2,10 @@
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/macros.h"

@@ -1,9 +1,10 @@
 #pragma once
 
-#include <cassert>
 #include <vector>
+
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/storage/BitVector.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace expressions {
@@ -17,8 +18,8 @@ class WinningRegion {
     bool update(uint64_t observation, storm::storage::BitVector const& winning);
     bool query(uint64_t observation, storm::storage::BitVector const& currently) const;
     bool isWinning(uint64_t observation, uint64_t offset) const {
-        assert(observation < observationSizes.size());
-        assert(offset < observationSizes[observation]);
+        STORM_LOG_ASSERT(observation < observationSizes.size(), "Observation index out of range.");
+        STORM_LOG_ASSERT(offset < observationSizes[observation], "Offset out of range for observation.");
         storm::storage::BitVector currently(observationSizes[observation]);
         currently.set(offset);
         return query(observation, currently);

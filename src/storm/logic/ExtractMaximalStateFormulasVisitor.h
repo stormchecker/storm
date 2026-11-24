@@ -26,6 +26,8 @@ class ExtractMaximalStateFormulasVisitor : public CloneVisitor {
     virtual boost::any visit(NextFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(UntilFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(WeakUntilFormula const& f, boost::any const& data) const override;
+    virtual boost::any visit(ReleaseFormula const& f, boost::any const& data) const override;
 
     virtual boost::any visit(TimeOperatorFormula const& f, boost::any const& data) const override;
     virtual boost::any visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const override;

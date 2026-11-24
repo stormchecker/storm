@@ -1,7 +1,7 @@
 #include "storm/simulator/PrismProgramSimulator.h"
 #include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
+#include "storm/expressions/ExpressionEvaluator.h"
 
 using namespace storm::generator;
 
@@ -85,7 +85,7 @@ std::vector<std::string> DiscreteTimePrismProgramSimulator<ValueType>::getCurren
 }
 
 template<typename ValueType>
-std::vector<generator::Choice<ValueType, uint32_t>> const& DiscreteTimePrismProgramSimulator<ValueType>::getChoices() const {
+std::span<generator::Choice<ValueType, uint32_t> const> DiscreteTimePrismProgramSimulator<ValueType>::getChoices() const {
     return behavior.getChoices();
 }
 

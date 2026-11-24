@@ -40,7 +40,7 @@ bool TerminateIfFilteredSumExceedsThreshold<ValueType>::terminateNow(std::functi
     }
 
     ValueType sum = storm::utility::zero<ValueType>();
-    for (auto pos : filter) {
+    for (uint64_t pos : filter) {
         sum += valueGetter(pos);
         // Exiting this loop early is not possible as values might be negative
     }

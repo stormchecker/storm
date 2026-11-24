@@ -589,6 +589,11 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
 }
 
 int mtbdd_iszero(MTBDD dd) {
+    // Only a leaf can be zero. The type of an internal node is meaningless: that field holds the index of the
+    // low child, which may coincide with one of the custom types below.
+    if (!mtbdd_isleaf(dd)) {
+        return 0;
+    }
     if (mtbdd_gettype(dd) == 0) {
         return mtbdd_getint64(dd) == 0;
     } else if (mtbdd_gettype(dd) == 1) {

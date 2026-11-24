@@ -1,0 +1,218 @@
+name: CI
+# Build Storm and perform checks (run tests, check compiler flags, build starter project)
+
+# - on every pull request commit: run "quick" configs
+# - for every PR when labeled "ready for review", on every master/stable push: run "normal" configs
+# - for every PR when labeled "ci: extensive": run "extensive" configs (also for later commits until the label is removed)
+#   labels other than "ready for review" and "ci: extensive" are ignored
+# - every week: run "extensive" configs (no cache, not fail-fast, including deploy)
+# - on a manual run: run the configs of the selected mode
+
+# Configurations are defined in ci-configs.json.
+# - this CI then calls the tests in build-test-action with the given configurations.
+# - the installation steps are not executed in quick mode.
+# - Expensive tests (STORM_EXPENSIVE_*) are only run in extensive mode.
+# - configs with "stormpyCheck" additionally build and test stormpy against Storm (see stormpy-check-action) (only runs in normal/extensive mode).
+# - Docker images are deployed to DockerHub for master (tag 'ci') and stable (tag 'stable').
+# - Cache is restored everywhere (except for extensive) but only saved on master pushes.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [master, stable]
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Which configs to run"
+        type: choice
+        options: [quick, normal, extensive]
+        default: normal
+
+# On PRs a newer run cancels the running one.
+# On master pushes each run is its own group (via run_id) so CI is never canceled.
+# Adding other labels than "ready for review" or "ci: extensive" also uses its own group so it does not cancel the running CI.
+concurrency:
+  group: >-
+    ${{ github.workflow }}-${{ (github.event.action == 'labeled' && !contains(fromJSON('["ready for review", "ci: extensive"]'), github.event.label.name)) && github.run_id || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # Load configurations and filter according to mode (quick/normal/extensive)
+  prepare:
+    # Skip if a label other than "ready for review" or "ci: extensive" was added (all other jobs depend on prepare)
+    if: >-
+      github.event.action != 'labeled' || contains(fromJSON('["ready for review", "ci: extensive"]'), github.event.label.name)
+    uses: ./.github/workflows/ci-prepare-configs.yml
+    with:
+      mode: >-
+        ${{ github.event_name == 'schedule' && 'extensive'
+        || github.event_name == 'workflow_dispatch' && inputs.mode
+        || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci: extensive')) && 'extensive'
+        || (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready for review')) && 'quick'
+        || 'normal' }}
+
+  linuxTests:
+    needs: prepare
+    name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
+    runs-on: ubuntu-latest
+    container: ${{ matrix.config.baseImg }}
+    strategy:
+      # Extensive runs all configs to see all failures
+      fail-fast: ${{ needs.prepare.outputs.mode != 'extensive' }}
+      matrix:
+        config: ${{ fromJson(needs.prepare.outputs.linuxTests) }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v7
+      - name: Ensure jq is available
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            if command -v apt-get >/dev/null 2>&1; then
+              apt-get update && apt-get install -y jq
+            elif command -v pacman >/dev/null 2>&1; then
+              pacman -Sy --noconfirm jq
+            elif command -v apk >/dev/null 2>&1; then
+              apk add --no-cache jq
+            elif command -v dnf >/dev/null 2>&1; then
+              dnf install -y jq
+            else
+              echo "::error::No known package manager found to install jq"
+              exit 1
+            fi
+          fi
+      - name: Install packages
+        if: matrix.config.setup != ''
+        run: ${{ matrix.config.setup }}
+      - name: Resolve config
+        id: resolve-config
+        env:
+          CONFIG: ${{ toJson(matrix.config) }}
+        # Update config: disable PCH when using caching, set developer mode for debug.
+        run: |
+          if [ "${{ matrix.config.cache }}" = "true" ]; then
+            RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
+          else
+            RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
+          fi
+          echo "config=$RESOLVED" >> "$GITHUB_OUTPUT"
+      - name: Build and test Storm
+        uses: ./.github/actions/build-test-action
+        with:
+          nr_jobs: "4"
+          name: ${{ matrix.config.name }}
+          config: ${{ steps.resolve-config.outputs.config }}
+          # ccache is only used for configs with "cache" set: caching everything would exceed GitHub's 10GB limit
+          restore_cache: ${{ matrix.config.cache }}
+          save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # Run expensive tests only in extensive mode
+          expensive_tests: ${{ needs.prepare.outputs.mode == 'extensive' }}
+          # Skip install steps for quick mode
+          install: ${{ needs.prepare.outputs.mode != 'quick' }}
+      - name: Check stormpy compatibility
+        # Build and test stormpy against the installed Storm (not in quick mode)
+        if: matrix.config.stormpyCheck && needs.prepare.outputs.mode != 'quick'
+        uses: ./.github/actions/stormpy-check-action
+        with:
+          nr_jobs: "4"
+          build_type: ${{ matrix.config.buildType }}
+
+  macTests:
+    needs: prepare
+    name: ${{ matrix.config.name }} (${{ matrix.config.buildType }})
+    runs-on: ${{ matrix.config.distro }}
+    strategy:
+      # Extensive runs all configs to see all failures
+      fail-fast: ${{ needs.prepare.outputs.mode != 'extensive' }}
+      matrix:
+        config: ${{ fromJson(needs.prepare.outputs.macTests) }}
+    steps:
+      - name: Git clone
+        uses: actions/checkout@v7
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.config.xcode }}
+      - name: Install dependencies
+        env:
+          USE_CCACHE: ${{ matrix.config.cache }}
+        run: |
+          brew update
+          PACKAGES=(automake boost cln ginac glpk highs hwloc libarchive xerces-c z3)
+          if [ "$USE_CCACHE" = "true" ]; then
+            PACKAGES+=(ccache)
+          fi
+          brew install "${PACKAGES[@]}"
+      - name: Resolve config
+        id: resolve-config
+        env:
+          CONFIG: ${{ toJson(matrix.config) }}
+        # Update config: disable PCH when using caching, set developer mode for debug.
+        run: |
+          if [ "${{ matrix.config.cache }}" = "true" ]; then
+            RESOLVED=$(echo "$CONFIG" | jq -c '.cmakeArgs += " -DSTORM_COMPILE_WITH_PCH=OFF" | .Developer = (.buildType == "Debug")')
+          else
+            RESOLVED=$(echo "$CONFIG" | jq -c '.Developer = (.buildType == "Debug")')
+          fi
+          echo "config=$RESOLVED" >> "$GITHUB_OUTPUT"
+      - name: Build and test Storm
+        uses: ./.github/actions/build-test-action
+        with:
+          nr_jobs: "4"
+          name: ${{ matrix.config.name }}
+          config: ${{ steps.resolve-config.outputs.config }}
+          # ccache is only used for configs with "cache" set: caching everything would exceed GitHub's 10GB limit.
+          restore_cache: ${{ matrix.config.cache }}
+          save_cache: ${{ matrix.config.cache && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          restore_3rdparty_cache: true
+          save_3rdparty_cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          # Run expensive tests only in extensive mode
+          expensive_tests: ${{ needs.prepare.outputs.mode == 'extensive' }}
+          # Skip install steps for quick mode
+          install: ${{ needs.prepare.outputs.mode != 'quick' }}
+
+  # Build Docker images and deploy them
+  # master yields the 'ci' images (dev image with sources and build directory)
+  # stable yields the 'stable' images (release image with only the installed Storm)
+  deploy:
+    name: Deploy
+    needs: prepare
+    # Run on master/stable and for PR in 'extensive' mode
+    if: (github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable')) || needs.prepare.outputs.mode == 'extensive'
+    # Run deployments for the same branch in sequence to ensure correct deployment
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v1
+    permissions:
+      contents: read
+      id-token: write  # to sign the provenance of the images
+    with:
+      image: movesrwth/storm
+      tag: ${{ github.ref == 'refs/heads/stable' && 'stable' || 'ci' }}
+      # Always build, but only deploy for master/stable.
+      # Check for forks is done in the shared workflow.
+      push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable') }}
+      build_args: |
+        BASE_IMAGE=movesrwth/storm-dependencies:latest
+        run_tests=ON
+        ${{ github.ref == 'refs/heads/stable' && 'image_type=release' || '' }}
+        ${{ github.ref != 'refs/heads/stable' && 'carl_tag=master' || '' }}
+      debug_build_args: |
+        developer=ON
+    secrets: inherit
+
+  notify:
+    name: Email notification
+    needs: [linuxTests, macTests, deploy]
+    # Only run in main repo (not for pull requests) and even if previous step failed
+    if: github.repository_owner == 'stormchecker' && github.event_name != 'pull_request' && always()
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    with:
+      title: ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }}
+    secrets: inherit
+    permissions:
+      actions: read

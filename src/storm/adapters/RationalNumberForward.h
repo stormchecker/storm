@@ -6,7 +6,7 @@
 // The small gmp.h header is always included.
 #include <gmp.h>
 template<typename U, typename V>
-class __gmp_expr;
+class __gmp_expr;  // NOLINT(bugprone-reserved-identifier)
 #endif
 
 #if defined(STORM_HAVE_CLN)
@@ -22,8 +22,11 @@ typedef cln::cl_RA ClnRationalNumber;
 typedef cln::cl_I ClnIntegerNumber;
 #endif
 #if defined(STORM_HAVE_GMP)
+// Silence clang-tidy warnings. We cannot use the typedefs here, because they are only defined in gmpxx.h
+// NOLINTBEGIN(bugprone-reserved-identifier)
 typedef __gmp_expr<mpq_t, mpq_t> GmpRationalNumber;  // corresponds to mpq_class
 typedef __gmp_expr<mpz_t, mpz_t> GmpIntegerNumber;   // corresponds to mpz_class
+// NOLINTEND(bugprone-reserved-identifier)
 #endif
 
 #if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_EA)

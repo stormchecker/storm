@@ -68,7 +68,7 @@ class ChoiceLabelIdStorage {
     }
 
     std::string const& getLabel(uint64_t id) const {
-        STORM_LOG_ASSERT(id < storage.size(), "Id must be in storage");
+        STORM_LOG_ASSERT(id < storage.size(), "Id must be in storage.");
         return storage[id];
     }
 
@@ -224,7 +224,7 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             // While this is in full generality a set of labels,
             // for models modelled with prism, we actually know that these are singleton sets.
             std::set<std::string> labels = choiceLabeling.getLabelsOfChoice(actionIndex);
-            STORM_LOG_ASSERT(labels.size() <= 1, "We expect choice labels to be single sets");
+            STORM_LOG_ASSERT(labels.size() <= 1, "We expect choice labels to be single sets.");
             // Generate action identifier
             uint64_t labelId = -1;
             if (labels.size() == 1) {
@@ -243,10 +243,10 @@ std::vector<uint64_t> MakePOMDPCanonic<ValueType>::computeCanonicalPermutation()
             } else {
                 ai.choiceOriginId = freshChoiceOriginId++;
             }
-            STORM_LOG_ASSERT(actionIdentifiers.count(ai) == 0, "Action with this identifier already exists for this state");
+            STORM_LOG_ASSERT(actionIdentifiers.count(ai) == 0, "Action with this identifier already exists for this state.");
             actionIdentifiers.emplace(ai, actionIndex);
         }
-        STORM_LOG_ASSERT(actionIdentifiers.size() == rowIndexTo - rowIndexFrom, "Number of action identifiers should match number of actions");
+        STORM_LOG_ASSERT(actionIdentifiers.size() == rowIndexTo - rowIndexFrom, "Number of action identifiers should match number of actions.");
 
         if (observationActionIdentifiers.count(observation) == 0) {
             // First state with this observation

@@ -1,5 +1,6 @@
 #include "storm/solver/Z3LpSolver.h"
 
+#include <memory>
 #include <numeric>
 
 #include "storm/exceptions/ExpressionEvaluationException.h"
@@ -8,11 +9,11 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/MissingLibraryException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/LinearCoefficientVisitor.h"
+#include "storm/expressions/OperatorType.h"
 #include "storm/io/file.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/LinearCoefficientVisitor.h"
-#include "storm/storage/expressions/OperatorType.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
@@ -26,9 +27,14 @@ Z3LpSolver<ValueType, RawMode>::Z3LpSolver(std::string const& name, Optimization
     : LpSolver<ValueType, RawMode>(optDir), isIncremental(false) {
     z3::config config;
     config.set("model", true);
-    context = std::unique_ptr<z3::context>(new z3::context(config));
-    solver = std::unique_ptr<z3::optimize>(new z3::optimize(*context));
-    expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
+    context = std::make_unique<z3::context>(config);
+    solver = std::make_unique<z3::optimize>(*context);
+    // Do not let z3 install its own SIGINT handler (the "ctrl_c" parameter): if we did, z3 would swallow interrupts
+    // during check() and just return "unknown" instead of letting Storm's signal handler abort the computation.
+    z3::params params(*context);
+    params.set("ctrl_c", false);
+    solver->set(params);
+    expressionAdapter = std::make_unique<storm::adapters::Z3ExpressionAdapter>(*this->manager, *context);
 }
 
 template<typename ValueType, bool RawMode>
@@ -92,7 +98,7 @@ template<typename ValueType, bool RawMode>
 void Z3LpSolver<ValueType, RawMode>::addConstraint(std::string const& name, Constraint const& constraint) {
     if constexpr (RawMode) {
         // Generate expression from raw constraint
-        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "number of variables and coefficients do not match.");
+        STORM_LOG_ASSERT(constraint.lhsVariableIndices.size() == constraint.lhsCoefficients.size(), "Number of variables and coefficients do not match.");
         std::vector<storm::expressions::Expression> lhsSummands;
         lhsSummands.reserve(constraint.lhsVariableIndices.size());
         auto varIt = constraint.lhsVariableIndices.cbegin();

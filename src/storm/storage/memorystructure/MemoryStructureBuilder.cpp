@@ -63,7 +63,7 @@ void MemoryStructureBuilder<ValueType, RewardModelType>::setInitialMemoryState(u
         }
     }
 
-    assert(initMemStateIt != initialMemoryStates.end());
+    STORM_LOG_ASSERT(initMemStateIt != initialMemoryStates.end(), "Initial memory state not found.");
 }
 
 template<typename ValueType, typename RewardModelType>
@@ -85,7 +85,7 @@ void MemoryStructureBuilder<ValueType, RewardModelType>::setTransition(uint_fast
 
     storm::storage::BitVector transitionVector(modelTransitions.getEntryCount(), false);
     if (modelChoices) {
-        for (auto choice : modelChoices.get()) {
+        for (uint64_t choice : modelChoices.get()) {
             for (auto entryIt = modelTransitions.getRow(choice).begin(); entryIt < modelTransitions.getRow(choice).end(); ++entryIt) {
                 if (modelStates.get(entryIt->getColumn())) {
                     transitionVector.set(entryIt - modelTransitions.begin());

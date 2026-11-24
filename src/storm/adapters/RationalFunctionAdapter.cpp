@@ -4,6 +4,14 @@ namespace storm {
 RationalFunctionVariable createRFVariable(std::string const& name) {
     return carl::freshRealVariable(name);
 }
+
+RationalFunctionVariable findRFVariable(std::string const& name) {
+    return carl::VariablePool::getInstance().findVariableWithName(name);
+}
+
+void clearRFVariablePool() {
+    carl::VariablePool::getInstance().clear();
+}
 }  // namespace storm
 
 // Explicit instantiations

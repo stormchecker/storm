@@ -48,12 +48,12 @@ bool EpochManager::compareEpochClass(Epoch const& epoch1, Epoch const& epoch2) c
     uint64_t mask = dimensionBitMask;
     for (uint64_t d = 0; d < dimensionCount; ++d) {
         if (((epoch1 & mask) == mask) != ((epoch2 & mask) == mask)) {
-            assert(getEpochClass(epoch1) != getEpochClass(epoch2));
+            STORM_LOG_ASSERT(getEpochClass(epoch1) != getEpochClass(epoch2), "Epoch classes should differ.");
             return false;
         }
         mask = mask << bitsPerDimension;
     }
-    assert(getEpochClass(epoch1) == getEpochClass(epoch2));
+    STORM_LOG_ASSERT(getEpochClass(epoch1) == getEpochClass(epoch2), "Epoch classes should match.");
     return true;
 }
 
@@ -117,7 +117,7 @@ void EpochManager::gatherPredecessorEpochs(std::set<Epoch>& gatheredPredecessorE
                 setDimensionOfEpoch(predecessor, dPrime, getDimensionOfEpoch(predecessor, dPrime) + step_dPrime);
             }
         }
-        assert(epoch == getSuccessorEpoch(predecessor, step));
+        STORM_LOG_ASSERT(epoch == getSuccessorEpoch(predecessor, step), "Epoch does not match successor.");
         gatheredPredecessorEpochs.insert(predecessor);
 
         do {
@@ -245,7 +245,7 @@ bool EpochManager::epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch
     uint64_t e2Sum = 0;
     for (uint64_t dim = 0; dim < dimensionCount; ++dim) {
         if (!isBottomDimension(epoch1, dim)) {
-            assert(!isBottomDimension(epoch2, dim));
+            STORM_LOG_ASSERT(!isBottomDimension(epoch2, dim), "Unexpected bottom dimension in epoch2.");
             e1Sum += getDimensionOfEpoch(epoch1, dim);
             e2Sum += getDimensionOfEpoch(epoch2, dim);
         }
@@ -284,7 +284,7 @@ bool EpochManager::epochClassZigZagOrder(Epoch const& epoch1, Epoch const& epoch
     }
 
     // reaching this point means that the epochs are equal
-    assert(epoch1 == epoch2);
+    STORM_LOG_ASSERT(epoch1 == epoch2, "Epochs should be equal.");
     return false;
 }
 

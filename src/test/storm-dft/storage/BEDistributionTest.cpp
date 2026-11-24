@@ -1,9 +1,15 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/analysis.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/DftEnvironment.h"
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-parsers/api/properties.h"
+#include "storm/api/properties.h"
+#include "storm/languages/jani/Property.h"
 
 namespace {
 
@@ -13,7 +19,8 @@ TEST(BEDistributionTest, ConstantFail) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.3296799540, 1e-10);
 #endif
@@ -23,7 +30,8 @@ TEST(BEDistributionTest, ConstantFail) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.3296799540, 1e-10);
 }
 
@@ -33,7 +41,8 @@ TEST(BEDistributionTest, ConstantNonFail) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.9592377960, 1e-10);
 #endif
@@ -43,7 +52,8 @@ TEST(BEDistributionTest, ConstantNonFail) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.9592377960, 1e-10);
 }
 
@@ -53,7 +63,8 @@ TEST(BEDistributionTest, ConstantNonFail2) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_EQ(resultBDD, 0);
 #endif
@@ -63,7 +74,8 @@ TEST(BEDistributionTest, ConstantNonFail2) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_EQ(resultMC, 0);
 }
 
@@ -73,7 +85,8 @@ TEST(BEDistributionTest, Probability) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.1095403852, 1e-10);
 #endif
@@ -83,7 +96,8 @@ TEST(BEDistributionTest, Probability) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "Pmax=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.1095403852, 1e-10);
 }
 
@@ -93,7 +107,8 @@ TEST(BEDistributionTest, Exponential) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.108688872, 1e-10);
 #endif
@@ -103,7 +118,8 @@ TEST(BEDistributionTest, Exponential) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.108688872, 1e-10);
 }
 
@@ -113,7 +129,8 @@ TEST(BEDistributionTest, Erlang) {
 
 #ifdef STORM_HAVE_SYLVAN
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.4949009834, 1e-10);
 #endif
@@ -123,7 +140,8 @@ TEST(BEDistributionTest, Erlang) {
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft2).first);
     std::string property = "P=? [F<=" + std::to_string(timebound) + " \"failed\"]";
     std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
-    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(*dft2, properties)[0]);
+    storm::dft::DftEnvironment dftEnv;
+    double resultMC = boost::get<double>(storm::dft::api::analyzeDFT<double>(dftEnv, *dft2, properties)[0]);
     EXPECT_NEAR(resultMC, 0.4949009834, 1e-10);
 }
 
@@ -133,7 +151,8 @@ TEST(BEDistributionTest, Weibull) {
     double timebound = 2;
 
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.0382982486, 1e-10);
 #else
@@ -147,7 +166,8 @@ TEST(BEDistributionTest, LogNormal) {
     double timebound = 0.8;
 
     // Perform BDD-based analysis on FT
-    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft);
+    storm::Environment env;
+    auto checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(dft, std::make_shared<storm::dft::storage::SylvanBddManager>(env));
     double resultBDD = checker->getProbabilityAtTimebound(timebound);
     EXPECT_NEAR(resultBDD, 0.2336675428, 1e-10);
 #else

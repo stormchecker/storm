@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "storm/adapters/RationalFunctionForward.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/generator/ArrayVariableReplacementInformation.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/OutOfRangeException.h"

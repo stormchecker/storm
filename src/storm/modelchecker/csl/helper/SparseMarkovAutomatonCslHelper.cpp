@@ -7,17 +7,18 @@
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/expressions/Expression.h"
+#include "storm/expressions/Variable.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/LpSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/multiplier/Multiplier.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/SchedulerChoice.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/scheduler/SchedulerChoice.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
@@ -69,7 +70,7 @@ class UnifPlusHelper {
 
     std::vector<ValueType> computeBoundedUntilProbabilities(storm::Environment const& env, OptimizationDirection dir,
                                                             storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
-                                                            ValueType const& upperTimeBound,
+                                                            std::optional<ValueType> const& upperTimeBound,
                                                             boost::optional<storm::storage::BitVector> const& relevantStates = boost::none) {
         // Since there is no lower time bound, we can treat the psiStates as if they are absorbing.
 
@@ -80,8 +81,8 @@ class UnifPlusHelper {
         storm::storage::BitVector markovianStatesModMaybeStates = markovianMaybeStates % maybeStates;
         storm::storage::BitVector probabilisticStatesModMaybeStates = probabilisticMaybeStates % maybeStates;
         // Catch the case where this query can be solved by solving the untimed variant instead.
-        // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) of if the time bound is infinity.
-        if (markovianMaybeStates.empty() || storm::utility::isInfinity(upperTimeBound)) {
+        // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) or if there is no time bound.
+        if (markovianMaybeStates.empty() || !upperTimeBound) {
             return SparseMarkovAutomatonCslHelper::computeUntilProbabilities<ValueType>(env, dir, transitionMatrix, transitionMatrix.transpose(true), phiStates,
                                                                                         psiStates, false, false)
                 .values;
@@ -155,17 +156,18 @@ class UnifPlusHelper {
         std::vector<ValueType> eqSysRhs(probabilisticToProbabilisticTransitions.getRowCount());
 
         // Start the outer iterations which increase the uniformization rate until lower and upper bound on the result vector is sufficiently small
-        storm::utility::ProgressMeasurement progressIterations("iterations");
+        storm::utility::ProgressMeasurement progressIterations("iterations", env.solver().getShowProgressDelay());
         uint64_t iteration = 0;
         progressIterations.startNewMeasurement(iteration);
         bool converged = false;
         bool abortedInnerIterations = false;
         while (!converged) {
             // Maximal step size
-            uint64_t N = storm::utility::ceil(lambda * upperTimeBound * std::exp(2) - storm::utility::log(kappa * epsilon));
+            uint64_t N = storm::utility::ceil(lambda * *upperTimeBound * std::exp(2) - storm::utility::log(kappa * epsilon));
             // Compute poisson distribution.
             // The division by 8 is similar to what is done for CTMCs (probably to reduce numerical impacts?)
-            auto foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * upperTimeBound, epsilon * kappa / storm::utility::convertNumber<ValueType>(8.0));
+            auto foxGlynnResult =
+                storm::utility::numerical::foxGlynn(lambda * *upperTimeBound, epsilon * kappa / storm::utility::convertNumber<ValueType>(8.0));
             // Scale the weights so they sum to one.
             // storm::utility::vector::scaleVectorInPlace(foxGlynnResult.weights, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
 
@@ -178,8 +180,9 @@ class UnifPlusHelper {
             for (bool computeLowerBound : {false, true}) {
                 auto& maybeStatesValues = computeLowerBound ? maybeStatesValuesLower : maybeStatesValuesWeightedUpper;
                 ValueType targetValue = computeLowerBound ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
-                storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration) + " for " +
-                                                                  std::string(computeLowerBound ? "lower" : "upper") + " bounds.");
+                storm::utility::ProgressMeasurement progressSteps(
+                    "steps in iteration " + std::to_string(iteration) + " for " + std::string(computeLowerBound ? "lower" : "upper") + " bounds.",
+                    env.solver().getShowProgressDelay());
                 progressSteps.setMaxCount(N);
                 progressSteps.startNewMeasurement(0);
                 bool firstIteration = true;  // The first iterations can be irrelevant, because they will only produce zeroes anyway.
@@ -220,7 +223,8 @@ class UnifPlusHelper {
                     // Update the value when reaching a psi state.
                     // This has to be done after updating the Markovian state values since we needed the 'old' target value above.
                     if (computeLowerBound && static_cast<uint64_t>(k) >= foxGlynnResult.left) {
-                        assert(static_cast<uint64_t>(k) <= foxGlynnResult.right);  // has to hold since this iteration is relevant
+                        STORM_LOG_ASSERT(static_cast<uint64_t>(k) <= foxGlynnResult.right,
+                                         "K exceeds left bound.");  // has to hold since this iteration is relevant
                         targetValue += foxGlynnResult.weights[k - foxGlynnResult.left];
                     }
 
@@ -244,7 +248,7 @@ class UnifPlusHelper {
                         // Add the scaled values to the actual result vector
                         uint64_t i = N - 1 - k;
                         if (i >= foxGlynnResult.left) {
-                            assert(i <= foxGlynnResult.right);  // has to hold since this iteration is considered relevant.
+                            STORM_LOG_ASSERT(i <= foxGlynnResult.right, "I exceeds right bound.");  // has to hold since this iteration is considered relevant.
                             ValueType const& weight = foxGlynnResult.weights[i - foxGlynnResult.left];
                             storm::utility::vector::addScaledVector(maybeStatesValuesUpper, maybeStatesValuesWeightedUpper, weight);
                         }
@@ -276,7 +280,7 @@ class UnifPlusHelper {
                 // Store the best solution we have found so far.
                 if (relevantMaybeStates) {
                     auto currentSolIt = bestKnownSolution.begin();
-                    for (auto state : relevantMaybeStates.get()) {
+                    for (uint64_t state : relevantMaybeStates.get()) {
                         // We take the average of the lower and upper bounds
                         *currentSolIt = (maybeStatesValuesLower[state] + maybeStatesValuesUpper[state]) / two;
                         ++currentSolIt;
@@ -329,16 +333,16 @@ class UnifPlusHelper {
         } else {
             // Set the values for Markovian "maybe" states
             STORM_LOG_ASSERT(markovianMaybeStates.getNumberOfSetBits() == markovianStatesModMaybeStates.getNumberOfSetBits(),
-                             "Unexpected number of Markovian maybe states");
+                             "Unexpected number of Markovian maybe states.");
             auto subStateIt = markovianStatesModMaybeStates.begin();
-            for (auto const markovianState : markovianMaybeStates) {
+            for (uint64_t markovianState : markovianMaybeStates) {
                 result[markovianState] = (maybeStatesValuesLower[*subStateIt] + maybeStatesValuesUpper[*subStateIt]) / two;
                 ++subStateIt;
             }
             // At this point, we only need to set the values for probabilistic "maybe" states.
             // We derive the values from the values of the other states, which are reached in zero time.
             uint64_t probSubState = 0;
-            for (auto const probabilisticState : probabilisticMaybeStates) {
+            for (uint64_t probabilisticState : probabilisticMaybeStates) {
                 for (auto const probStateRow : transitionMatrix.getRowGroupIndices(probabilisticState)) {
                     eqSysRhs[probSubState] = transitionMatrix.multiplyRowWithVector(probStateRow, result);
                     ++probSubState;
@@ -388,13 +392,13 @@ class UnifPlusHelper {
 
         // First build a submatrix without selfloop entries
         auto submatrix = transitionMatrix.getSubmatrix(true, markovianMaybeStates, maybeStates);
-        assert(submatrix.getRowCount() == submatrix.getRowGroupCount());
+        STORM_LOG_ASSERT(submatrix.getRowCount() == submatrix.getRowGroupCount(), "Submatrix row count != row group count.");
 
         // Now add selfloop entries at the correct positions and apply uniformization
         storm::storage::SparseMatrixBuilder<ValueType> builder(submatrix.getRowCount(), submatrix.getColumnCount());
         auto markovianStateColumns = markovianMaybeStates % maybeStates;
         uint64_t row = 0;
-        for (auto selfloopColumn : markovianStateColumns) {
+        for (uint64_t selfloopColumn : markovianStateColumns) {
             ValueType const& oldExitRate = oldRates[row];
             bool foundSelfoop = false;
             for (auto const& entry : submatrix.getRow(row)) {
@@ -412,7 +416,7 @@ class UnifPlusHelper {
             }
             ++row;
         }
-        assert(row == submatrix.getRowCount());
+        STORM_LOG_ASSERT(row == submatrix.getRowCount(), "Row count mismatch for submatrix.");
 
         return builder.build();
     }
@@ -420,7 +424,7 @@ class UnifPlusHelper {
     void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps,
                     std::vector<ValueType> const& oldRates, ValueType uniformizationRate, storm::storage::BitVector const& selfloopColumns) {
         uint64_t row = 0;
-        for (auto selfloopColumn : selfloopColumns) {
+        for (uint64_t selfloopColumn : selfloopColumns) {
             ValueType const& oldExitRate = oldRates[row];
             if (oldExitRate == uniformizationRate) {
                 // Already uniformized.
@@ -437,7 +441,7 @@ class UnifPlusHelper {
             }
             ++row;
         }
-        assert(row == matrix.getRowCount());
+        STORM_LOG_ASSERT(row == matrix.getRowCount(), "Row count mismatch after uniformization.");
         for (auto& oneStep : oneSteps) {
             oneStep.second *= oldRates[oneStep.first] / uniformizationRate;
         }
@@ -448,11 +452,11 @@ class UnifPlusHelper {
     void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps, ValueType oldUniformizationRate,
                     ValueType newUniformizationRate, storm::storage::BitVector const& selfloopColumns) {
         if (oldUniformizationRate != newUniformizationRate) {
-            assert(oldUniformizationRate < newUniformizationRate);
+            STORM_LOG_ASSERT(oldUniformizationRate < newUniformizationRate, "Old uniformization rate must be less than new.");
             ValueType rateDiff = newUniformizationRate - oldUniformizationRate;
             ValueType rateFraction = oldUniformizationRate / newUniformizationRate;
             uint64_t row = 0;
-            for (auto selfloopColumn : selfloopColumns) {
+            for (uint64_t selfloopColumn : selfloopColumns) {
                 for (auto& v : matrix.getRow(row)) {
                     if (v.getColumn() == selfloopColumn) {
                         ValueType newSelfLoop = rateDiff + v.getValue() * oldUniformizationRate;
@@ -463,7 +467,7 @@ class UnifPlusHelper {
                 }
                 ++row;
             }
-            assert(row == matrix.getRowCount());
+            STORM_LOG_ASSERT(row == matrix.getRowCount(), "Row count mismatch after uniformization.");
             for (auto& oneStep : oneSteps) {
                 oneStep.second *= rateFraction;
             }
@@ -529,7 +533,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     // The matrices with transitions from Markovian states need to be digitized.
     // Digitize aMarkovian. Based on whether the transition is a self-loop or not, we apply the two digitization rules.
     uint64_t rowIndex = 0;
-    for (auto state : markovianNonGoalStates) {
+    for (uint64_t state : markovianNonGoalStates) {
         for (auto& element : aMarkovian.getRow(rowIndex)) {
             ValueType eTerm = std::exp(-exitRates[state] * delta);
             if (element.getColumn() == rowIndex) {
@@ -544,7 +548,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     // Digitize aMarkovianToProbabilistic. As there are no self-loops in this case, we only need to apply the digitization formula for regular successors.
     if (existProbabilisticStates) {
         rowIndex = 0;
-        for (auto state : markovianNonGoalStates) {
+        for (uint64_t state : markovianNonGoalStates) {
             for (auto& element : aMarkovianToProbabilistic.getRow(rowIndex)) {
                 element.setValue((1 - std::exp(-exitRates[state] * delta)) * element.getValue());
             }
@@ -563,7 +567,7 @@ void computeBoundedReachabilityProbabilitiesImca(Environment const& env, Optimiz
     }
     std::vector<ValueType> bMarkovianFixed;
     bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
-    for (auto state : markovianNonGoalStates) {
+    for (uint64_t state : markovianNonGoalStates) {
         bMarkovianFixed.push_back(storm::utility::zero<ValueType>());
 
         for (auto& element : transitionMatrix.getRowGroup(state)) {
@@ -631,14 +635,17 @@ template<typename ValueType>
 std::vector<ValueType> computeBoundedUntilProbabilitiesImca(Environment const& env, OptimizationDirection dir,
                                                             storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                             std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates,
-                                                            storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
+                                                            storm::storage::BitVector const& psiStates,
+                                                            std::pair<double, std::optional<double>> const& boundsPair) {
     STORM_LOG_TRACE("Using IMCA's technique to compute bounded until probabilities.");
 
     uint64_t numberOfStates = transitionMatrix.getRowGroupCount();
 
     // 'Unpack' the bounds to make them more easily accessible.
+    STORM_LOG_THROW(boundsPair.second.has_value(), storm::exceptions::NotSupportedException,
+                    "IMCA's technique requires an upper time bound, but the given property has none.");
     double lowerBound = boundsPair.first;
-    double upperBound = boundsPair.second;
+    double upperBound = *boundsPair.second;
 
     // (1) Compute the accuracy we need to achieve the required error bound.
     ValueType maxExitRate = 0;
@@ -701,7 +708,7 @@ template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueTy
 std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
-    storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
+    storm::storage::BitVector const& psiStates, std::pair<double, std::optional<double>> const& boundsPair) {
     STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException,
                     "Exact computations not possible for bounded until probabilities.");
 
@@ -737,7 +744,7 @@ std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbab
                                                                                         storm::storage::SparseMatrix<ValueType> const&,
                                                                                         std::vector<ValueType> const&, storm::storage::BitVector const&,
                                                                                         storm::storage::BitVector const&, storm::storage::BitVector const&,
-                                                                                        std::pair<double, double> const&) {
+                                                                                        std::pair<double, std::optional<double>> const&) {
     STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
 }
 
@@ -751,13 +758,13 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType, typename RewardModelType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
     std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
@@ -767,13 +774,13 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType, typename RewardModelType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, RewardModelType const& rewardModel, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model where the state rewards are scaled accordingly
     std::vector<ValueType> stateRewardWeights(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         stateRewardWeights[markovianState] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     std::vector<ValueType> totalRewardVector = rewardModel.getTotalActionRewardVector(transitionMatrix, stateRewardWeights);
@@ -784,13 +791,13 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 }
 
 template<typename ValueType>
-MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+MDPSparseModelCheckingHelperReturnType<ValueType, storm::utility::ExtendedValueType<ValueType>> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
     storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler) {
     // Get a reward model representing expected sojourn times
     std::vector<ValueType> rewardValues(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-    for (auto const markovianState : markovianStates) {
+    for (uint64_t markovianState : markovianStates) {
         rewardValues[transitionMatrix.getRowGroupIndices()[markovianState]] = storm::utility::one<ValueType>() / exitRateVector[markovianState];
     }
     storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::nullopt, std::move(rewardValues));
@@ -802,25 +809,25 @@ MDPSparseModelCheckingHelperReturnType<ValueType> SparseMarkovAutomatonCslHelper
 template std::vector<double> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix,
     std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
-    storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+    storm::storage::BitVector const& psiStates, std::pair<double, std::optional<double>> const& boundsPair);
 
 template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeUntilProbabilities(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates,
     bool qualitative, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel,
     storm::storage::BitVector const& psiStates, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+template MDPSparseModelCheckingHelperReturnType<double, storm::utility::ExtendedValueType<double>> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix,
     storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler);
@@ -828,26 +835,29 @@ template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCsl
 template std::vector<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(
     Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     std::vector<storm::RationalNumber> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates,
-    storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+    storm::storage::BitVector const& psiStates, std::pair<double, std::optional<double>> const& boundsPair);
 
 template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeUntilProbabilities(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates,
     storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityRewards(
-    Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
-    storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
-    storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
-    storm::storage::BitVector const& psiStates, bool produceScheduler);
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber>
+SparseMarkovAutomatonCslHelper::computeReachabilityRewards(Environment const& env, OptimizationDirection dir,
+                                                           storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
+                                                           storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions,
+                                                           std::vector<storm::RationalNumber> const& exitRateVector,
+                                                           storm::storage::BitVector const& markovianStates,
+                                                           storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
+                                                           storm::storage::BitVector const& psiStates, bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeTotalRewards(
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber> SparseMarkovAutomatonCslHelper::computeTotalRewards(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<storm::RationalNumber> const& rewardModel,
     bool produceScheduler);
 
-template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
+template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber, storm::ExtendedRationalNumber> SparseMarkovAutomatonCslHelper::computeReachabilityTimes(
     Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix,
     storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& exitRateVector,
     storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, bool produceScheduler);

@@ -69,11 +69,17 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
     std::vector<ValueType>* xPtr = &x;
     std::vector<ValueType> const* bPtr = &b;
     if (rowOrdering) {
-        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "b-vector has unexpected size.");
+        STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "B-vector has unexpected size.");
         auxiliaryRowVector->resize(b.size());
         storm::utility::vector::selectVectorValues(*auxiliaryRowVector, *rowOrdering, b);
         for (auto const& bFactor : bFactors) {
-            (*auxiliaryRowVector)[bFactor.first] *= bFactor.second;
+            if (bFactor.second) {
+                (*auxiliaryRowVector)[bFactor.first] *= *bFactor.second;
+            } else {
+                // A selfloop of probability one: the equation for this row can only be satisfied if it contributes nothing.
+                STORM_LOG_ASSERT(storm::utility::isZero((*auxiliaryRowVector)[bFactor.first]),
+                                 "Expected a zero b vector entry for a row with a selfloop of probability one.");
+            }
         }
         bPtr = &auxiliaryRowVector.get();
         xPtr = &auxiliaryRowVector2.get();
@@ -86,6 +92,8 @@ bool AcyclicLinearEquationSolver<ValueType>::internalSolveEquations(Environment 
             x[(*rowOrdering)[newRow]] = (*xPtr)[newRow];
         }
     }
+
+    this->setSolutionBoundsExact(x);
 
     if (!this->isCachingEnabled()) {
         this->clearCache();

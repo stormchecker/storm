@@ -1,7 +1,7 @@
 #pragma once
 
+#include "storm/expressions/Expression.h"
 #include "storm/logic/StateFormula.h"
-#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
 namespace logic {

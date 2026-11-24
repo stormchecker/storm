@@ -75,7 +75,7 @@ std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSc
             res.emplace(observation, weights);
         }
         STORM_LOG_ASSERT(it == res.end() || it->second.size() == pomdp.getNumberOfChoices(state),
-                         "Number of choices must be equal for every state with same number of actions");
+                         "Number of choices must be equal for every state with same number of actions.");
     }
     return res;
 }

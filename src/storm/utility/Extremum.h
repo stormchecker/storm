@@ -5,6 +5,8 @@
 #include <type_traits>
 
 #include "storm/solver/OptimizationDirection.h"
+#include "storm/utility/ExtendedNumber.h"
+#include "storm/utility/NumberTraits.h"
 
 namespace storm::utility {
 
@@ -42,6 +44,22 @@ class Extremum {
     bool better(ValueType const& value) const;
 
     /*!
+     * @param value
+     * @return True if the provided value is strictly better (larger if we maximize; smaller if we minimize) than the stored value
+     */
+    template<typename ExtendedType>
+        requires(std::is_same_v<ExtendedType, storm::utility::ExtendedValueType<ValueType>> &&
+                 !std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>)
+    bool better(ExtendedType const& value) const {
+        if constexpr (storm::solver::minimize(Dir)) {
+            return value < extremalValue;
+        } else {
+            static_assert(storm::solver::maximize(Dir));
+            return value > extremalValue;
+        }
+    }
+
+    /*!
      * Updates the stored value, if the given extremal value is better.
      * @param other
      * @return true if the extremum value of this changed
@@ -70,18 +88,18 @@ class Extremum {
     bool operator&=(ValueType&& value);
 
     /*!
-     * @return true if this does not store any value (representing the extremum over an empty set)
+     * @return true if the stored value is the extremum over the empty set
      */
     bool empty() const;
 
     /*!
-     * @pre this is not empty
+     * @pre the extremal value is finite, i.e., not empty.
      * @return the stored extremal value
      */
     ValueType const& operator*() const;
 
     /*!
-     * @pre this is not empty
+     * @pre the extremal value is finite, i.e., not empty.
      * @return the stored extremal value
      */
     ValueType& operator*();
@@ -92,35 +110,56 @@ class Extremum {
     std::optional<ValueType> getOptionalValue() const;
 
     /*!
+     * @return the stored extremal value, including an infinite one
+     */
+    storm::utility::ExtendedValueType<ValueType> const& getExtendedValue() const;
+
+    /*!
+     * Updates the stored value, if the given value is better.
+     * @return true if the extremum value of this changed
+     */
+    template<typename ExtendedType>
+        requires(std::is_same_v<ExtendedType, storm::utility::ExtendedValueType<ValueType>> &&
+                 !std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>)
+    bool operator&=(ExtendedType const& value) {
+        if (better(value)) {
+            extremalValue = value;
+            return true;
+        }
+        return false;
+    }
+
+    /*!
      * Forgets the extremal value so that this represents the extremum over an empty set.
      */
     void reset();
 
    private:
-    /// indicates whether ValueType supports +/- infinity. If this is true we can use those values to encode an extremum over an empty set
-    static bool const SupportsInfinity = std::numeric_limits<ValueType>::is_iec559;
+    /// True if ValueType brings its own infinity, in which case the value is stored in ValueType itself.
+    static bool const StoresPlainValues = std::is_same_v<storm::utility::ExtendedValueType<ValueType>, ValueType>;
+    static_assert(!StoresPlainValues || std::numeric_limits<ValueType>::has_infinity, "NumberTraits claims an infinity that numeric_limits cannot provide.");
 
-    /// Data for the case that ValueType does not have infinity
-    struct DefaultData {
-        ValueType value;
-        bool empty{true};
-    };
-
-    /// Data for the case that ValueType has infinity
-    struct DataInfinity {
-        ValueType constexpr baseValue() const {
+    /// @return the value an extremum over an empty set has.
+    static storm::utility::ExtendedValueType<ValueType> baseValue() {
+        if constexpr (StoresPlainValues) {
+            // Taken from numeric_limits rather than from storm::utility so that it stays a compile time constant.
             if constexpr (storm::solver::minimize(Dir)) {
                 return std::numeric_limits<ValueType>::infinity();
             } else {
                 static_assert(storm::solver::maximize(Dir));
                 return -std::numeric_limits<ValueType>::infinity();
             }
+        } else {
+            if constexpr (storm::solver::minimize(Dir)) {
+                return storm::utility::ExtendedValueType<ValueType>::infinity();
+            } else {
+                static_assert(storm::solver::maximize(Dir));
+                return storm::utility::ExtendedValueType<ValueType>::negativeInfinity();
+            }
         }
-        ValueType value{baseValue()};
-    };
+    }
 
-    /// Data
-    std::conditional_t<SupportsInfinity, DataInfinity, DefaultData> data;
+    storm::utility::ExtendedValueType<ValueType> extremalValue{baseValue()};
 };
 
 template<typename ValueType>

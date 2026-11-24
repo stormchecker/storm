@@ -27,7 +27,7 @@ class StateGeneration {
 
     std::vector<StateType> getInitialStates();
 
-    storm::generator::StateBehavior<ValueType, StateType> expand();
+    storm::generator::StateBehavior<ValueType, StateType> const& expand();
 
     void computeInitialStates();
 

@@ -1,5 +1,5 @@
 #include "storm/api/export.h"
-#include "storm/storage/jani/JaniLocationExpander.h"
+#include "storm/languages/jani/JaniLocationExpander.h"
 
 namespace storm {
 namespace api {

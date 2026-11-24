@@ -95,8 +95,9 @@ class DFTChildren : public DFTElement<ValueType> {
 
     virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents,
                               bool sparesAsLeaves) const override {
-        if (elemsInSubtree.count(this->id()) > 0)
+        if (elemsInSubtree.count(this->id()) > 0) {
             return;
+        }
         DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
         if (elemsInSubtree.empty()) {
             // Parent in the subdft, ie it is *not* a subdft

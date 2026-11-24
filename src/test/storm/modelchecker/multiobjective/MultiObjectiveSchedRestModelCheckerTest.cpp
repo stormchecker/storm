@@ -12,7 +12,7 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/SchedulerClass.h"
+#include "storm/storage/scheduler/SchedulerClass.h"
 
 namespace {
 
@@ -142,7 +142,7 @@ class MultiObjectiveSchedRestModelCheckerTest : public ::testing::Test {
         return env;
     }
 
-    typedef std::vector<storm::RationalNumber> Point;
+    typedef std::vector<storm::ExtendedRationalNumber> Point;
 
     ValueType parseNumber(std::string const& input) const {
         return storm::utility::convertNumber<ValueType>(input);

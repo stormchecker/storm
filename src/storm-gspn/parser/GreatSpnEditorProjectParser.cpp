@@ -58,7 +58,7 @@ void GreatSpnEditorProjectParser::traverseProjectElement(xercesc::DOMNode const*
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -74,7 +74,7 @@ void GreatSpnEditorProjectParser::traverseProjectElement(xercesc::DOMNode const*
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -92,7 +92,7 @@ void GreatSpnEditorProjectParser::traverseGspnElement(xercesc::DOMNode const* co
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -110,7 +110,7 @@ void GreatSpnEditorProjectParser::traverseGspnElement(xercesc::DOMNode const* co
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -123,7 +123,7 @@ void GreatSpnEditorProjectParser::traverseNodesElement(xercesc::DOMNode const* c
 
         // Found node or attribute which is at the moment not handled by this parser.
         // Notify the user and continue the parsing.
-        STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+        STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
     }
 
     // traverse children
@@ -161,7 +161,7 @@ void GreatSpnEditorProjectParser::traverseNodesElement(xercesc::DOMNode const* c
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -184,7 +184,7 @@ void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOM
             } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("INTEGER") == 0) {
                 type = manager->getIntegerType();
             } else {
-                STORM_PRINT_AND_LOG("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << '\n');
+                STORM_LOG_WARN("Unknown consttype: " << storm::adapters::XMLtoString(attr->getNodeValue()) << '\n');
             }
         } else if (name.compare("value") == 0) {
             valueStr = storm::adapters::XMLtoString(attr->getNodeValue());
@@ -193,7 +193,7 @@ void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOM
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -227,7 +227,7 @@ void GreatSpnEditorProjectParser::traverseConstantOrTemplateElement(xercesc::DOM
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -240,7 +240,7 @@ void GreatSpnEditorProjectParser::traverseEdgesElement(xercesc::DOMNode const* c
 
         // Found node or attribute which is at the moment not handled by this parser.
         // Notify the user and continue the parsing.
-        STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+        STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
     }
 
     // traverse children
@@ -255,7 +255,7 @@ void GreatSpnEditorProjectParser::traverseEdgesElement(xercesc::DOMNode const* c
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -286,7 +286,7 @@ void GreatSpnEditorProjectParser::traversePlaceElement(xercesc::DOMNode const* c
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -300,7 +300,7 @@ void GreatSpnEditorProjectParser::traversePlaceElement(xercesc::DOMNode const* c
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
     builder.addPlace(boost::none, initialTokens, placeName);
@@ -336,7 +336,7 @@ void GreatSpnEditorProjectParser::traverseTransitionElement(xercesc::DOMNode con
             } else if (storm::adapters::XMLtoString(attr->getNodeValue()).compare("IMM") == 0) {
                 immediateTransition = true;
             } else {
-                STORM_PRINT_AND_LOG("unknown transition type: " << storm::adapters::XMLtoString(attr->getNodeValue()));
+                STORM_LOG_WARN("unknown transition type: " << storm::adapters::XMLtoString(attr->getNodeValue()));
             }
         } else if (name.compare("delay") == 0) {
             rate = parseReal(storm::adapters::XMLtoString(attr->getNodeValue()));
@@ -358,7 +358,7 @@ void GreatSpnEditorProjectParser::traverseTransitionElement(xercesc::DOMNode con
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -378,7 +378,7 @@ void GreatSpnEditorProjectParser::traverseTransitionElement(xercesc::DOMNode con
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -421,7 +421,7 @@ void GreatSpnEditorProjectParser::traverseArcElement(xercesc::DOMNode const* con
         } else {
             // Found node or attribute which is at the moment not handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -451,7 +451,7 @@ void GreatSpnEditorProjectParser::traverseArcElement(xercesc::DOMNode const* con
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }

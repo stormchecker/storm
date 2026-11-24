@@ -1,11 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/dd/DdManager.h"
 #include "storm/environment/Environment.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/solver.h"
 
 class Cudd {
@@ -47,7 +47,7 @@ TYPED_TEST(FullySymbolicGameSolverTest, Solve) {
     const storm::dd::DdType DdType = TestFixture::DdType;
     storm::Environment env;
     // Create some variables.
-    std::shared_ptr<storm::dd::DdManager<DdType>> manager(new storm::dd::DdManager<DdType>());
+    auto manager(storm::dd::DdManager<DdType>::createWithDefaultEnvironment());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> state = manager->addMetaVariable("x", 1, 4);
     std::pair<storm::expressions::Variable, storm::expressions::Variable> pl1 = manager->addMetaVariable("a", 0, 1);
     std::pair<storm::expressions::Variable, storm::expressions::Variable> pl2 = manager->addMetaVariable("b", 0, 1);

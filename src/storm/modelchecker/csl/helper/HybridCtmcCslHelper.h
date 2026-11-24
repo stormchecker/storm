@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <memory>
 
 #include "storm/models/symbolic/Ctmc.h"
@@ -24,7 +26,7 @@ class HybridCtmcCslHelper {
                                                                          bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix,
                                                                          storm::dd::Add<DdType, ValueType> const& exitRateVector,
                                                                          storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates,
-                                                                         bool qualitative, ValueType lowerBound, ValueType upperBound);
+                                                                         bool qualitative, ValueType lowerBound, std::optional<ValueType> const& upperBound);
 
     template<storm::dd::DdType DdType, typename ValueType>
         requires storm::NumberTraits<ValueType>::SupportsExponential

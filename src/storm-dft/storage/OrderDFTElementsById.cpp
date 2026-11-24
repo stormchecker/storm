@@ -1,5 +1,7 @@
 #include "storm-dft/storage/OrderDFTElementsById.h"
+
 #include "storm-dft/storage/elements/DFTElements.h"
+#include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace storm::dft {
 namespace storage {
@@ -26,8 +28,8 @@ bool OrderElementsByRank<ValueType>::operator()(const std::shared_ptr<storm::dft
 template struct OrderElementsById<double>;
 template struct OrderElementsByRank<double>;
 
-template struct OrderElementsById<RationalFunction>;
-template struct OrderElementsByRank<RationalFunction>;
+template struct OrderElementsById<storm::RationalFunction>;
+template struct OrderElementsByRank<storm::RationalFunction>;
 
 }  // namespace storage
 }  // namespace storm::dft

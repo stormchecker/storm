@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -138,8 +139,8 @@ class ParameterLifter {
            public:
             std::size_t operator()(FunctionValuation const& fv) const {
                 std::size_t seed = 0;
-                carl::hash_add(seed, fv.first);
-                carl::hash_add(seed, fv.second.getHashValue());
+                boost::hash_combine(seed, fv.first);
+                boost::hash_combine(seed, fv.second.getHashValue());
                 return seed;
             }
         };

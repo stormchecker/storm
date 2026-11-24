@@ -4,11 +4,11 @@
 #include "storm-gamebased-ar/abstraction/MenuGameRefiner.h"
 #include "storm-gamebased-ar/abstraction/prism/PrismMenuGameAbstractor.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/Bdd.h"
+#include "storm/environment/Environment.h"
+#include "storm/expressions/Expression.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/solver.h"
 
 class Cudd {
@@ -20,6 +20,7 @@ class Cudd {
     }
 
     static const storm::dd::DdType DdType = storm::dd::DdType::CUDD;
+    typedef double ValueType;
 };
 
 class Sylvan {
@@ -31,12 +32,26 @@ class Sylvan {
     }
 
     static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
+    typedef double ValueType;
+};
+
+class SylvanExact {
+   public:
+    static void checkLibraryAvailable() {
+#ifndef STORM_HAVE_SYLVAN
+        GTEST_SKIP() << "Library Sylvan not available.";
+#endif
+    }
+
+    static const storm::dd::DdType DdType = storm::dd::DdType::Sylvan;
+    typedef storm::RationalNumber ValueType;
 };
 
 template<typename TestType>
 class PrismMenuGame : public ::testing::Test {
    public:
     static const storm::dd::DdType DdType = TestType::DdType;
+    typedef typename TestType::ValueType ValueType;
 
    protected:
     void SetUp() override {
@@ -47,14 +62,15 @@ class PrismMenuGame : public ::testing::Test {
     }
 };
 
-typedef ::testing::Types<Cudd, Sylvan> TestingTypes;
+typedef ::testing::Types<Cudd, Sylvan, SylvanExact> TestingTypes;
 TYPED_TEST_SUITE(PrismMenuGame, TestingTypes, );
 
 TYPED_TEST(PrismMenuGame, DieAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
@@ -64,47 +80,23 @@ TYPED_TEST(PrismMenuGame, DieAbstractionTest) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(26ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
-
-// Commented out due to incompatibility with new refiner functionality.
-// This functionality depends on some operators being available on the value type which are not there for rational functions.
-// TEST(PrismMenuGame, DieAbstractionTest_SylvanWithRationalFunction) {
-//    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
-
-//    std::vector<storm::expressions::Expression> initialPredicates;
-//    storm::expressions::ExpressionManager& manager = program.getManager();
-
-//    initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
-
-//    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-
-//    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<storm::dd::DdType::Sylvan, storm::RationalFunction> abstractor(program, smtSolverFactory);
-//    storm::gbar::abstraction::MenuGameRefiner<storm::dd::DdType::Sylvan, storm::RationalFunction> refiner(abstractor, smtSolverFactory->create(manager));
-//    refiner.refine(initialPredicates);
-
-//    storm::gbar::abstraction::MenuGame<storm::dd::DdType::Sylvan, storm::RationalFunction> game = abstractor.abstract();
-
-//    EXPECT_EQ(26, game.getNumberOfTransitions());
-//    EXPECT_EQ(4, game.getNumberOfStates());
-//    EXPECT_EQ(2, game.getBottomStates().getNonZeroCount());
-//}
 
 TYPED_TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
@@ -115,26 +107,25 @@ TYPED_TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("s") == manager.integer(7)}));
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(24ull, game.getNumberOfTransitions());
     EXPECT_EQ(5ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, DieFullAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
 
@@ -160,24 +151,23 @@ TYPED_TEST(PrismMenuGame, DieFullAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(20ull, game.getNumberOfTransitions());
     EXPECT_EQ(13ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, CrowdsAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstantsFormulas();
@@ -189,24 +179,23 @@ TYPED_TEST(PrismMenuGame, CrowdsAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(31ull, game.getNumberOfTransitions());
     EXPECT_EQ(4ull, game.getNumberOfStates());
     EXPECT_EQ(2ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstantsFormulas();
@@ -218,8 +207,8 @@ TYPED_TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(
@@ -227,20 +216,19 @@ TYPED_TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
                             manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <=
                         manager.getVariableExpression("runCount")}));
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(68ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/crowds-5-5.pm");
     program = program.substituteConstantsFormulas();
@@ -306,24 +294,23 @@ TYPED_TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(15113ull, game.getNumberOfTransitions());
     EXPECT_EQ(8607ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstantsFormulas();
@@ -337,23 +324,22 @@ TYPED_TEST(PrismMenuGame, TwoDiceAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(90ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 TYPED_TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstantsFormulas();
@@ -367,25 +353,24 @@ TYPED_TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(276ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 TYPED_TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
     program = program.substituteConstantsFormulas();
@@ -430,24 +415,23 @@ TYPED_TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(436ull, game.getNumberOfTransitions());
     EXPECT_EQ(169ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, WlanAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstantsFormulas();
@@ -462,24 +446,23 @@ TYPED_TEST(PrismMenuGame, WlanAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(903ull, game.getNumberOfTransitions());
     EXPECT_EQ(8ull, game.getNumberOfStates());
     EXPECT_EQ(4ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstantsFormulas();
@@ -494,26 +477,25 @@ TYPED_TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
     ASSERT_NO_THROW(refiner.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(1800ull, game.getNumberOfTransitions());
     EXPECT_EQ(16ull, game.getNumberOfStates());
     EXPECT_EQ(8ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }
 
 TYPED_TEST(PrismMenuGame, WlanFullAbstractionTest) {
     const storm::dd::DdType DdType = TestFixture::DdType;
-    auto& settings = storm::settings::mutableAbstractionSettings();
-    settings.setAddAllGuards(false);
-    settings.setAddAllInitialExpressions(false);
+    typedef typename TestFixture::ValueType ValueType;
+    storm::gbar::abstraction::AbstractionOptions options;
+    options.addAllGuards = false;
+    options.addAllInitialExpressions = false;
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/wlan0-2-4.nm");
     program = program.substituteConstantsFormulas();
@@ -626,15 +608,13 @@ TYPED_TEST(PrismMenuGame, WlanFullAbstractionTest) {
 
     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
 
-    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, double> abstractor(program, smtSolverFactory);
-    storm::gbar::abstraction::MenuGameRefiner<DdType, double> refiner(abstractor, smtSolverFactory->create(manager));
+    storm::gbar::abstraction::prism::PrismMenuGameAbstractor<DdType, ValueType> abstractor(storm::Environment(), program, smtSolverFactory, options);
+    storm::gbar::abstraction::MenuGameRefiner<DdType, ValueType> refiner(abstractor, smtSolverFactory->create(manager), options);
     refiner.refine(initialPredicates);
 
-    storm::gbar::abstraction::MenuGame<DdType, double> game = abstractor.abstract();
+    storm::gbar::abstraction::MenuGame<DdType, ValueType> game = abstractor.abstract();
 
     EXPECT_EQ(9503ull, game.getNumberOfTransitions());
     EXPECT_EQ(5523ull, game.getNumberOfStates());
     EXPECT_EQ(0ull, game.getBottomStates().getNonZeroCount());
-
-    storm::settings::mutableAbstractionSettings().restoreDefaults();
 }

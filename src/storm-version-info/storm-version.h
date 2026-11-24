@@ -15,6 +15,9 @@ struct StormVersion {
     /// The patch version of Storm.
     const static unsigned versionPatch;
 
+    /// The development counter of Storm (fourth version component). Zero for released versions.
+    const static unsigned versionTweak;
+
     /// Flag indicating if the version of Storm is a development version.
     const static bool versionDev;
 
@@ -46,7 +49,7 @@ struct StormVersion {
         std::stringstream sstream;
         sstream << versionMajor << "." << versionMinor << "." << versionPatch;
         if (versionDev) {
-            sstream << " (dev)";
+            sstream << "." << versionTweak << " (dev)";
         }
         return sstream.str();
     }

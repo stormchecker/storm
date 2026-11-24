@@ -37,7 +37,9 @@ StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(
 
 template<typename ValueType, typename RewardModelType>
 StochasticTwoPlayerGame<ValueType, RewardModelType>::StochasticTwoPlayerGame(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components)
-    : NondeterministicModel<ValueType, RewardModelType>(ModelType::S2pg, std::move(components)), player1Matrix(std::move(components.player1Matrix.get())) {
+    : NondeterministicModel<ValueType, RewardModelType>(ModelType::S2pg, std::move(components)),
+      // NOLINTNEXTLINE(bugprone-use-after-move) The base constructor only consumes the base-relevant fields of components.
+      player1Matrix(std::move(components.player1Matrix.get())) {
     // Intentionally left empty
 }
 

@@ -1,7 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
 #include "storm-dft/parser/BEOrderParser.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 
@@ -10,7 +10,8 @@ namespace {
 TEST(TestBddVarOrdering, VariableOrdering) {
 #ifdef STORM_HAVE_SYLVAN
     auto dft = storm::dft::api::loadDFTGalileoFile<double>(STORM_TEST_RESOURCES_DIR "/dft/bdd/AndOrTest.dft");
-    auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>()};
+    storm::Environment env;
+    auto manager{std::make_shared<storm::dft::storage::SylvanBddManager>(env)};
     auto transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager)};
 
     // Use default variable ordering x1, x2, x3, x4
@@ -28,7 +29,7 @@ TEST(TestBddVarOrdering, VariableOrdering) {
     beOrder.push_back(dft->getIndex("x1"));
     beOrder.push_back(dft->getIndex("x3"));
     dft->setBEOrder(beOrder);
-    manager = std::make_shared<storm::dft::storage::SylvanBddManager>();
+    manager = std::make_shared<storm::dft::storage::SylvanBddManager>(env);
     transformator = std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager);
 
     bdd = transformator->transformTopLevel();
@@ -55,7 +56,8 @@ TEST(TestBddVarOrdering, OrderParser) {
     EXPECT_EQ("x3", dft->getElement(beOrder.at(3))->name());
     dft->setBEOrder(beOrder);
 
-    auto manager = std::make_shared<storm::dft::storage::SylvanBddManager>();
+    storm::Environment env;
+    auto manager = std::make_shared<storm::dft::storage::SylvanBddManager>(env);
     auto transformator = std::make_shared<storm::dft::transformations::SftToBddTransformator<double>>(dft, manager);
 
     auto bdd = transformator->transformTopLevel();

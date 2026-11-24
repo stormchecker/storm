@@ -5,7 +5,7 @@
 #include <vector>
 #include "cpphoafparser/consumer/hoa_consumer.hh"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/StateBlock.h"
+#include "storm/storage/decomposition/StateBlock.h"
 
 namespace storm {
 namespace automata {

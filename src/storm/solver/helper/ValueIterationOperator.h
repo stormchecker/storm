@@ -172,7 +172,7 @@ class ValueIterationOperator {
     template<typename OperandType, typename OffsetType, typename BackendType, bool Backward, bool SkipIgnoredRows, OptimizationDirection RobustDirection>
     bool apply(OperandType& operandOut, OperandType const& operandIn, OffsetType const& offsets, BackendType& backend) const {
         auto const outSize = TrivialRowGrouping ? getSize(operandOut) : rowGroupIndices->size() - 1;
-        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch");
+        STORM_LOG_ASSERT(TrivialRowGrouping || getSize(operandOut) >= outSize, "Dimension mismatch.");
         backend.startNewIteration();
         auto matrixValueIt = matrixValues.cbegin();
         auto matrixColumnIt = matrixColumns.cbegin();
@@ -233,6 +233,12 @@ class ValueIterationOperator {
     std::pair<OpT1, OpT2> initializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&, std::vector<OffT> const& offsets,
                                            uint64_t offsetIndex) const {
         return {offsets[offsetIndex], offsets[offsetIndex]};
+    }
+
+    template<typename OpT1, typename OpT2, typename OffT1, typename OffT2>
+    std::pair<OpT1, OpT2> initializeRowRes(std::pair<std::vector<OpT1>, std::vector<OpT2>> const&,
+                                           std::pair<std::vector<OffT1>, std::vector<OffT2>> const& offsets, uint64_t offsetIndex) const {
+        return {offsets.first[offsetIndex], offsets.second[offsetIndex]};
     }
 
     template<typename OpT1, typename OpT2, typename OffT1, typename OffT2>

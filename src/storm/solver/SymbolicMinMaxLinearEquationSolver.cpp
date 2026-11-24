@@ -1,17 +1,15 @@
 #include "storm/solver/SymbolicMinMaxLinearEquationSolver.h"
 
-#include "storm/storage/dd/DdManager.h"
-
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-
-#include "storm/utility/constants.h"
-
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/backend/BackendTraits.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
-
 #include "storm/exceptions/InvalidEnvironmentException.h"
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/utility/constants.h"
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
 
@@ -250,14 +248,20 @@ SymbolicMinMaxLinearEquationSolver<DdType, ValueType>::solveEquationsRationalSea
                                                                                           storm::solver::OptimizationDirection const& dir,
                                                                                           storm::dd::Add<DdType, ValueType> const& x,
                                                                                           storm::dd::Add<DdType, ValueType> const& b) const {
-    storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
-    SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(
-        this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables,
-        this->choiceVariables, this->rowColumnMetaVariablePairs, std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>>());
+    if constexpr (storm::dd::BackendTraits<DdType>::template supportsValueType<storm::RationalNumber>) {
+        storm::dd::Add<DdType, storm::RationalNumber> rationalB = b.template toValueType<storm::RationalNumber>();
+        SymbolicMinMaxLinearEquationSolver<DdType, storm::RationalNumber> rationalSolver(
+            this->A.template toValueType<storm::RationalNumber>(), this->allRows, this->illegalMask, this->rowMetaVariables, this->columnMetaVariables,
+            this->choiceVariables, this->rowColumnMetaVariablePairs,
+            std::make_unique<GeneralSymbolicLinearEquationSolverFactory<DdType, storm::RationalNumber>>());
 
-    storm::dd::Add<DdType, storm::RationalNumber> rationalResult =
-        solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(env, dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
-    return rationalResult.template toValueType<ValueType>();
+        storm::dd::Add<DdType, storm::RationalNumber> rationalResult = solveEquationsRationalSearchHelper<storm::RationalNumber, ImpreciseType>(
+            env, dir, rationalSolver, *this, rationalB, this->getLowerBoundsVector(), b);
+        return rationalResult.template toValueType<ValueType>();
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                        "Rational search is not supported, as the selected DD library does not support rational numbers.");
+    }
 }
 
 template<storm::dd::DdType DdType, typename ValueType>
@@ -534,7 +538,9 @@ MinMaxLinearEquationSolverRequirements SymbolicMinMaxLinearEquationSolver<DdType
         }
     } else if (method == MinMaxMethod::RationalSearch) {
         requirements.requireLowerBounds();
-        if (!this->hasUniqueSolution() && (!direction || direction.get() == storm::solver::OptimizationDirection::Minimize)) {
+        // RationalSearch guesses and verifies a fixpoint and terminates once a fixpoint is found. To ensure that the guessed fixpoint is the
+        // correct one, we enforce uniqueness.
+        if (!this->hasUniqueSolution()) {
             requirements.requireUniqueSolution();
         }
     } else {

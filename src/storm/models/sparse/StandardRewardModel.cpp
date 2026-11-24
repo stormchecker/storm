@@ -256,9 +256,11 @@ void StandardRewardModel<ValueType>::reduceToStateBasedRewards(storm::storage::S
 template<typename ValueType>
 template<typename MatrixValueType>
 std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    std::vector<ValueType> result = this->hasTransitionRewards() ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix())
-                                                                 : (this->hasStateActionRewards() ? this->getStateActionRewardVector()
-                                                                                                  : std::vector<ValueType>(transitionMatrix.getRowCount()));
+    std::vector<ValueType> result =
+        this->hasTransitionRewards()
+            ? transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix())
+            : (this->hasStateActionRewards() ? this->getStateActionRewardVector()
+                                             : std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>()));
     if (this->hasStateActionRewards() && this->hasTransitionRewards()) {
         storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);
     }
@@ -281,7 +283,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalRewardVector(stor
                 return weight * (resultElement + rewardElement);
             });
     } else {
-        result = std::vector<ValueType>(transitionMatrix.getRowCount());
+        result = std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
         if (this->hasStateActionRewards()) {
             storm::utility::vector::applyPointwise<MatrixValueType, ValueType, ValueType>(
                 weights, this->getStateActionRewardVector(), result,
@@ -323,7 +325,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalActionRewardVecto
     if (this->hasTransitionRewards()) {
         result = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
     } else {
-        result = std::vector<ValueType>(transitionMatrix.getRowCount());
+        result = std::vector<ValueType>(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
     }
     if (this->hasStateActionRewards()) {
         storm::utility::vector::addVectors(result, this->getStateActionRewardVector(), result);
@@ -339,7 +341,7 @@ std::vector<ValueType> StandardRewardModel<ValueType>::getTotalActionRewardVecto
 template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getStatesWithZeroReward(storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getStatesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getStatesWithFilter(transitionMatrix, [](ValueType const& value) { return storm::utility::isZero(value); });
 }
 
 template<typename ValueType>
@@ -375,7 +377,7 @@ template<typename ValueType>
 template<typename MatrixValueType>
 storm::storage::BitVector StandardRewardModel<ValueType>::getChoicesWithZeroReward(
     storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix) const {
-    return getChoicesWithFilter(transitionMatrix, storm::utility::isZero<ValueType>);
+    return getChoicesWithFilter(transitionMatrix, [](ValueType const& value) { return storm::utility::isZero(value); });
 }
 
 template<typename ValueType>
@@ -485,12 +487,14 @@ bool StandardRewardModel<ValueType>::hasPositiveRewards() const {
 template<typename ValueType>
 bool StandardRewardModel<ValueType>::isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const {
     if (hasStateRewards()) {
-        if (optionalStateRewardVector.value().size() != nrStates)
+        if (optionalStateRewardVector.value().size() != nrStates) {
             return false;
+        }
     }
     if (hasStateActionRewards()) {
-        if (optionalStateActionRewardVector.value().size() != nrChoices)
+        if (optionalStateActionRewardVector.value().size() != nrChoices) {
             return false;
+        }
     }
     return true;
 }

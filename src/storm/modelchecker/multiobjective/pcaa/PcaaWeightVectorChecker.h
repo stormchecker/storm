@@ -6,7 +6,7 @@
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 

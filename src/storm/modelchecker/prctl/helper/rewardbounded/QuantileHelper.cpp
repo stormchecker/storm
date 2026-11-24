@@ -2,20 +2,19 @@
 
 #include <boost/optional.hpp>
 #include <memory>
+#include <optional>
 #include <set>
 #include <vector>
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/expressions/Expressions.h"
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
 #include "storm/utility/vector.h"
 
 #include "storm/logic/BoundedUntilFormula.h"
@@ -90,7 +89,7 @@ std::shared_ptr<storm::logic::ProbabilityOperatorFormula> transformBoundedUntilO
     STORM_LOG_ASSERT(transformations.size() == origBoundedUntil.getDimension(),
                      "Tried to replace the bound of a dimension that is higher than the number of dimensions of the formula.");
     std::vector<std::shared_ptr<storm::logic::Formula const>> leftSubformulas, rightSubformulas;
-    std::vector<boost::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<storm::logic::TimeBound>> lowerBounds, upperBounds;
     std::vector<storm::logic::TimeBoundReference> timeBoundReferences;
 
     for (uint64_t dim = 0; dim < origBoundedUntil.getDimension(); ++dim) {
@@ -103,12 +102,12 @@ std::shared_ptr<storm::logic::ProbabilityOperatorFormula> transformBoundedUntilO
             if (origBoundedUntil.hasLowerBound(dim)) {
                 lowerBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isLowerBoundStrict(dim), origBoundedUntil.getLowerBound(dim)));
             } else {
-                lowerBounds.push_back(boost::none);
+                lowerBounds.push_back(std::nullopt);
             }
             if (origBoundedUntil.hasUpperBound(dim)) {
                 upperBounds.push_back(storm::logic::TimeBound(origBoundedUntil.isUpperBoundStrict(dim), origBoundedUntil.getUpperBound(dim)));
             } else {
-                upperBounds.push_back(boost::none);
+                upperBounds.push_back(std::nullopt);
             }
         } else {
             // We need a zero expression in all other cases
@@ -121,13 +120,13 @@ std::shared_ptr<storm::logic::ProbabilityOperatorFormula> transformBoundedUntilO
                 zero = origBoundedUntil.getUpperBound(dim).getManager().rational(0.0);
             }
             if (transformations[dim] == BoundTransformation::LessEqualZero) {
-                lowerBounds.push_back(boost::none);
+                lowerBounds.push_back(std::nullopt);
                 upperBounds.push_back(storm::logic::TimeBound(false, zero));
             } else {
                 STORM_LOG_ASSERT(transformations[dim] == BoundTransformation::GreaterZero || transformations[dim] == BoundTransformation::GreaterEqualZero,
                                  "Unhandled bound transformation.");
                 lowerBounds.push_back(storm::logic::TimeBound(transformations[dim] == BoundTransformation::GreaterZero, zero));
-                upperBounds.push_back(boost::none);
+                upperBounds.push_back(std::nullopt);
             }
         }
     }
@@ -210,14 +209,14 @@ storm::expressions::Variable const& QuantileHelper<ModelType>::getVariableForDim
 }
 
 template<typename ModelType>
-std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
+std::vector<std::vector<storm::utility::ExtendedValueType<typename ModelType::ValueType>>> QuantileHelper<ModelType>::computeQuantile(Environment const& env) {
     numCheckedEpochs = 0;
     numPrecisionRefinements = 0;
     swEpochAnalysis.reset();
     swExploration.reset();
     cachedSubQueryResults.clear();
 
-    std::vector<std::vector<ValueType>> result;
+    std::vector<std::vector<storm::utility::ExtendedValueType<ValueType>>> result;
     Environment envCpy = env;  // It might be necessary to increase the precision during the computation
     // Call the internal recursive function
     auto internalResult = computeQuantile(envCpy, getOpenDimensions(), false);
@@ -234,22 +233,21 @@ std::vector<std::vector<typename ModelType::ValueType>> QuantileHelper<ModelType
             ++openDim;
         }
     }
-    assert(permutation.size() == getOpenDimensions().getNumberOfSetBits());
+    STORM_LOG_ASSERT(permutation.size() == getOpenDimensions().getNumberOfSetBits(), "Permutation size mismatch.");
     for (auto const& costLimits : internalResult.first.getGenerator()) {
-        std::vector<ValueType> resultPoint;
+        std::vector<storm::utility::ExtendedValueType<ValueType>> resultPoint;
         for (auto const& dim : permutation) {
             CostLimit const& cl = costLimits[dim];
-            resultPoint.push_back(cl.isInfinity() ? storm::utility::infinity<ValueType>()
-                                                  : storm::utility::convertNumber<ValueType>(cl.get()) * internalResult.second[dim]);
+            resultPoint.push_back(cl.isInfinity() ? storm::utility::positiveInfinity<ValueType>()
+                                                  : storm::utility::ExtendedValueType<ValueType>(storm::utility::convertNumber<ValueType>(cl.get()) *
+                                                                                                 internalResult.second[dim]));
         }
         result.push_back(resultPoint);
     }
-    if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
-        std::cout << "Number of checked epochs: " << numCheckedEpochs << '\n';
-        std::cout << "Number of required precision refinements: " << numPrecisionRefinements << '\n';
-        std::cout << "Time for epoch exploration: " << swExploration << " seconds.\n";
-        std::cout << "\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.\n";
-    }
+    STORM_LOG_STATISTICS("Number of checked epochs: " << numCheckedEpochs);
+    STORM_LOG_STATISTICS("Number of required precision refinements: " << numPrecisionRefinements);
+    STORM_LOG_STATISTICS("Time for epoch exploration: " << swExploration << " seconds.");
+    STORM_LOG_STATISTICS("\tTime for epoch model analysis: " << swEpochAnalysis << " seconds.");
     return result;
 }
 
@@ -288,7 +286,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
     bool onlyUpperCostBounds = lowerBoundedDimensions.empty();
     bool onlyLowerCostBounds = lowerBoundedDimensions == consideredDimensions;
     if (onlyUpperCostBounds || onlyLowerCostBounds) {
-        for (auto k : consideredDimensions) {
+        for (uint64_t k : consideredDimensions) {
             storm::storage::BitVector subQueryDimensions = consideredDimensions;
             subQueryDimensions.set(k, false);
             bool subQueryComplement = complementaryQuery != ((onlyUpperCostBounds && hasLowerValueBound) || (onlyLowerCostBounds && !hasLowerValueBound));
@@ -296,7 +294,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
             for (auto const& subQueryCostLimit : subQueryResult.first.getGenerator()) {
                 CostLimits initPoint;
                 uint64_t i = 0;
-                for (auto dim : consideredDimensions) {
+                for (uint64_t dim : consideredDimensions) {
                     if (dim == k) {
                         initPoint.push_back(CostLimit::infinity());
                     } else {
@@ -322,7 +320,7 @@ std::pair<CostLimitClosure, std::vector<typename QuantileHelper<ModelType>::Valu
         MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, boundedUntilOp, infinityVariables);
         if (computeQuantile(env, consideredDimensions, *boundedUntilOp, lowerBoundedDimensions, satCostLimits, unsatCostLimits, rewardUnfolding)) {
             std::vector<ValueType> scalingFactors;
-            for (auto dim : consideredDimensions) {
+            for (uint64_t dim : consideredDimensions) {
                 scalingFactors.push_back(rewardUnfolding.getDimension(dim).scalingFactor);
             }
             std::pair<CostLimitClosure, std::vector<ValueType>> result(satCostLimits, scalingFactors);
@@ -418,7 +416,7 @@ bool QuantileHelper<ModelType>::computeQuantile(Environment& env, storm::storage
                 // Transform candidate cost limits to an appropriate start epoch
                 auto startEpoch = rewardUnfolding.getStartEpoch(true);
                 auto costLimitIt = currentCandidate.begin();
-                for (auto dim : consideredDimensions) {
+                for (uint64_t dim : consideredDimensions) {
                     if (lowerBoundedDimensions.get(dim)) {
                         if (costLimitIt->get() > 0) {
                             rewardUnfolding.getEpochManager().setDimensionOfEpoch(startEpoch, dim, costLimitIt->get() - 1);

@@ -5,7 +5,7 @@
 #include "storm/utility/OptionalRef.h"
 
 namespace storm {
-namespace storage {
+namespace languages {
 class SymbolicModelDescription;
 }
 namespace jani {
@@ -19,7 +19,7 @@ enum class BuilderType { Explicit, Dd };
 storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderType);
 
 template<typename ValueType>
-bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription,
+bool canHandle(BuilderType const& builderType, storm::languages::SymbolicModelDescription const& modelDescription,
                storm::OptionalRef<std::vector<storm::jani::Property> const> properties = storm::NullRef);
 }  // namespace builder
 }  // namespace storm

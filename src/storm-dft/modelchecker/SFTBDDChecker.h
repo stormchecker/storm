@@ -10,6 +10,7 @@
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
+#include "storm/environment/Environment.h"
 
 namespace storm::dft {
 namespace modelchecker {
@@ -25,8 +26,7 @@ class SFTBDDChecker {
     using Bdd = sylvan::Bdd;
 #endif
 
-    SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft,
-                  std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>());
+    SFTBDDChecker(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager);
 
     SFTBDDChecker(std::shared_ptr<storm::dft::transformations::SftToBddTransformator<ValueType>> transformator);
 

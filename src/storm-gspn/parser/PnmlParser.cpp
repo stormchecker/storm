@@ -35,7 +35,7 @@ void PnmlParser::traversePnmlElement(xercesc::DOMElement const* const element) {
 
         // Found node or attribute which is at the moment nod handled by this parser.
         // Notify the user and continue the parsing.
-        STORM_PRINT_AND_LOG("unknown attribute (node=pnml): " + name + "\n");
+        STORM_LOG_WARN("unknown attribute (node=pnml): " + name + "\n");
     }
 
     // traverse children
@@ -50,7 +50,7 @@ void PnmlParser::traversePnmlElement(xercesc::DOMElement const* const element) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=pnml): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=pnml): " + name + "\n");
         }
     }
 }
@@ -66,7 +66,7 @@ void PnmlParser::traverseNetOrPage(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 
@@ -90,7 +90,7 @@ void PnmlParser::traverseNetOrPage(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=" + storm::adapters::XMLtoString(node->getNodeName()) + "): " + name + "\n");
         }
     }
 }
@@ -111,7 +111,7 @@ void PnmlParser::traversePlace(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=place): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=place): " + name + "\n");
         }
     }
 
@@ -133,18 +133,18 @@ void PnmlParser::traversePlace(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=place): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=place): " + name + "\n");
         }
     }
 
     if (!numberOfInitialTokens.first) {
         // no information about the number of initial tokens is found
         // use the default number of initial tokens
-        STORM_PRINT_AND_LOG("unknown numberOfInitialTokens (place=" + placeName + ")\n");
+        STORM_LOG_WARN("unknown numberOfInitialTokens (place=" + placeName + ")\n");
     }
     if (!capacity.first) {
         // no information about the capacity is found
-        STORM_PRINT_AND_LOG("unknown capacity (place=" + placeName + ")\n");
+        STORM_LOG_WARN("unknown capacity (place=" + placeName + ")\n");
     }
     builder.addPlace(capacity.second, numberOfInitialTokens.first ? numberOfInitialTokens.second : 0, placeName);
 }
@@ -166,7 +166,7 @@ void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=transition): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=transition): " + name + "\n");
         }
     }
 
@@ -190,7 +190,7 @@ void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=transition): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=transition): " + name + "\n");
         }
     }
 
@@ -203,8 +203,9 @@ void PnmlParser::traverseTransition(xercesc::DOMNode const* const node) {
         builder.addTimedTransition(priority, std::stod(value.second), id);
     } else {
         if (!value.first) {
-            // no information about the weight is found -> continue with the default weight
-            STORM_PRINT_AND_LOG("unknown transition weight (transition=" + id + ")\n");
+            // no information about the weight is found
+            // continue with the default weight
+            STORM_LOG_WARN("unknown transition weight (transition=" + id + ")\n");
         }
         builder.addImmediateTransition(priority, std::stod(value.second), id);
     }
@@ -234,7 +235,7 @@ void PnmlParser::traverseArc(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown attribute (node=arc): " + name + "\n");
+            STORM_LOG_WARN("unknown attribute (node=arc): " + name + "\n");
         }
     }
 
@@ -255,7 +256,7 @@ void PnmlParser::traverseArc(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=arc): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=arc): " + name + "\n");
         }
     }
 
@@ -267,7 +268,7 @@ void PnmlParser::traverseArc(xercesc::DOMNode const* const node) {
     if (!multiplicity.first) {
         // no information about the multiplicity of the arc
         // continue and use the default multiplicity
-        STORM_PRINT_AND_LOG("unknown multiplicity (node=arc): " + id + "\n");
+        STORM_LOG_WARN("unknown multiplicity (node=arc): " + id + "\n");
     }
 
     if (type.second == "normal") {
@@ -297,7 +298,7 @@ uint_fast64_t PnmlParser::traverseInitialMarking(xercesc::DOMNode const* const n
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=initialMarking): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=initialMarking): " + name + "\n");
         }
     }
     return result;
@@ -321,7 +322,7 @@ int_fast64_t PnmlParser::traverseCapacity(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=capacity): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=capacity): " + name + "\n");
         }
     }
     return result;
@@ -345,7 +346,7 @@ uint_fast64_t PnmlParser::traverseMultiplicity(xercesc::DOMNode const* const nod
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=inscription): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=inscription): " + name + "\n");
         }
     }
     return result;
@@ -363,7 +364,7 @@ std::string PnmlParser::traverseTransitionValue(xercesc::DOMNode const* const no
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=rate): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=rate): " + name + "\n");
         }
     }
     return result;
@@ -381,7 +382,7 @@ bool PnmlParser::traverseTransitionType(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=timed): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=timed): " + name + "\n");
         }
     }
     return result;
@@ -396,7 +397,7 @@ std::string PnmlParser::traverseArcType(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=type): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=type): " + name + "\n");
         }
     }
     return defaultArcType;
@@ -420,7 +421,7 @@ uint_fast64_t PnmlParser::traversePriority(xercesc::DOMNode const* const node) {
         } else {
             // Found node or attribute which is at the moment nod handled by this parser.
             // Notify the user and continue the parsing.
-            STORM_PRINT_AND_LOG("unknown child (node=priority): " + name + "\n");
+            STORM_LOG_WARN("unknown child (node=priority): " + name + "\n");
         }
     }
     return result;

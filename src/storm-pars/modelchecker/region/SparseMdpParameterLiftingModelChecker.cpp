@@ -2,7 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityBackend.h"
-#include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotImplementedException.h"
@@ -53,22 +53,21 @@ bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::canHa
 }
 
 template<typename SparseModelType, typename ConstantType>
-void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env,
-                                                                                   std::shared_ptr<storm::models::ModelBase> parametricModel,
-                                                                                   CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                                                                                   std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates,
-                                                                                   std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
-                                                                                   bool allowModelSimplifications, bool graphPreserving) {
+void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(
+    Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+    std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates, std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend,
+    bool allowModelSimplifications, storm::pars::analysis::GraphPreservationStatus graphPreservationStatus) {
     STORM_LOG_THROW(this->canHandle(parametricModel, checkTask), storm::exceptions::NotSupportedException,
                     "Combination of model " << parametricModel->getType() << " and formula '" << checkTask.getFormula() << "' is not supported.");
-    STORM_LOG_THROW(graphPreserving, storm::exceptions::NotImplementedException, "Non-graph-preserving regions not implemented for MDPs.");
+    STORM_LOG_THROW(storm::pars::analysis::isGraphPreserving(graphPreservationStatus), storm::exceptions::NotImplementedException,
+                    "Non-graph-preserving regions not implemented for MDPs.");
     this->specifySplitEstimates(generateRegionSplitEstimates, checkTask);
     this->specifyMonotonicity(monotonicityBackend, checkTask);
     auto mdp = parametricModel->template as<SparseModelType>();
     reset();
 
     if (allowModelSimplifications) {
-        auto simplifier = storm::transformer::SparseParametricMdpSimplifier<SparseModelType>(*mdp);
+        auto simplifier = storm::transformer::SparseParametricModelSimplifier<SparseModelType>(*mdp);
         STORM_LOG_THROW(simplifier.simplify(checkTask.getFormula()), storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
         this->parametricModel = simplifier.getSimplifiedModel();
         this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
@@ -122,7 +121,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates &= ~psiStates;
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, psiStates, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
@@ -170,7 +169,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
 
     // set the result for all non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
     storm::utility::vector::setVectorValues(resultsForNonMaybeStates, statesWithProbability01.second, storm::utility::one<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
@@ -221,8 +220,8 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
     maybeStates = ~(targetStates | infinityStates);
 
     // set the result for all the non-maybe states
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
-    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::infinity<ConstantType>());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates(), storm::utility::zero<ConstantType>());
+    storm::utility::vector::setVectorValues(resultsForNonMaybeStates, infinityStates, storm::utility::positiveInfinity<ConstantType>());
 
     // if there are maybestates, create the parameterLifter
     if (!maybeStates.empty()) {
@@ -272,7 +271,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
     // Every state is a maybeState
     maybeStates = storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getColumnCount(), true);
-    resultsForNonMaybeStates = std::vector<ConstantType>(this->parametricModel->getNumberOfStates());
+    resultsForNonMaybeStates = std::vector<ExtendedConstantType>(this->parametricModel->getNumberOfStates());
 
     // Create the reward vector
     STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) ||
@@ -295,9 +294,10 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::speci
 
 template<typename SparseModelType, typename ConstantType>
 storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>&
-SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(bool quantitative) {
+SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker(Environment const& env, bool quantitative) {
     if (!instantiationChecker) {
-        instantiationChecker = std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+        instantiationChecker =
+            std::make_unique<storm::modelchecker::SparseMdpInstantiationModelChecker<SparseModelType, ConstantType>>(env, *this->parametricModel);
         instantiationChecker->specifyFormula(quantitative ? *this->currentCheckTaskNoBound
                                                           : this->currentCheckTask->template convertValueType<ParametricType>());
         instantiationChecker->setInstantiationsAreGraphPreserving(true);
@@ -313,8 +313,9 @@ bool SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::isMon
 }
 
 template<typename SparseModelType, typename ConstantType>
-std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(
-    Environment const& env, AnnotatedRegion<ParametricType>& region, storm::solver::OptimizationDirection const& dirForParameters) {
+std::vector<typename SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::ExtendedConstantType>
+SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                                                storm::solver::OptimizationDirection const& dirForParameters) {
     if (maybeStates.empty()) {
         this->updateKnownValueBoundInRegion(region, dirForParameters, resultsForNonMaybeStates);
         return resultsForNonMaybeStates;
@@ -324,17 +325,21 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
 
     // Set up the solver
     auto solver = solverFactory->create(env, player1Matrix, parameterLifter->getMatrix());
-    if (lowerResultBound)
+    if (lowerResultBound) {
         solver->setLowerBound(lowerResultBound.value());
-    if (upperResultBound)
+    }
+    if (upperResultBound) {
         solver->setUpperBound(upperResultBound.value());
+    }
     if (applyPreviousResultAsHint) {
         solver->setTrackSchedulers(true);
         x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
-        if (storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices)
+        if (storm::solver::minimize(dirForParameters) && minSchedChoices && player1SchedChoices) {
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(minSchedChoices.value()));
-        if (storm::solver::maximize(dirForParameters) && maxSchedChoices && player1SchedChoices)
+        }
+        if (storm::solver::maximize(dirForParameters) && maxSchedChoices && player1SchedChoices) {
             solver->setSchedulerHints(std::move(player1SchedChoices.value()), std::move(maxSchedChoices.value()));
+        }
     } else {
         x.assign(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
     }
@@ -373,9 +378,9 @@ std::vector<ConstantType> SparseMdpParameterLiftingModelChecker<SparseModelType,
     }
 
     // Get the result for the complete model (including maybestates)
-    std::vector<ConstantType> result = resultsForNonMaybeStates;
+    std::vector<ExtendedConstantType> result = resultsForNonMaybeStates;
     auto maybeStateResIt = x.begin();
-    for (auto maybeState : maybeStates) {
+    for (uint64_t maybeState : maybeStates) {
         result[maybeState] = *maybeStateResIt;
         ++maybeStateResIt;
     }
@@ -390,7 +395,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::compu
         // only count selected rows
         n = selectedRows->getNumberOfSetBits();
     } else {
-        for (auto maybeState : maybeStates) {
+        for (uint64_t maybeState : maybeStates) {
             n += this->parametricModel->getTransitionMatrix().getRowGroupSize(maybeState);
         }
     }
@@ -398,7 +403,7 @@ void SparseMdpParameterLiftingModelChecker<SparseModelType, ConstantType>::compu
     // The player 1 matrix is the identity matrix of size n with the row groups as given by the original matrix (potentially without unselected rows)
     storm::storage::SparseMatrixBuilder<storm::storage::sparse::state_type> matrixBuilder(n, n, n, true, true, maybeStates.getNumberOfSetBits());
     uint64_t p1MatrixRow = 0;
-    for (auto maybeState : maybeStates) {
+    for (uint64_t maybeState : maybeStates) {
         matrixBuilder.newRowGroup(p1MatrixRow);
         if (selectedRows) {
             for (uint64_t row = selectedRows->getNextSetIndex(this->parametricModel->getTransitionMatrix().getRowGroupIndices()[maybeState]);

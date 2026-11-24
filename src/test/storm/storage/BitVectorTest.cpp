@@ -170,7 +170,6 @@ TEST(BitVectorTest, Resize) {
 
     vector.resize(72, true);
 
-    std::cout << vector << std::endl;
     ASSERT_EQ(72ul, vector.size());
     ASSERT_EQ(34ul, vector.getNumberOfSetBits());
 
@@ -186,7 +185,7 @@ TEST(BitVectorTest, Resize) {
         ASSERT_TRUE(vector.get(i));
     }
 
-    vector.resize(16, 0);
+    vector.resize(16, false);
     ASSERT_EQ(16ul, vector.size());
     ASSERT_EQ(16ul, vector.getNumberOfSetBits());
 
@@ -194,7 +193,7 @@ TEST(BitVectorTest, Resize) {
         ASSERT_TRUE(vector.get(i));
     }
 
-    vector.resize(65, 1);
+    vector.resize(65, true);
     ASSERT_EQ(65ul, vector.size());
     ASSERT_TRUE(vector.full());
 }
@@ -285,11 +284,18 @@ TEST(BitVectorTest, OperatorXor) {
 
     storm::storage::BitVector vector3 = vector1 ^ vector2;
     storm::storage::BitVector vector4 = ~vector2;
-    storm::storage::BitVector vector5 = vector1 ^ vector1;
+    storm::storage::BitVector vector5 = vector1 ^ vector1;  // NOLINT(misc-redundant-expression)
+    vector1 ^= vector2;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
+    vector2 ^= vector2;
+#pragma clang diagnostic pop
 
     for (uint64_t i = 0; i < 32; ++i) {
         ASSERT_EQ(vector3.get(i), vector4.get(i));
+        ASSERT_EQ(vector1.get(i), vector3.get(i));
         ASSERT_FALSE(vector5.get(i));
+        ASSERT_FALSE(vector2.get(i));
     }
 }
 
@@ -586,7 +592,7 @@ TEST(BitVectorTest, Iterator) {
     }
 
     uint64_t i = 0;
-    for (auto bit : vector) {
+    for (uint64_t bit : vector) {
         ASSERT_EQ(i, bit);
         i += 2;
     }
@@ -662,7 +668,7 @@ TEST(BitVectorTest, ZeroSized) {
     EXPECT_EQ(0ul, v.getNextSetIndex(0));
     EXPECT_EQ(v, v);
     EXPECT_EQ(v, ~v);
-    for (auto entry : v) {
+    for (uint64_t entry : v) {
         FAIL() << "Should not iterate over an empty bit vector.";
         ASSERT_FALSE(entry);
     }

@@ -2,6 +2,7 @@
 
 #include <boost/optional.hpp>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "storm/logic/Formulas.h"
@@ -20,7 +21,6 @@ template<typename SparseModelType>
 class SparseParametricModelSimplifier {
    public:
     SparseParametricModelSimplifier(SparseModelType const& model);
-    virtual ~SparseParametricModelSimplifier() = default;
 
     /*
      * Invokes the simplification of the model w.r.t. the given formula.
@@ -48,31 +48,11 @@ class SparseParametricModelSimplifier {
     void setPreserveParametricTransitions(bool preserveParametricTransitions);
 
     /**
-     * Whether this SparseParametricDtmcSimplifier preserves parametric transitions.
+     * Whether this SparseParametricModelSimplifier preserves parametric transitions.
      */
     bool isPreserveParametricTransitionsSet() const;
 
-   protected:
-    // Perform the simplification for the corresponding formula type
-    virtual bool simplifyForUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
-    virtual bool simplifyForReachabilityProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
-    virtual bool simplifyForBoundedUntilProbabilities(storm::logic::ProbabilityOperatorFormula const& formula);
-    virtual bool simplifyForReachabilityRewards(storm::logic::RewardOperatorFormula const& formula);
-    virtual bool simplifyForCumulativeRewards(storm::logic::RewardOperatorFormula const& formula);
-
-    /*!
-     * Eliminates all states that satisfy
-     * * there is only one enabled action (i.e., there is no nondeterministic choice at the state),
-     * * all outgoing transitions are constant,
-     * * there is no statelabel defined, and
-     * * (if rewardModelName is given) the reward collected at the state is constant.
-     *
-     * The resulting model will only have the rewardModel with the provided name (or no reward model at all if no name was given).
-     * Labelings of eliminated states will be lost
-     */
-    std::shared_ptr<SparseModelType> eliminateConstantDeterministicStates(SparseModelType const& model, storm::storage::BitVector const& consideredStates,
-                                                                          boost::optional<std::string> const& rewardModelName = boost::none);
-
+   private:
     SparseModelType const& originalModel;
 
     std::shared_ptr<SparseModelType> simplifiedModel;

@@ -5,11 +5,7 @@
 #include "storm/logic/Formulas.h"
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -54,19 +50,18 @@ BuilderOptions::BuilderOptions(bool buildAllRewardModels, bool buildAllLabels)
       addOutOfBoundsState(false),
       reservedBitsForUnboundedVariables(32),
       showProgress(false),
-      showProgressDelay(0) {
-    // Note that we would like to move this out of here, but SJ doesn't want to change everything at once.
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-    stochasticTolerance = storm::utility::convertNumber<storm::RationalNumber>(generalSettings.getPrecision());
+      showProgressDelay(0),
+      stochasticTolerance(0.0) {
+    // Intentionally left empty.
 }
 
-BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription)
+BuilderOptions::BuilderOptions(storm::logic::Formula const& formula, storm::languages::SymbolicModelDescription const& modelDescription)
     : BuilderOptions({formula.asSharedPointer()}, modelDescription) {
     // Intentionally left empty.
 }
 
 BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                               storm::storage::SymbolicModelDescription const& modelDescription)
+                               storm::languages::SymbolicModelDescription const& modelDescription)
     : BuilderOptions() {
     if (!formulas.empty()) {
         for (auto const& formula : formulas) {
@@ -77,17 +72,14 @@ BuilderOptions::BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula
         }
     }
 
-    auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
     if (modelDescription.hasModel()) {
-        this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-        this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
-        this->setBuildChoiceLabels(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
+        this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::MA);
+        this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::POMDP);
+        this->setBuildChoiceLabels(modelDescription.getModelType() == storm::languages::SymbolicModelDescription::ModelType::POMDP);
     }
-    showProgress = generalSettings.isVerboseSet();
-    showProgressDelay = generalSettings.getShowProgressDelay();
 }
 
-void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::storage::SymbolicModelDescription const& modelDescription) {
+void BuilderOptions::preserveFormula(storm::logic::Formula const& formula, storm::languages::SymbolicModelDescription const& modelDescription) {
     // If we already had terminal states, we need to erase them.
     if (hasTerminalStates()) {
         clearTerminalStates();
@@ -210,7 +202,7 @@ uint64_t BuilderOptions::getShowProgressDelay() const {
     return showProgressDelay;
 }
 
-storm::RationalNumber const& BuilderOptions::getStochasticTolerance() const {
+double BuilderOptions::getStochasticTolerance() const {
     return stochasticTolerance;
 }
 
@@ -295,6 +287,21 @@ BuilderOptions& BuilderOptions::setReservedBitsForUnboundedVariables(uint64_t ne
 
 BuilderOptions& BuilderOptions::setAddOverlappingGuardsLabel(bool newValue) {
     addOverlappingGuardsLabel = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setStochasticTolerance(double newValue) {
+    stochasticTolerance = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setShowProgress(bool newValue) {
+    showProgress = newValue;
+    return *this;
+}
+
+BuilderOptions& BuilderOptions::setShowProgressDelay(uint64_t newValue) {
+    showProgressDelay = newValue;
     return *this;
 }
 

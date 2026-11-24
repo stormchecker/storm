@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
@@ -9,11 +9,9 @@
 #include "storm-gamebased-ar/abstraction/ValidBlockAbstractor.h"
 #include "storm-gamebased-ar/abstraction/prism/ModuleAbstractor.h"
 
-#include "storm/storage/dd/Add.h"
+#include "storm/dd/Add.h"
 
-#include "storm/storage/expressions/Expression.h"
-
-#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace utility {
@@ -21,6 +19,8 @@ namespace solver {
 class SmtSolverFactory;
 }
 }  // namespace utility
+
+class Environment;
 
 namespace models {
 namespace symbolic {
@@ -45,11 +45,13 @@ class PrismMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
     /*!
      * Constructs an abstractor for the given program.
      *
+     * @param env The environment providing the settings for the DD manager.
      * @param program The concrete program for which to build the abstraction.
      * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
      */
-    PrismMenuGameAbstractor(storm::prism::Program const& program, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                            MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
+    PrismMenuGameAbstractor(storm::Environment const& env, storm::prism::Program const& program,
+                            std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
+                            AbstractionOptions const& options = AbstractionOptions());
 
     PrismMenuGameAbstractor(PrismMenuGameAbstractor const&) = default;
     PrismMenuGameAbstractor& operator=(PrismMenuGameAbstractor const&) = default;

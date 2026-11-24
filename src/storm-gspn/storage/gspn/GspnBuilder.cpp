@@ -175,7 +175,7 @@ storm::gspn::GSPN* GspnBuilder::buildGspn(std::shared_ptr<storm::expressions::Ex
     for (auto const& priorityPartitions : partitions) {
         for (auto const& partition : priorityPartitions.second) {
             // sanity check
-            assert(partition.priority == priorityPartitions.first);
+            STORM_LOG_ASSERT(partition.priority == priorityPartitions.first, "Partition priority mismatch.");
 
             if (partition.nrTransitions() > 0) {
                 orderedPartitions.push_back(partition);

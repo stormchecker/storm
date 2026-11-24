@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 
@@ -14,7 +16,7 @@ namespace parser {
  * The second pass then collects the actual file data and compiles it into a Result.
  */
 template<typename ValueType = double>
-class MarkovAutomatonSparseTransitionParser {
+class STORM_PARSERS_API MarkovAutomatonSparseTransitionParser {
    public:
     /*!
      * A structure representing the result of the first pass of this parser. It contains the number of non-zero entries in the model, the highest state index
@@ -77,7 +79,7 @@ class MarkovAutomatonSparseTransitionParser {
      * @param filename The name of the file to parse.
      * @return A structure representing the result of the parser.
      */
-    static Result parseMarkovAutomatonTransitions(std::string const& filename);
+    static Result parseMarkovAutomatonTransitions(std::string const& filename, ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     /*!
@@ -86,7 +88,7 @@ class MarkovAutomatonSparseTransitionParser {
      * @param buffer The buffer that cointains the input.
      * @return A structure representing the result of the first pass.
      */
-    static FirstPassResult firstPass(char const* buffer);
+    static FirstPassResult firstPass(char const* buffer, ExplicitModelParserOptions const& options);
 
     /*!
      * Performs the second pass on the input pointed to by the given buffer with the information of the first pass.
@@ -95,7 +97,7 @@ class MarkovAutomatonSparseTransitionParser {
      * @param firstPassResult The result of the first pass performed on the same input.
      * @return A structure representing the result of the second pass.
      */
-    static Result secondPass(char const* buffer, FirstPassResult const& firstPassResult);
+    static Result secondPass(char const* buffer, FirstPassResult const& firstPassResult, ExplicitModelParserOptions const& options);
 };
 
 }  // namespace parser

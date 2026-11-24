@@ -7,8 +7,8 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/expressions/Expression.h"
+#include "storm/expressions/Expression.h"
+#include "storm/languages/SymbolicModelDescription.h"
 
 namespace storm {
 namespace expressions {
@@ -56,7 +56,7 @@ class BuilderOptions {
      * @param formula The formula based on which to choose the building options.
      */
     BuilderOptions(storm::logic::Formula const& formula,
-                   storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
+                   storm::languages::SymbolicModelDescription const& modelDescription = storm::languages::SymbolicModelDescription());
 
     /*!
      * Creates an object representing the suggested building options assuming that the given formulas are
@@ -65,7 +65,7 @@ class BuilderOptions {
      * @param formula Thes formula based on which to choose the building options.
      */
     BuilderOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
-                   storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
+                   storm::languages::SymbolicModelDescription const& modelDescription = storm::languages::SymbolicModelDescription());
 
     /*!
      * Changes the options in a way that ensures that the given formula can be checked on the model once it
@@ -74,7 +74,7 @@ class BuilderOptions {
      * @param formula The formula that is to be ''preserved''.
      */
     void preserveFormula(storm::logic::Formula const& formula,
-                         storm::storage::SymbolicModelDescription const& modelDescription = storm::storage::SymbolicModelDescription());
+                         storm::languages::SymbolicModelDescription const& modelDescription = storm::languages::SymbolicModelDescription());
 
     /*!
      * Analyzes the given formula and sets an expression for the states states of the model that can be
@@ -125,7 +125,7 @@ class BuilderOptions {
      * Some distributions may not sum to one. This tolerance allows handling this case.
      * @return The tolerance
      */
-    storm::RationalNumber const& getStochasticTolerance() const;
+    double getStochasticTolerance() const;
 
     /**
      * Should all reward models be built? If not set, only required reward models are build.
@@ -215,6 +215,27 @@ class BuilderOptions {
     BuilderOptions& setReservedBitsForUnboundedVariables(uint64_t value);
 
     /**
+     * Sets the tolerance used for checking whether a distribution sums to one.
+     * @param newValue The new tolerance
+     * @return this
+     */
+    BuilderOptions& setStochasticTolerance(double newValue);
+
+    /**
+     * Sets whether the progress of state space exploration should be printed.
+     * @param newValue The new value (default true)
+     * @return this
+     */
+    BuilderOptions& setShowProgress(bool newValue = true);
+
+    /**
+     * Sets the delay (in seconds) between progress reports during state space exploration.
+     * @param newValue The new delay
+     * @return this
+     */
+    BuilderOptions& setShowProgressDelay(uint64_t newValue);
+
+    /**
      * Substitutes all expressions occurring in these options.
      */
     BuilderOptions& substituteExpressions(std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const& substitutionFunction);
@@ -281,7 +302,7 @@ class BuilderOptions {
     uint64_t showProgressDelay;
 
     /// The tolerance that is used for checking whether something is a distribution.
-    storm::RationalNumber stochasticTolerance;
+    double stochasticTolerance;
 };
 
 }  // namespace builder

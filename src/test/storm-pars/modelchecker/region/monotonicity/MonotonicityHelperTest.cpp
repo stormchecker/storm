@@ -1,6 +1,8 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/environment/Environment.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wthread-safety-negative"
 #pragma clang diagnostic ignored "-Wundefined-reinterpret-cast"
@@ -8,19 +10,24 @@
 #include <carl/util/stringparser.h>
 #pragma clang diagnostic pop
 
+#include "storm-pars/api/region.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityHelper.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
+#include "storm-pars/utility/parametric.h"
+#include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
-#include "storm/api/storm.h"
+#include "storm/api/properties.h"
+#include "storm/utility/constants.h"
 
 class MonotonicityHelperTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -122,18 +129,12 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
-    }
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
@@ -144,18 +145,18 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
 
     // Start testing
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper =
-        storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true);
+        storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, true);
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -177,18 +178,12 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
-    }
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
 
@@ -199,18 +194,18 @@ TEST_F(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
 
     // Start testing
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper =
-        storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+        storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, true, 50);
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -232,17 +227,11 @@ TEST_F(MonotonicityHelperTest, zeroconf) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
-    }
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     ASSERT_EQ(7ul, model->getNumberOfStates());
     ASSERT_EQ(12ul, model->getNumberOfTransitions());
 
@@ -252,19 +241,19 @@ TEST_F(MonotonicityHelperTest, zeroconf) {
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 50);
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     // TODO @Jip we have 1 assumption instead of 0 here
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -286,7 +275,7 @@ TEST_F(MonotonicityHelperTest, Simple1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
     ASSERT_EQ(5ul, model->getNumberOfStates());
@@ -298,19 +287,19 @@ TEST_F(MonotonicityHelperTest, Simple1) {
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 10);
 
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
 
     // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     // Check if result for each variable is correct
@@ -332,7 +321,7 @@ TEST_F(MonotonicityHelperTest, Casestudy1) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -344,16 +333,16 @@ TEST_F(MonotonicityHelperTest, Casestudy1) {
     ASSERT_EQ(5ul, model->getNumberOfStates());
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     ASSERT_EQ(1ul, result.size());
 
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
+    auto order = result.front().order;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();
@@ -374,7 +363,7 @@ TEST_F(MonotonicityHelperTest, CaseStudy2) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -387,12 +376,12 @@ TEST_F(MonotonicityHelperTest, CaseStudy2) {
     ASSERT_EQ(12ul, model->getNumberOfTransitions());
 
     // Start testing
-    auto monotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto monotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 10);
 
     // Check if correct result size
     auto result = monotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1ul, result.size());
-    EXPECT_FALSE(result.begin()->first->getDoneBuilding());
+    EXPECT_FALSE(result.front().order->getDoneBuilding());
 }
 
 TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
@@ -407,7 +396,7 @@ TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -419,17 +408,17 @@ TEST_F(MonotonicityHelperTest, Casestudy3_not_monotone) {
     ASSERT_EQ(5ul, model->getNumberOfStates());
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1ul, result.size());
-    auto order = result.begin()->first;
+    auto order = result.front().order;
 
-    auto monotonicityResult = result.begin()->second.first;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();
@@ -450,7 +439,7 @@ TEST_F(MonotonicityHelperTest, Casestudy3_monotone) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -462,17 +451,17 @@ TEST_F(MonotonicityHelperTest, Casestudy3_monotone) {
     ASSERT_EQ(5ul, model->getNumberOfStates());
     ASSERT_EQ(8ul, model->getNumberOfTransitions());
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(storm::Environment(), model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1ul, result.size());
-    auto order = result.begin()->first;
+    auto order = result.front().order;
 
-    auto monotonicityResult = result.begin()->second.first;
+    auto monotonicityResult = result.front().monotonicityResult;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
+    auto assumptions = result.front().assumptions;
     EXPECT_EQ(0ul, assumptions.size());
 
     auto monRes = monotonicityResult->getMonotonicityResult();

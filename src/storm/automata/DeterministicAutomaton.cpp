@@ -76,8 +76,9 @@ void DeterministicAutomaton::printHOA(std::ostream& out) const {
         bool first = true;
         for (unsigned int i = 0; i < acceptance->getNumberOfAcceptanceSets(); i++) {
             if (acceptance->getAcceptanceSet(i).get(s)) {
-                if (!first)
+                if (!first) {
                     out << " ";
+                }
                 first = false;
                 out << i;
             }

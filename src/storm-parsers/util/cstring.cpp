@@ -47,7 +47,9 @@ double checked_strtod(char const* str, char const** end) {
  * @return A pointer to the first whitespace character.
  */
 char const* skipWord(char const* buf) {
-    while (!isspace(*buf) && *buf != '\0') buf++;
+    while (!isspace(*buf) && *buf != '\0') {
+        buf++;
+    }
     return buf;
 }
 
@@ -58,7 +60,9 @@ char const* skipWord(char const* buf) {
  *	@return	A pointer to the first non-whitespace character.
  */
 char const* trimWhitespaces(char const* buf) {
-    while (isspace(*buf)) buf++;
+    while (isspace(*buf)) {
+        buf++;
+    }
     return buf;
 }
 
@@ -74,7 +78,9 @@ char const* forwardToLineEnd(char const* buffer) {
  */
 char const* forwardToNextLine(char const* buffer) {
     char const* lineEnd = forwardToLineEnd(buffer);
-    while ((*lineEnd == '\n') || (*lineEnd == '\r')) lineEnd++;
+    while ((*lineEnd == '\n') || (*lineEnd == '\r')) {
+        lineEnd++;
+    }
     return lineEnd;
 }
 

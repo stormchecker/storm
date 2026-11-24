@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/Model.h"
 
 #include <string>
@@ -20,7 +22,7 @@ namespace parser {
  * The choice of the parser is made using the model hint at the beginning of the given transition file.
  */
 template<typename ValueType = double, typename RewardValueType = double>
-class AutoParser {
+class STORM_PARSERS_API AutoParser {
    public:
     /*!
      * Checks the given files and parses the model within these files.
@@ -45,7 +47,8 @@ class AutoParser {
      */
     static std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>> parseModel(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     // Define the maximal length of a hint in the file.

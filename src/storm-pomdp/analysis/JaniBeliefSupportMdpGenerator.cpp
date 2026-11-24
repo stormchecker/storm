@@ -4,11 +4,11 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/api/builder.h"
 #include "storm/api/verification.h"
+#include "storm/expressions/ExpressionManager.h"
+#include "storm/languages/SymbolicModelDescription.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
-#include "storm/storage/SymbolicModelDescription.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
 
 namespace storm {
 namespace pomdp {
@@ -128,13 +128,13 @@ void JaniBeliefSupportMdpGenerator<ValueType>::generate(storm::storage::BitVecto
     auto const& targetVar = model.addVariable(
         *storm::jani::Variable::makeBooleanVariable("target", exprManager.declareBooleanVariable("target"), exprManager.boolean(false), true));
     std::vector<storm::expressions::Expression> notTargetExpression;
-    for (auto const state : ~targetStates) {
+    for (uint64_t state : ~targetStates) {
         notTargetExpression.push_back(!stateVariables.at(state)->getExpressionVariable().getExpression());
     }
     auto const& badVar =
         model.addVariable(*storm::jani::Variable::makeBooleanVariable("bad", exprManager.declareBooleanVariable("bad"), exprManager.boolean(false), true));
     std::vector<storm::expressions::Expression> badExpression;
-    for (auto const state : badStates) {
+    for (uint64_t state : badStates) {
         badExpression.push_back(stateVariables.at(state)->getExpressionVariable().getExpression());
     }
 
@@ -186,13 +186,12 @@ void JaniBeliefSupportMdpGenerator<ValueType>::generate(storm::storage::BitVecto
 }
 
 template<typename ValueType>
-void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(bool onlyInitial) {
-    storage::SymbolicModelDescription symdesc(model);
+void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(storm::Environment const& env, bool onlyInitial) {
+    storm::languages::SymbolicModelDescription symdesc(model);
     // This trick only works because we do not explictly check that the model is stochastic!
     symdesc = symdesc.preprocess("posProb=0.1");
     auto property = storm::api::parsePropertiesForJaniModel("Pmax>=1 [!\"bad\" U \"target\"]", model)[0];
-    auto mdp = storm::api::buildSymbolicModel<storm::dd::DdType::Sylvan, ValueType>(symdesc, {property.getRawFormula()});
-    storm::Environment env;
+    auto mdp = storm::api::buildSymbolicModel<storm::dd::DdType::Sylvan, ValueType>(env, symdesc, {property.getRawFormula()});
     std::unique_ptr<modelchecker::CheckResult> result =
         storm::api::verifyWithDdEngine(env, mdp, storm::api::createTask<ValueType>(property.getRawFormula(), onlyInitial));
     std::unique_ptr<storm::modelchecker::CheckResult> filter;

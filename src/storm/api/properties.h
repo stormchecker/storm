@@ -22,7 +22,7 @@ class Expression;
 namespace prism {
 class Program;
 }
-namespace storage {
+namespace languages {
 class SymbolicModelDescription;
 }
 namespace logic {

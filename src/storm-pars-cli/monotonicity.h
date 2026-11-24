@@ -7,6 +7,6 @@
 
 namespace storm::pars {
 template<typename ValueType>
-void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
+void analyzeMonotonicity(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, cli::SymbolicInput const& input,
                          std::vector<storm::storage::ParameterRegion<ValueType>> const& regions);
 }

@@ -3,9 +3,9 @@
 #include "storm-pars/utility/parametric.h"
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/RobustMaximalEndComponentDecomposition.h"
 #include "storm/storage/SparseMatrix.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/RobustMaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/logging.h"
 
@@ -24,11 +24,6 @@ std::optional<storage::SparseMatrix<Interval>> IntervalEndComponentPreserver::el
     for (auto const& group : decomposition) {
         if (!group.isTrivial()) {
             hasNonTrivialMEC = true;
-            // std::cout << "Non-trivial MEC: ";
-            // for (auto const& state : group) {
-            //     std::cout << state << " ";
-            // }
-            // std::cout << std::endl;
         }
     }
 

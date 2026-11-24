@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 
+#include "storm-pars/analysis/GraphPreservationStatus.h"
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/RegionResultHypothesis.h"
@@ -29,6 +30,7 @@ template<typename ParametricType>
 class RegionModelChecker {
    public:
     typedef typename storm::storage::ParameterRegion<ParametricType>::CoefficientType CoefficientType;
+    typedef storm::utility::ExtendedValueType<CoefficientType> ExtendedCoefficientType;
     typedef typename storm::storage::ParameterRegion<ParametricType>::VariableType VariableType;
     typedef typename storm::storage::ParameterRegion<ParametricType>::Valuation Valuation;
 
@@ -38,11 +40,11 @@ class RegionModelChecker {
     virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel,
                            CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
 
-    virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel,
-                         CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
-                         std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
-                         std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
-                         bool graphPreserving = true) = 0;
+    virtual void specify(
+        Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask,
+        std::optional<RegionSplitEstimateKind> generateRegionSplitEstimates = std::nullopt,
+        std::shared_ptr<MonotonicityBackend<ParametricType>> monotonicityBackend = {}, bool allowModelSimplifications = true,
+        storm::pars::analysis::GraphPreservationStatus graphPreservationStatus = storm::pars::analysis::GraphPreservationStatus::GraphPreserving) = 0;
 
     /*!
      * Analyzes the given region. Assumes that a property with a threshold was specified.
@@ -82,8 +84,8 @@ class RegionModelChecker {
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    virtual CoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                storm::solver::OptimizationDirection const& dirForParameters) = 0;
+    virtual ExtendedCoefficientType getBoundAtInitState(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                        storm::solver::OptimizationDirection const& dirForParameters) = 0;
 
     /*!
      * Over-approximates the value within the given region. If dirForParameters maximizes, the returned value is an upper bound on the maximum value within the
@@ -93,8 +95,8 @@ class RegionModelChecker {
      * @param dirForParameters whether to maximize or minimize the value in the region
      * @return the over-approximated value within the region
      */
-    CoefficientType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
-                                        storm::solver::OptimizationDirection const& dirForParameters);
+    ExtendedCoefficientType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region,
+                                                storm::solver::OptimizationDirection const& dirForParameters);
 
     /*!
      * Heuristically finds a point within the region and computes the value at the initial state for that point.
@@ -104,8 +106,8 @@ class RegionModelChecker {
      * @param dirForParameters whether the heuristic tries to find a point with a high or low value
      * @return a pair of the value at the initial state and the point at which the value was computed
      */
-    virtual std::pair<CoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
-                                                                          storm::solver::OptimizationDirection const& dirForParameters) = 0;
+    virtual std::pair<ExtendedCoefficientType, Valuation> getAndEvaluateGoodPoint(Environment const& env, AnnotatedRegion<ParametricType>& region,
+                                                                                  storm::solver::OptimizationDirection const& dirForParameters) = 0;
 
     /*!
      * @return the default kind of region split estimate that this region model checker generates.

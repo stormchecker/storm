@@ -1,8 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
-#include "storm-dft/storage/DftModule.h"
+#include "storm-dft/api/io.h"
 #include "storm-dft/utility/DftModularizer.h"
 
 namespace {

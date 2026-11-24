@@ -5,7 +5,7 @@
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/environment/modelchecker/ModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/MultiObjectiveModelCheckingMethod.h"
-#include "storm/storage/SchedulerClass.h"
+#include "storm/storage/scheduler/SchedulerClass.h"
 
 namespace storm {
 

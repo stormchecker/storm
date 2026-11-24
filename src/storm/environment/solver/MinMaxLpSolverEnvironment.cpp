@@ -1,14 +1,9 @@
 #include "storm/environment/solver/MinMaxLpSolverEnvironment.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 
 namespace storm {
 
-MinMaxLpSolverEnvironment::MinMaxLpSolverEnvironment() {
-    auto const& minMaxSettings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-    useNonTrivialBounds = minMaxSettings.getLpUseNonTrivialBounds();
-    optimizeOnlyForInitialState = minMaxSettings.getLpUseOnlyInitialStateAsObjective();
-    useEqualityForSingleActions = minMaxSettings.getLpUseEqualityForTrivialActions();
+MinMaxLpSolverEnvironment::MinMaxLpSolverEnvironment() : useEqualityForSingleActions(false), optimizeOnlyForInitialState(false), useNonTrivialBounds(false) {
+    // Intentionally left empty.
 }
 
 void MinMaxLpSolverEnvironment::setUseEqualityForSingleActions(bool newValue) {

@@ -1,8 +1,9 @@
 #include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include <boost/any.hpp>
+#include <optional>
 #include "storm/logic/Formulas.h"
 
-#include "storm/storage/jani/Model.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -22,7 +23,7 @@ std::shared_ptr<Formula> RewardModelNameSubstitutionVisitor::substitute(Formula 
 }
 
 boost::any RewardModelNameSubstitutionVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
-    std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<TimeBound>> lowerBounds, upperBounds;
     std::vector<TimeBoundReference> timeBoundReferences;
     for (uint64_t i = 0; i < f.getDimension(); ++i) {
         if (f.hasLowerBound(i)) {

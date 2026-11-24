@@ -2,7 +2,8 @@
 
 #include <memory>
 #include <vector>
-#include "storm/storage/Scheduler.h"
+#include "storm/solver/SolutionBounds.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace storage {
@@ -11,12 +12,12 @@ class BitVector;
 
 namespace modelchecker {
 namespace helper {
-template<typename ValueType>
+template<typename ValueType, typename ValuesType = ValueType>
 struct MDPSparseModelCheckingHelperReturnType {
     MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType const&) = delete;
     MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType&&) = default;
 
-    MDPSparseModelCheckingHelperReturnType(std::vector<ValueType>&& values, std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler = nullptr)
+    MDPSparseModelCheckingHelperReturnType(std::vector<ValuesType>&& values, std::unique_ptr<storm::storage::Scheduler<ValueType>>&& scheduler = nullptr)
         : values(std::move(values)), scheduler(std::move(scheduler)) {
         // Intentionally left empty.
     }
@@ -26,10 +27,12 @@ struct MDPSparseModelCheckingHelperReturnType {
     }
 
     // The values computed for the states.
-    std::vector<ValueType> values;
+    std::vector<ValuesType> values;
 
     // A scheduler, if it was computed.
     std::unique_ptr<storm::storage::Scheduler<ValueType>> scheduler;
+
+    storm::solver::SolutionBounds<ValuesType> solutionBounds;
 };
 }  // namespace helper
 

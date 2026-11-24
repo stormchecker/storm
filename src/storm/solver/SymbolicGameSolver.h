@@ -5,9 +5,9 @@
 
 #include "storm/solver/OptimizationDirection.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/expressions/Variable.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/expressions/Variable.h"
 
 namespace storm {
 

@@ -49,9 +49,10 @@ void EliminationLinearEquationSolver<ValueType>::setMatrix(storm::storage::Spars
 template<typename ValueType>
 bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x,
                                                                         std::vector<ValueType> const& b) const {
-    // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
-    // not work for systems that have a 1 on the diagonal. This is not a restriction of this technique in general
-    // but arbitrary matrices require pivoting, which is not currently implemented.
+    // This solver computes the least fixed point of systems of the form x = A*x + b. Systems that have a one on
+    // the diagonal (i.e., absorbing states) are handled by the state eliminator: the value of an absorbing state
+    // is zero. However, arbitrary matrices that are not such fixed-point systems would require pivoting, which is
+    // not currently implemented.
 
     STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with elimination");
 
@@ -90,6 +91,8 @@ bool EliminationLinearEquationSolver<ValueType>::internalSolveEquations(Environm
         eliminator.eliminateState(state, false);
     }
 
+    this->setSolutionBoundsExact(x);
+
     return true;
 }
 
@@ -110,7 +113,9 @@ uint64_t EliminationLinearEquationSolver<ValueType>::getMatrixColumnCount() cons
 
 template<typename ValueType>
 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
-    return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>();
+    auto solver = std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>();
+    solver->setShowProgress(env.solver().isVerboseSet(), env.solver().getShowProgressDelay());
+    return solver;
 }
 
 template<typename ValueType>

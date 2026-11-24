@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 3.25)
 
 # Set project name
 project(storm
-	VERSION 1.13.0.1
-	# Version x.y.z.1 should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+	VERSION 2.0.0.3
+	# Version x.y.z.N (N > 0) should be read as: This is an updated version of x.y.z that has not been released as x.y.z+1 yet.
+	# Increase N for changes on master which downstream tools such as stormpy need to detect.
 	LANGUAGES CXX C
 	DESCRIPTION "Storm - A Modern Probabilistic Model Checker"
 	HOMEPAGE_URL "https://www.stormchecker.org"
@@ -54,11 +55,17 @@ option(STORM_COMPILE_WITH_CCACHE "Compile using CCache [if found]" ON)
 mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_COMPILE_WITH_PCH "Enable pre-compiled headers" ON)
 mark_as_advanced(STORM_COMPILE_WITH_PCH)
+option(STORM_ENABLE_CLANG_TIDY "Sets whether a target for running clang-tidy is added." OFF)
+MARK_AS_ADVANCED(STORM_ENABLE_CLANG_TIDY)
+option(STORM_ENABLE_CLANG_FORMAT "Sets whether a target for running clang-format is added." OFF)
+MARK_AS_ADVANCED(STORM_ENABLE_CLANG_FORMAT)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_COMPILE_WITH_ADDRESS_SANITIZER "Sets whether to compile with AddressSanitizer enabled" OFF)
 option(STORM_COMPILE_WITH_ALL_SANITIZERS "Sets whether to compile with all sanitizers enabled" OFF)
 option(STORM_COMPILE_WITH_COMPILATION_PROFILING "Compile with output to profile compilation process" OFF)
 MARK_AS_ADVANCED(STORM_COMPILE_WITH_COMPILATION_PROFILING)
+option(STORM_STRIP_PARSER_BINARY "Strip symbols from storm-parsers after linking." ON)
+MARK_AS_ADVANCED(STORM_STRIP_PARSER_BINARY)
 option(STORM_USE_CLN_EA "Sets whether CLN instead of GMP numbers should be used for exact arithmetic." OFF)
 export_option(STORM_USE_CLN_EA)
 option(STORM_USE_CLN_RF "Sets whether CLN instead of GMP numbers should be used for rational functions." ON)
@@ -77,7 +84,16 @@ MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 
 ## Configuring dependencies
 set(STORM_CARL_GIT_REPO "https://github.com/stormchecker/carl-storm.git" CACHE STRING "For fetching carl: which git repo to use")
-option(STORM_CARL_GIT_TAG "For fetching carl: which git tag to use" "14.35")
+set(STORM_CARL_GIT_TAG_DEFAULT "14.37")
+set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use")
+
+# Correct a non-STRING cache entry, while leaving a tag that was set deliberately untouched.
+get_property(STORM_CARL_GIT_TAG_TYPE CACHE STORM_CARL_GIT_TAG PROPERTY TYPE)
+if(STORM_CARL_GIT_TAG_TYPE STREQUAL "BOOL")
+    message(STATUS "Storm - Correcting the boolean cache entry of STORM_CARL_GIT_TAG.")
+    set(STORM_CARL_GIT_TAG "${STORM_CARL_GIT_TAG_DEFAULT}" CACHE STRING "For fetching carl: which git tag to use" FORCE)
+endif()
+
 MARK_AS_ADVANCED(STORM_CARL_GIT_TAG)
 option(STORM_DISABLE_CUDD "Sets whether linking with CUDD should be disabled." OFF)
 option(STORM_DISABLE_GLPK "Sets whether linking with GLPK should be disabled." OFF)
@@ -87,6 +103,7 @@ option(STORM_DISABLE_GMM "Sets whether linking with GMM should be disabled." OFF
 option(STORM_DISABLE_GUROBI "Sets whether linking with Gurobi should be disabled." OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi.")
 MARK_AS_ADVANCED(GUROBI_ROOT)
+option(STORM_DISABLE_HIGHS "Sets whether linking with HiGHS should be disabled." OFF)
 option(STORM_DISABLE_LIBARCHIVE "Sets whether linking with LibArchive should be disabled." OFF)
 set(LibArchive_ROOT "" CACHE STRING "A hint to the root directory of LibArchive.")
 MARK_AS_ADVANCED(LibArchive_ROOT)
@@ -107,6 +124,11 @@ mark_as_advanced(XERCESC_ROOT)
 option(STORM_DISABLE_Z3  "Sets whether linking with Z3 should be disabled." OFF)
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3.")
 mark_as_advanced(Z3_ROOT)
+option(STORM_DISABLE_CVC5 "Sets whether linking with cvc5 should be disabled." OFF)
+set(CVC5_ROOT "" CACHE STRING "A hint to the root directory of cvc5.")
+mark_as_advanced(CVC5_ROOT)
+set(STORM_DEFAULT_SMT_SOLVER "Auto" CACHE STRING "The default SMT solver to use (Auto, Z3, Mathsat or cvc5). Must be available at compile time.")
+MARK_AS_ADVANCED(STORM_DEFAULT_SMT_SOLVER)
 
 option(STORM_DEBUG_CUDD "Build CUDD in debug mode." OFF)
 MARK_AS_ADVANCED(STORM_DEBUG_CUDD)
@@ -129,6 +151,9 @@ mark_as_advanced(STORM_RESOURCES_BUILD_JOBCOUNT)
 if(NOT STORM_RESOURCES_BUILD_JOBCOUNT GREATER 0)
 	message(FATAL_ERROR "STORM_RESOURCES_BUILD_JOBCOUNT must be a positive number. Got '${STORM_RESOURCES_BUILD_JOBCOUNT}' instead." )
 endif()
+# Compilers for resources. By default this is the same compiler Storm uses. Is extended to use CCache if available.
+set(STORM_RESOURCES_C_COMPILER   "${CMAKE_C_COMPILER}")
+set(STORM_RESOURCES_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 
 # Set some CMAKE Variables as advanced
 mark_as_advanced(CMAKE_OSX_ARCHITECTURES)
@@ -154,12 +179,19 @@ if (STORM_DEVELOPER)
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE "DEBUG")
     endif()
-    # TODO Do this more targeted
-    add_definitions(-DSTORM_DEV)
+    # Enable debug builds for 3rdparty libraries
     set(STORM_DEBUG_CUDD ON)
     set(STORM_DEBUG_SPOT ON)
     set(STORM_DEBUG_SYLVAN ON)
+    # Disable LTO
+    set(STORM_USE_LTO OFF)
+    set(STORM_USE_THIN_LTO OFF)
+    # More strict handling of compiler warnings
     set(STORM_WARNING_AS_ERROR ON)
+    # Enable developer tools
+    set(STORM_ENABLE_CLANG_FORMAT ON)
+    set(STORM_ENABLE_CLANG_TIDY ON)
+    set(STORM_STRIP_PARSER_BINARY OFF)  # Stripping would remove the debug symbols we are about to produce.
 else()
     set(STORM_LOG_DISABLE_DEBUG ON)
     if (NOT CMAKE_BUILD_TYPE)
@@ -171,12 +203,23 @@ set(CMAKE_COMPILE_WARNING_AS_ERROR ${STORM_WARNING_AS_ERROR})
 message(STATUS "Storm - Building ${CMAKE_BUILD_TYPE} version.")
 
 if(STORM_COMPILE_WITH_CCACHE)
-	find_program(CCACHE_FOUND ccache)
-	mark_as_advanced(CCACHE_FOUND)
-	if(CCACHE_FOUND)
+	find_program(CCACHE_EXECUTABLE ccache)
+	mark_as_advanced(CCACHE_EXECUTABLE)
+	if(CCACHE_EXECUTABLE)
 		message(STATUS "Storm - Using ccache")
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+		# Relax the caching keys
+		# pch_defines tries to ignore precompiled headers (but often does not succeed in our case)
+		# the time options ignore time macros when calculating the cache key, improving cache hit rates
+		# Additional but not recommended: include_file_mtime,include_file_ctime
+		# Wrapping in `cmake -E env` sets it for the build step, not just the configure run.
+		set(CMAKE_C_COMPILER_LAUNCHER   "${CMAKE_COMMAND};-E;env;CCACHE_SLOPPINESS=pch_defines,time_macros;${CCACHE_EXECUTABLE}")
+		set(CMAKE_CXX_COMPILER_LAUNCHER "${CMAKE_COMMAND};-E;env;CCACHE_SLOPPINESS=pch_defines,time_macros;${CCACHE_EXECUTABLE}")
+		set(STORM_RESOURCES_C_COMPILER   "${CCACHE_EXECUTABLE} ${CMAKE_C_COMPILER}")
+		set(STORM_RESOURCES_CXX_COMPILER "${CCACHE_EXECUTABLE} ${CMAKE_CXX_COMPILER}")
+
+		if(STORM_COMPILE_WITH_PCH)
+			message(STATUS "Storm - PCH is enabled which will lead to significantly lower ccache hit rates. Consider setting STORM_COMPILE_WITH_PCH=OFF if you plan to rebuild Storm multiple times.")
+		endif()
 	else()
 		message(STATUS "Storm - Could not find ccache.")
 	endif()
@@ -270,7 +313,7 @@ else()
 endif()
 set(STORM_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
 
-if(CCACHE_FOUND)
+if(CCACHE_EXECUTABLE)
 	set(STORM_COMPILER_ID "${STORM_COMPILER_ID} (ccache)")
 endif()
 
@@ -324,6 +367,7 @@ endif()
 SET(STORM_PRECOMPILED_HEADERS "<any>" "<map>" "<vector>" "<unordered_set>" "<forward_list>"
 		"<optional>" "<ostream>" "<istream>" "<list>" "<set>" "<fstream>" "<string>" "<boost/optional.hpp>" "<boost/variant.hpp>"
 		"<boost/container/flat_set.hpp>" "<boost/dynamic_bitset.hpp>" "<boost/range/irange.hpp>")
+
 
 #############################################################
 ##
@@ -418,12 +462,19 @@ message(STATUS "Storm - Build type: ${CMAKE_BUILD_TYPE}")
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
-if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3)
+if(STORM_HAVE_GLPK OR STORM_HAVE_GUROBI OR STORM_HAVE_HIGHS OR STORM_HAVE_SOPLEX OR STORM_HAVE_Z3)
 	set(STORM_HAVE_LP_SOLVER ON)
 	message(STATUS "Storm - Compiled with an LP solver.")
 else()
 	set(STORM_HAVE_LP_SOLVER OFF)
 	message(WARNING "Storm - Compiled without an LP solver. This may yield errors at run time.")
+endif()
+if(STORM_HAVE_CVC5 OR STORM_HAVE_MATHSAT OR STORM_HAVE_Z3)
+	set(STORM_HAVE_SMT_SOLVER ON)
+	message(STATUS "Storm - Compiled with an SMT solver.")
+else()
+	# A warning is issued when determining the default SMT solver below.
+	set(STORM_HAVE_SMT_SOLVER OFF)
 endif()
 if(STORM_HAVE_CUDD OR STORM_HAVE_SYLVAN)
 	set(STORM_HAVE_DD_LIBRARY ON)
@@ -434,9 +485,11 @@ else()
 endif()
 
 export_option(STORM_HAVE_CUDD)
+export_option(STORM_HAVE_CVC5)
 export_option(STORM_HAVE_GMM)
 export_option(STORM_HAVE_GLPK)
 export_option(STORM_HAVE_GUROBI)
+export_option(STORM_HAVE_HIGHS)
 export_option(STORM_HAVE_MATHSAT)
 export_option(STORM_HAVE_SOPLEX)
 export_option(STORM_HAVE_SPOT)
@@ -444,6 +497,40 @@ export_option(STORM_HAVE_SYLVAN)
 export_option(STORM_HAVE_XERCES)
 export_option(STORM_HAVE_Z3)
 export_option(STORM_HAVE_LP_SOLVER)
+export_option(STORM_HAVE_SMT_SOLVER)
+
+# Determine the compile-time default SMT solver from the STORM_DEFAULT_SMT_SOLVER option.
+set(STORM_DEFAULT_SMT_SOLVER_Z3 OFF)
+set(STORM_DEFAULT_SMT_SOLVER_MATHSAT OFF)
+set(STORM_DEFAULT_SMT_SOLVER_CVC5 OFF)
+if(STORM_DEFAULT_SMT_SOLVER STREQUAL "Z3")
+	if(NOT STORM_HAVE_Z3)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Z3 requested, but Z3 is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Mathsat")
+	if(NOT STORM_HAVE_MATHSAT)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=Mathsat requested, but MathSAT is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "cvc5")
+	if(NOT STORM_HAVE_CVC5)
+		message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER=cvc5 requested, but cvc5 is not available.")
+	endif()
+	set(STORM_DEFAULT_SMT_SOLVER_CVC5 ON)
+elseif(STORM_DEFAULT_SMT_SOLVER STREQUAL "Auto")
+	if(STORM_HAVE_Z3)
+		set(STORM_DEFAULT_SMT_SOLVER_Z3 ON)
+	elseif(STORM_HAVE_MATHSAT)
+		set(STORM_DEFAULT_SMT_SOLVER_MATHSAT ON)
+	elseif(STORM_HAVE_CVC5)
+		set(STORM_DEFAULT_SMT_SOLVER_CVC5 ON)
+	else()
+		message(WARNING "Storm - No SMT solver (Z3, MathSAT or cvc5) available; SMT-based features will fail at run time.")
+	endif()
+else()
+	message(FATAL_ERROR "STORM_DEFAULT_SMT_SOLVER must be one of Auto, Z3, Mathsat or cvc5, but was '${STORM_DEFAULT_SMT_SOLVER}'.")
+endif()
 
 if(PROJECT_IS_TOP_LEVEL)
 	# Include Doxygen
@@ -495,20 +582,21 @@ set(STORM_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(STORM_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(STORM_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(STORM_VERSION "${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}")
-if(PROJECT_VERSION_TWEAK GREATER 0)
-	set(STORM_VERSION_DEV 1)
-else()
-	set(STORM_VERSION_DEV 0)
+set(STORM_VERSION_DEV ${PROJECT_VERSION_TWEAK}) # Development counter N of version x.y.z.N
+if(NOT STORM_VERSION_DEV)
+	set(STORM_VERSION_DEV 0) # Released versions x.y.z have no development counter
 endif()
 
 set(STORM_VERSION_STRING "${STORM_VERSION}")
 if(STORM_VERSION_DEV GREATER 0)
-	set(STORM_VERSION_STRING "${STORM_VERSION_STRING} (dev)")
+	set(STORM_VERSION_STRING "${STORM_VERSION}.${STORM_VERSION_DEV} (dev)")
 endif()
 
 message(STATUS "Storm - Version is ${STORM_VERSION_STRING}.")
 export_option(STORM_VERSION) # We want this information also in the more accessible stormOptions.cmake
-export_option(STORM_VERSION_DEV) # We want this information also in the more accessible stormOptions.cmake
+export_option(STORM_VERSION_DEV) # Development counter N (0 for releases); we want this information also in the more accessible stormOptions.cmake
+set(STORM_VERSION_FULL_DEV "${STORM_VERSION}.${STORM_VERSION_DEV}") # Full version x.y.z.N, intended for development purposes
+export_option(STORM_VERSION_FULL_DEV) # We want this information also in the more accessible stormOptions.cmake
 
 # Configure a header file to pass some of the CMake settings to the source code
 configure_file (
@@ -528,9 +616,9 @@ if(PROJECT_IS_TOP_LEVEL AND STORM_BUILD_TESTS)
 	add_dependencies(check-verbose tests)
 endif()
 
+# Developer tools for formatting and static analysis
 if(PROJECT_IS_TOP_LEVEL)
-	# Apply code formatting
-	add_custom_target(format COMMAND ${PROJECT_SOURCE_DIR}/resources/scripts/auto-format.sh)
+	include(${PROJECT_SOURCE_DIR}/resources/cmake/ClangTools.cmake)
 endif()
 
 set(STORM_TARGETS "")

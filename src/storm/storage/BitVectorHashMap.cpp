@@ -88,7 +88,7 @@ void BitVectorHashMap<ValueType, Hash>::increaseSize() {
     // Now iterate through the elements and reinsert them in the new storage.
     [[maybe_unused]] uint64_t oldSize = numberOfElements;
     numberOfElements = 0;
-    for (auto bucketIndex : oldOccupied) {
+    for (uint64_t bucketIndex : oldOccupied) {
         findOrAddAndGetBucket(oldBuckets.get(bucketIndex * bucketSize, bucketSize), oldValues[bucketIndex]);
     }
     STORM_LOG_ASSERT(oldSize == numberOfElements, "Size mismatch in rehashing. Size before was " << oldSize << " and new size is " << numberOfElements << ".");
@@ -160,7 +160,7 @@ uint64_t BitVectorHashMap<ValueType, Hash>::getCurrentShiftWidth() const {
 
 template<class ValueType, class Hash>
 std::pair<bool, uint64_t> BitVectorHashMap<ValueType, Hash>::findBucket(storm::storage::BitVector const& key) const {
-    STORM_LOG_ASSERT(key.size() == bucketSize, "Size of bit vector and size of buckets do not match");
+    STORM_LOG_ASSERT(key.size() == bucketSize, "Size of bit vector and size of buckets do not match.");
     uint64_t bucket = hasher(key) >> this->getCurrentShiftWidth();
 
     while (isBucketOccupied(bucket)) {
@@ -183,7 +183,7 @@ std::pair<storm::storage::BitVector, ValueType> BitVectorHashMap<ValueType, Hash
 
 template<class ValueType, class Hash>
 void BitVectorHashMap<ValueType, Hash>::remap(std::function<ValueType(ValueType const&)> const& remapping) {
-    for (auto pos : occupied) {
+    for (uint64_t pos : occupied) {
         values[pos] = remapping(values[pos]);
     }
 }

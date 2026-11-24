@@ -4,11 +4,9 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/Formula.h"
-#include "storm/settings/SettingsManager.h"
 
 #include <initializer_list>
 #include <memory>
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
 #include "storm-dft/storage/DFT.h"
 
 namespace storm::dft {
@@ -81,9 +79,10 @@ class RelevantEvents {
      *
      * @param first Iterator pointing to the start of a std::shared_ptr<storm::logic::Formula const> range.
      * @param last Iterator pointing to the end of a std::shared_ptr<storm::logic::Formula const> range.
+     * @param addLabelsClaiming Whether labels representing claiming operations are added to the model.
      */
     template<typename ForwardIt>
-    void insertNamesFromProperties(ForwardIt first, ForwardIt last) {
+    void insertNamesFromProperties(ForwardIt first, ForwardIt last, bool addLabelsClaiming) {
         if (this->allRelevant) {
             return;
         }
@@ -106,8 +105,7 @@ class RelevantEvents {
                     // length of "_dc" = 3
                     this->names.insert(label.substr(0, label.size() - 3));
                 } else if (label.find("_claimed_") != std::string::npos) {
-                    STORM_LOG_THROW(storm::settings::getModule<storm::dft::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(),
-                                    storm::exceptions::InvalidArgumentException,
+                    STORM_LOG_THROW(addLabelsClaiming, storm::exceptions::InvalidArgumentException,
                                     "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");

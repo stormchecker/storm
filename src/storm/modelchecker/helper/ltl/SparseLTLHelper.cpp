@@ -9,8 +9,8 @@
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/solver/SolveGoal.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/MaximalEndComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 namespace modelchecker {
@@ -168,7 +168,7 @@ storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeA
                     } else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
                         // Do only sanity checks here.
                         STORM_LOG_ASSERT(atom.isNegated() ? !ec.containsAnyState(~accSet) : !ec.containsAnyState(accSet),
-                                         "EC contains Fin-states, which should have been removed");
+                                         "EC contains Fin-states, which should have been removed.");
                     }
                 }
             }
@@ -315,8 +315,9 @@ std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAPr
 
     } else {
         prodNumericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(
-            env, std::move(solveGoalProduct), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions(), bvTrue,
-            acceptingStates, this->isQualitativeSet());
+                                env, std::move(solveGoalProduct), product->getProductModel().getTransitionMatrix(),
+                                product->getProductModel().getBackwardTransitions(), bvTrue, acceptingStates, this->isQualitativeSet())
+                                .values;
     }
 
     std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_transitionMatrix.getRowGroupCount(), prodNumericResult);

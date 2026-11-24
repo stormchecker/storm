@@ -1,6 +1,7 @@
 #include "storm-pars/modelchecker/region/monotonicity/LocalMonotonicityResult.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/utility/macros.h"
 
 namespace storm {
 namespace analysis {
@@ -47,7 +48,7 @@ std::shared_ptr<MonotonicityResult<VariableType>> LocalMonotonicityResult<Variab
 template<typename VariableType>
 void LocalMonotonicityResult<VariableType>::setMonotonicity(uint_fast64_t state, VariableType var,
                                                             typename LocalMonotonicityResult<VariableType>::Monotonicity mon) {
-    assert(stateMonRes[state] != dummyPointer);
+    STORM_LOG_ASSERT(stateMonRes[state] != dummyPointer, "State monotonicity result is dummy pointer.");
     if (stateMonRes[state] == nullptr) {
         stateMonRes[state] = std::make_shared<MonotonicityResult<VariableType>>();
     }
@@ -87,7 +88,7 @@ bool LocalMonotonicityResult<VariableType>::isDone() const {
 
 template<typename VariableType>
 void LocalMonotonicityResult<VariableType>::setIndexMinimize(int i) {
-    assert(indexMinimize == -1);
+    STORM_LOG_ASSERT(indexMinimize == -1, "Index minimize already set.");
     this->indexMinimize = i;
 }
 

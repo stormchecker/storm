@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <memory>
 
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
@@ -48,7 +50,7 @@ class AcyclicMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSol
     // can be used if the performed scheduler choices need to be reordered
     mutable boost::optional<std::vector<uint64_t>> auxiliaryRowGroupIndexVector;  // A.rowGroupCount() entries
     // contains factors applied to scale the entries of the 'b' vector
-    mutable std::vector<std::pair<uint64_t, ValueType>> bFactors;
+    mutable std::vector<std::pair<uint64_t, std::optional<ValueType>>> bFactors;
 };
 }  // namespace solver
 }  // namespace storm

@@ -106,14 +106,12 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeBounde
         STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException,
                         "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
         ValueType lowerBound = 0;
-        ValueType upperBound = 0;
+        std::optional<ValueType> upperBound;
         if (pathFormula.hasLowerBound()) {
             lowerBound = pathFormula.getLowerBound<ValueType>();
         }
         if (pathFormula.hasUpperBound()) {
             upperBound = pathFormula.getNonStrictUpperBound<ValueType>();
-        } else {
-            upperBound = storm::utility::infinity<ValueType>();
         }
 
         return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(
@@ -166,7 +164,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
     SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions,
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), probabilisticTransitions,
                                                                                               this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
@@ -177,7 +175,7 @@ std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRu
     Environment const& env, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
     auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
     auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
-    storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions,
+    storm::modelchecker::helper::HybridInfiniteHorizonHelper<DdType, ValueType, false> helper(this->getModel(), probabilisticTransitions,
                                                                                               this->getModel().getExitRateVector());
     storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
     return helper.computeLongRunAverageRewards(env, rewardModel.get());

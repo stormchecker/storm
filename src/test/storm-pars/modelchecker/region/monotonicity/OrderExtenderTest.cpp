@@ -4,13 +4,18 @@
 #include <memory>
 #include <vector>
 
-#include "storm-pars/api/storm-pars.h"
-#include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-pars/api/region.h"
+#include "storm-pars/modelchecker/region/monotonicity/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/monotonicity/Order.h"
+#include "storm-pars/modelchecker/region/monotonicity/OrderExtender.h"
+#include "storm-pars/transformer/SparseParametricModelSimplifier.h"
+#include "storm-parsers/api/model_descriptions.h"
+#include "storm-parsers/api/properties.h"
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/api/bisimulation.h"
 #include "storm/api/builder.h"
-#include "storm/api/storm.h"
+#include "storm/api/properties.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -20,8 +25,8 @@
 class OrderExtenderTest : public ::testing::Test {
    protected:
     void SetUp() override {
-#ifndef STORM_HAVE_Z3
-        GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+        GTEST_SKIP() << "No SMT solver available.";
 #endif
     }
 };
@@ -38,18 +43,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_model) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
-    }
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
@@ -70,12 +69,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_model) {
         EXPECT_TRUE((order->contains(i)));
     }
 
-    // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
+    // Check on some nodes. The state indices refer to the bisimulation quotient. If that numbering changes, these indices have to be adapted.
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(4, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(6, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(94, 88));
 }
 
 TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_model) {
@@ -90,7 +89,7 @@ TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_model) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -121,18 +120,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
     // Apply bisimulation
-    storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
-        bisimType = storm::storage::BisimulationType::Weak;
-    }
-
-    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)
-                ->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     ASSERT_EQ(99ul, model->getNumberOfStates());
     ASSERT_EQ(195ul, model->getNumberOfTransitions());
@@ -158,12 +151,12 @@ TEST_F(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
-    // Check on some nodes
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(5, 0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(94, 5));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7, 13));
+    // Check on some nodes. The state indices refer to the bisimulation quotient. If that numbering changes, these indices have to be adapted.
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(97, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(4, 98));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(6, 4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(94, 88));
 }
 
 TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
@@ -178,7 +171,7 @@ TEST_F(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -218,7 +211,7 @@ TEST_F(OrderExtenderTest, simple1_on_model) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -256,7 +249,7 @@ TEST_F(OrderExtenderTest, simple1_on_matrix) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -310,7 +303,7 @@ TEST_F(OrderExtenderTest, casestudy1_on_model) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -348,7 +341,7 @@ TEST_F(OrderExtenderTest, casestudy1_on_matrix) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 
@@ -402,7 +395,7 @@ TEST_F(OrderExtenderTest, casestudy2_on_matrix) {
         storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model =
         storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
+    auto simplifier = storm::transformer::SparseParametricModelSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*model);
     ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
     model = simplifier.getSimplifiedModel();
 

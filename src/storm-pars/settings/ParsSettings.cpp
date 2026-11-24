@@ -8,6 +8,7 @@
 #include "storm-pars/settings/modules/RegionSettings.h"
 #include "storm-pars/settings/modules/RegionVerificationSettings.h"
 #include "storm-pars/settings/modules/SamplingSettings.h"
+#include "storm-pars/settings/modules/ScpSettings.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BisimulationSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -17,7 +18,9 @@
 #include "storm/settings/modules/EliminationSettings.h"
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/GlpkSettings.h"
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
+#include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/LongRunAverageSolverSettings.h"
@@ -49,6 +52,7 @@ void initializeParsSettings(std::string const& name, std::string const& executab
     storm::settings::addModule<storm::settings::modules::RegionVerificationSettings>();
     storm::settings::addModule<storm::settings::modules::SamplingSettings>();
     storm::settings::addModule<storm::settings::modules::RegionSettings>();
+    storm::settings::addModule<storm::settings::modules::ScpSettings>();
     storm::settings::addModule<storm::settings::modules::BuildSettings>();
     storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
@@ -61,6 +65,8 @@ void initializeParsSettings(std::string const& name, std::string const& executab
     storm::settings::addModule<storm::settings::modules::LongRunAverageSolverSettings>();
     storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+    storm::settings::addModule<storm::settings::modules::GurobiSettings>();
     storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();

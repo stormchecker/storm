@@ -8,6 +8,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/ExtendedNumber.h"
 
 namespace storm {
 namespace modelchecker {
@@ -18,7 +19,7 @@ namespace modelchecker {
 template<typename SparseModelType, typename ConstantType>
 class SparseMdpInstantiationModelChecker : public SparseInstantiationModelChecker<SparseModelType, ConstantType> {
    public:
-    SparseMdpInstantiationModelChecker(SparseModelType const& parametricModel, bool produceScheduler = true);
+    SparseMdpInstantiationModelChecker(Environment const& env, SparseModelType const& parametricModel, bool produceScheduler = true);
 
     virtual std::unique_ptr<CheckResult> check(Environment const& env,
                                                storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
@@ -26,6 +27,8 @@ class SparseMdpInstantiationModelChecker : public SparseInstantiationModelChecke
     virtual bool isWellDefined(storm::utility::parametric::Valuation<typename SparseModelType::ValueType> const& valuation) override;
 
    protected:
+    typedef storm::utility::ExtendedValueType<ConstantType> ExtendedConstantType;
+
     // Optimizations for the different formula types
     std::unique_ptr<CheckResult> checkReachabilityProbabilityFormula(
         Environment const& env, storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>& modelChecker,

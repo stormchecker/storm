@@ -22,6 +22,8 @@ const std::string BisimulationSettings::reuseOptionName = "reuse";
 const std::string BisimulationSettings::initialPartitionOptionName = "init";
 const std::string BisimulationSettings::refinementModeOptionName = "refine";
 const std::string BisimulationSettings::exactArithmeticDdOptionName = "ddexact";
+const std::string BisimulationSettings::toleranceOptionName = "tolerance";
+const std::string BisimulationSettings::actionSensitiveOptionName = "action-sensitive";
 
 BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
     std::vector<std::string> types = {"strong", "weak"};
@@ -91,6 +93,22 @@ BisimulationSettings::BisimulationSettings() : ModuleSettings(moduleName) {
                                          .setDefaultValueString("full")
                                          .build())
                         .build());
+
+    this->addOption(storm::settings::OptionBuilder(moduleName, toleranceOptionName, true,
+                                                   "Sets the tolerance to use for bisimulation minimization (only for sparse bisimulation).")
+                        .setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The tolerance. Defaults to 0 in exact mode.")
+                                         .setDefaultValueDouble(1e-9)
+                                         .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0))
+                                         .build())
+                        .build());
+
+    this->addOption(
+        storm::settings::OptionBuilder(moduleName, actionSensitiveOptionName, true,
+                                       "Sets whether choices are only lumped together if they belong to the same state-local action index (only for "
+                                       "sparse bisimulation).")
+            .setIsAdvanced()
+            .build());
 }
 
 bool BisimulationSettings::isStrongBisimulationSet() const {
@@ -140,37 +158,49 @@ storm::dd::bisimulation::SignatureMode BisimulationSettings::getSignatureMode() 
     } else if (modeAsString == "lazy") {
         return storm::dd::bisimulation::SignatureMode::Lazy;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidSettingsException, "Unknown signature mode '" << modeAsString << ".");
 }
 
-BisimulationSettings::ReuseMode BisimulationSettings::getReuseMode() const {
+storm::dd::bisimulation::ReuseMode BisimulationSettings::getReuseMode() const {
     std::string reuseModeAsString = this->getOption(reuseOptionName).getArgumentByName("mode").getValueAsString();
     if (reuseModeAsString == "none") {
-        return ReuseMode::None;
+        return storm::dd::bisimulation::ReuseMode::None;
     } else if (reuseModeAsString == "blocks") {
-        return ReuseMode::BlockNumbers;
+        return storm::dd::bisimulation::ReuseMode::BlockNumbers;
     }
-    return ReuseMode::BlockNumbers;
+    return storm::dd::bisimulation::ReuseMode::BlockNumbers;
 }
 
-BisimulationSettings::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
+storm::dd::bisimulation::InitialPartitionMode BisimulationSettings::getInitialPartitionMode() const {
     std::string initialPartitionModeAsString = this->getOption(initialPartitionOptionName).getArgumentByName("mode").getValueAsString();
     if (initialPartitionModeAsString == "regular") {
-        return InitialPartitionMode::Regular;
+        return storm::dd::bisimulation::InitialPartitionMode::Regular;
     } else if (initialPartitionModeAsString == "finer") {
-        return InitialPartitionMode::Finer;
+        return storm::dd::bisimulation::InitialPartitionMode::Finer;
     }
-    return InitialPartitionMode::Finer;
+    return storm::dd::bisimulation::InitialPartitionMode::Finer;
 }
 
-BisimulationSettings::RefinementMode BisimulationSettings::getRefinementMode() const {
+storm::dd::bisimulation::RefinementMode BisimulationSettings::getRefinementMode() const {
     std::string refinementModeAsString = this->getOption(refinementModeOptionName).getArgumentByName("mode").getValueAsString();
     if (refinementModeAsString == "full") {
-        return RefinementMode::Full;
+        return storm::dd::bisimulation::RefinementMode::Full;
     } else if (refinementModeAsString == "changed") {
-        return RefinementMode::ChangedStates;
+        return storm::dd::bisimulation::RefinementMode::ChangedStates;
     }
-    return RefinementMode::Full;
+    return storm::dd::bisimulation::RefinementMode::Full;
+}
+
+bool BisimulationSettings::isToleranceSet() const {
+    return this->getOption(toleranceOptionName).getHasOptionBeenSet();
+}
+
+double BisimulationSettings::getTolerance() const {
+    return this->getOption(toleranceOptionName).getArgumentByName("value").getValueAsDouble();
+}
+
+bool BisimulationSettings::isActionSensitiveSet() const {
+    return this->getOption(actionSensitiveOptionName).getHasOptionBeenSet();
 }
 
 bool BisimulationSettings::check() const {

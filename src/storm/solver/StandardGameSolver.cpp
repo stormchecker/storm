@@ -9,9 +9,8 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -30,11 +29,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<s
       localPlayer2Matrix(nullptr),
       player1Grouping(nullptr),
       player1Matrix(&player1Matrix),
-      player2Matrix(player2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(player2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type>&& player1Matrix,
@@ -46,11 +41,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(storm::storage::SparseMatrix<s
       localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))),
       player1Grouping(nullptr),
       player1Matrix(localPlayer1Matrix.get()),
-      player2Matrix(*localPlayer2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(*localPlayer2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& player1Grouping, storm::storage::SparseMatrix<ValueType> const& player2Matrix,
@@ -61,11 +52,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t> const& p
       localPlayer2Matrix(nullptr),
       player1Grouping(&player1Grouping),
       player1Matrix(nullptr),
-      player2Matrix(player2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(player2Matrix) {}
 
 template<typename ValueType>
 StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player1Grouping, storm::storage::SparseMatrix<ValueType>&& player2Matrix,
@@ -76,11 +63,7 @@ StandardGameSolver<ValueType>::StandardGameSolver(std::vector<uint64_t>&& player
       localPlayer2Matrix(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(player2Matrix))),
       player1Grouping(localPlayer1Grouping.get()),
       player1Matrix(nullptr),
-      player2Matrix(*localPlayer2Matrix),
-      linearEquationSolverIsExact(false) {
-    // Determine whether the linear equation solver is assumed to produce exact results.
-    linearEquationSolverIsExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
-}
+      player2Matrix(*localPlayer2Matrix) {}
 
 template<typename ValueType>
 GameMethod StandardGameSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
@@ -148,7 +131,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
         *player1Choices = std::vector<storm::storage::sparse::state_type>(this->getPlayer1Matrix().getRowGroupCount(), 0);
     } else {
         // Player 1 represented by grouping of player 2 states.
-        player1Choices->resize(player1Choices->size() - 1);
+        player1Choices->resize(this->player1Grouping->size() - 1);
     }
     if (this->hasSchedulerHints()) {
         *player2Choices = this->player2ChoicesHint.get();
@@ -205,7 +188,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
         asEquationSystem = true;
     }
     if (!this->hasUniqueSolution()) {
-        for (auto state : zeroStates) {
+        for (uint64_t state : zeroStates) {
             for (auto& element : submatrix.getRow(state)) {
                 if (element.getColumn() == state) {
                     element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
@@ -251,7 +234,7 @@ bool StandardGameSolver<ValueType>::solveGamePolicyIteration(Environment const& 
                 submatrix.convertToEquationSystem();
             }
             if (!this->hasUniqueSolution()) {
-                for (auto state : zeroStates) {
+                for (uint64_t state : zeroStates) {
                     for (auto& element : submatrix.getRow(state)) {
                         if (element.getColumn() == state) {
                             element.setValue(asEquationSystem ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
@@ -434,7 +417,7 @@ void StandardGameSolver<ValueType>::multiplyAndReduce(Environment const& env, Op
         uint_fast64_t player1State = 0;
         for (auto& result : player1ReducedResult) {
             storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = this->getPlayer1Matrix().getRowGroup(player1State);
-            STORM_LOG_ASSERT(relevantRows.getNumberOfEntries() != 0, "There is a choice of player 1 that does not lead to any player 2 choice");
+            STORM_LOG_ASSERT(relevantRows.getNumberOfEntries() != 0, "There is a choice of player 1 that does not lead to any player 2 choice.");
             auto it = relevantRows.begin();
             auto ite = relevantRows.end();
 
@@ -467,7 +450,7 @@ bool StandardGameSolver<ValueType>::extractChoices(Environment const& env, Optim
                                                    std::vector<ValueType>& player2ChoiceValues, std::vector<uint_fast64_t>& player1Choices,
                                                    std::vector<uint_fast64_t>& player2Choices) const {
     storm::utility::ConstantsComparator<ValueType> comparator(
-        linearEquationSolverIsExact
+        storm::NumberTraits<ValueType>::IsExact
             ? storm::utility::zero<ValueType>()
             : storm::utility::convertNumber<ValueType>(env.solver().getPrecisionOfLinearEquationSolver(env.solver().getLinearEquationSolverType()).first.get()),
         false);

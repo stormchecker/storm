@@ -1,11 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
-#include "storm-dft/generator/DftNextStateGenerator.h"
+#include "storm-dft/api/analysis.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
 #include "storm-dft/simulator/DFTTraceSimulator.h"
 #include "storm-dft/simulator/ImportanceFunction.h"
-#include "storm-dft/storage/DftSymmetries.h"
 
 namespace {
 
@@ -16,7 +16,7 @@ std::pair<std::shared_ptr<storm::dft::storage::DFT<double>>, storm::dft::storage
     EXPECT_TRUE(storm::dft::api::isWellFormed(*dft).first);
 
     // Compute relevant events
-    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents({}, {"all"});
+    storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents({}, {"all"}, true);
     dft->setRelevantEvents(relevantEvents, false);
 
     storm::dft::storage::DFTStateGenerationInfo stateGenerationInfo(dft->buildStateGenerationInfo(storm::dft::storage::DftSymmetries()));

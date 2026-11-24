@@ -7,6 +7,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/storage/sparse/ModelComponents.h"
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 
 namespace storm {
@@ -15,7 +16,7 @@ namespace parser {
 template<typename ValueType, typename StateType = uint32_t>
 class ImcaParserGrammar : public qi::grammar<Iterator, storm::storage::sparse::ModelComponents<ValueType>(), Skipper> {
    public:
-    ImcaParserGrammar();
+    explicit ImcaParserGrammar(ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     void initialize();
@@ -41,7 +42,7 @@ class ImcaParserGrammar : public qi::grammar<Iterator, storm::storage::sparse::M
     qi::rule<Iterator, StateType(), Skipper> state;
     qi::rule<Iterator, ValueType(), Skipper> value;
 
-    bool buildChoiceLabels;
+    ExplicitModelParserOptions options;
 
     StateType numStates;
     StateType numChoices;

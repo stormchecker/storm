@@ -1,8 +1,21 @@
 #pragma once
 
-#include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/storage/DFT.h"
-#include "storm-parsers/parser/ValueParser.h"
+#include <string>
+
+// Forward declarations
+namespace storm::parser {
+template<typename ValueType>
+class ValueParser;
+;
+}  // namespace storm::parser
+namespace storm::dft::builder {
+template<typename ValueType>
+class DFTBuilder;
+}
+namespace storm::dft::storage {
+template<typename ValueType>
+class DFT;
+}
 
 namespace storm::dft {
 namespace parser {

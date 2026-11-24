@@ -31,7 +31,7 @@ MappedFile::MappedFile(const char* filename) {
 
     STORM_LOG_THROW(this->file >= 0, storm::exceptions::FileIoException, "Error in open(" << filename << "): Probably, we may not read this file.");
 
-    this->data = static_cast<char*>(mmap(NULL, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
+    this->data = static_cast<char*>(mmap(nullptr, this->st.st_size, PROT_READ, MAP_PRIVATE, this->file, 0));
     if (this->data == MAP_FAILED) {
         close(this->file);
         STORM_LOG_ERROR("Error in mmap(" << filename << "): " << std::strerror(errno));

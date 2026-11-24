@@ -39,7 +39,7 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
     //  E.g., do not sample random numbers if there is only a single transition
     lastRewards = zeroRewards;
     ValueType probability = generator.random();
-    STORM_LOG_ASSERT(action < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions");
+    STORM_LOG_ASSERT(action < model.getTransitionMatrix().getRowGroupSize(currentState), "Action index higher than number of actions.");
     uint64_t row = model.getTransitionMatrix().getRowGroupIndices()[currentState] + action;
     uint64_t i = 0;
     for (auto const& rewModPair : model.getRewardModels()) {
@@ -52,7 +52,24 @@ bool DiscreteTimeSparseModelSimulator<ValueType, RewardModelType>::step(uint64_t
     for (auto const& entry : model.getTransitionMatrix().getRow(row)) {
         sum += entry.getValue();
         if (sum >= probability) {
-            currentState = entry.getColumn();
+            uint64_t const successor = entry.getColumn();
+            i = 0;
+            for (auto const& rewModPair : model.getRewardModels()) {
+                if (rewModPair.second.hasTransitionRewards()) {
+                    // The transition reward matrix is sparse and may not contain an entry for every transition.
+                    for (auto const& rewEntry : rewModPair.second.getTransitionRewardMatrix().getRow(row)) {
+                        if (rewEntry.getColumn() == successor) {
+                            lastRewards[i] += rewEntry.getValue();
+                            break;
+                        } else if (rewEntry.getColumn() > successor) {
+                            // Entries within a row are sorted by column.
+                            break;
+                        }
+                    }
+                }
+                ++i;
+            }
+            currentState = successor;
             i = 0;
             for (auto const& rewModPair : model.getRewardModels()) {
                 if (rewModPair.second.hasStateRewards()) {

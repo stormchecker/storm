@@ -4,16 +4,14 @@
 #include "storm-gamebased-ar/abstraction/BottomStateResult.h"
 #include "storm-gamebased-ar/abstraction/GameBddResult.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/prism/Module.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/DdManager.h"
+#include "storm/languages/prism/Module.h"
 #include "storm/utility/macros.h"
 
 namespace storm::gbar {
 namespace abstraction {
 namespace prism {
-
-using storm::settings::modules::AbstractionSettings;
 
 template<storm::dd::DdType DdType, typename ValueType>
 ModuleAbstractor<DdType, ValueType>::ModuleAbstractor(storm::prism::Module const& module, AbstractionInformation<DdType>& abstractionInformation,

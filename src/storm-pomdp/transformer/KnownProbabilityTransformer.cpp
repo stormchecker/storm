@@ -1,5 +1,7 @@
 #include "KnownProbabilityTransformer.h"
 
+#include "storm/models/sparse/ChoiceLabeling.h"
+
 namespace storm {
 namespace pomdp {
 namespace transformer {
@@ -24,7 +26,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
     std::vector<uint32_t> newObservations;
 
     // New state 0 represents all states with probability 1
-    for (auto const iter : prob1States) {
+    for (uint64_t iter : prob1States) {
         stateMap[iter] = 0;
 
         std::set<std::string> labelSet = pomdp.getStateLabeling().getLabelsOfState(iter);
@@ -36,7 +38,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         }
     }
     // New state 1 represents all states with probability 0
-    for (auto const iter : prob0States) {
+    for (uint64_t iter : prob0States) {
         stateMap[iter] = 1;
         for (auto const &label : pomdp.getStateLabeling().getLabelsOfState(iter)) {
             if (!newLabeling.containsLabel(label)) {
@@ -50,7 +52,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
     // If there are no states with probability 0 we set the next new state id to be 1, otherwise 2
     uint64_t newId = prob0States.empty() ? 1 : 2;
     uint64_t nextObservation = prob0States.empty() ? 1 : 2;
-    for (auto const iter : unknownStates) {
+    for (uint64_t iter : unknownStates) {
         stateMap[iter] = newId;
         if (observationMap.count(pomdp.getObservation(iter)) == 0) {
             observationMap[pomdp.getObservation(iter)] = nextObservation;
@@ -64,8 +66,6 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         }
         ++newId;
     }
-
-    uint64_t newNrOfStates = pomdp.getNumberOfStates() - (prob1States.getNumberOfSetBits() + prob0States.getNumberOfSetBits());
 
     uint64_t currentRow = 0;
     uint64_t currentRowGroup = 0;
@@ -86,7 +86,7 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
 
     auto transitionMatrix = pomdp.getTransitionMatrix();
 
-    for (auto const iter : unknownStates) {
+    for (uint64_t iter : unknownStates) {
         smb.newRowGroup(currentRow);
         // First collect all transitions
         // auto rowGroup = transitionMatrix.getRowGroup(iter);
@@ -105,10 +105,27 @@ std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> KnownProbabilityTransfo
         newObservations.push_back(observationMap[pomdp.getObservation(iter)]);
     }
 
-    auto newTransitionMatrix = smb.build(currentRow, newNrOfStates, currentRowGroup);
-    // STORM_PRINT(newTransitionMatrix)
+    // The new model has one state per row group (the sink states for probability 1 and 0 as well as all unknown states).
+    auto newTransitionMatrix = smb.build(currentRow, currentRowGroup, currentRowGroup);
     storm::storage::sparse::ModelComponents<ValueType> components(newTransitionMatrix, newLabeling);
     components.observabilityClasses = newObservations;
+    if (pomdp.hasChoiceLabeling()) {
+        auto const &originalChoiceLabeling = pomdp.getChoiceLabeling();
+        components.choiceLabeling.emplace(newTransitionMatrix.getRowCount());
+        for (auto const &label : originalChoiceLabeling.getLabels()) {
+            components.choiceLabeling->addLabel(label);
+        }
+        // Retained states keep their local action order. The new absorbing states have synthetic, unlabeled self-loops.
+        for (uint64_t state : unknownStates) {
+            uint64_t const originalRow = transitionMatrix.getRowGroupIndices()[state];
+            uint64_t const newRow = newTransitionMatrix.getRowGroupIndices()[stateMap.at(state)];
+            for (uint64_t localAction = 0; localAction < transitionMatrix.getRowGroupSize(state); ++localAction) {
+                for (auto const &label : originalChoiceLabeling.getLabelsOfChoice(originalRow + localAction)) {
+                    components.choiceLabeling->addLabelToChoice(label, newRow + localAction);
+                }
+            }
+        }
+    }
 
     return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
 }

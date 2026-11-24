@@ -7,7 +7,8 @@ namespace storm {
     const unsigned StormVersion::versionMajor = @STORM_VERSION_MAJOR@;
     const unsigned StormVersion::versionMinor = @STORM_VERSION_MINOR@;
     const unsigned StormVersion::versionPatch = @STORM_VERSION_PATCH@;
-    const bool StormVersion::versionDev = @STORM_VERSION_DEV@;
+    const unsigned StormVersion::versionTweak = @STORM_VERSION_DEV@;
+    const bool StormVersion::versionDev = @STORM_VERSION_DEV@ > 0;
     const std::string StormVersion::gitRevisionHash = "@STORM_VERSION_GIT_HASH@";
     const StormVersion::DirtyState StormVersion::dirty = @STORM_VERSION_DIRTY@;
     const std::string StormVersion::systemName = "@CMAKE_SYSTEM_NAME@";

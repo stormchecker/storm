@@ -8,10 +8,10 @@
 #include "storm-parsers/parser/ExpressionParser.h"
 #include "storm-parsers/parser/SpiritErrorHandler.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionEvaluator.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/results/FilterType.h"
-#include "storm/storage/expressions/ExpressionEvaluator.h"
-#include "storm/storage/jani/Property.h"
 
 namespace storm {
 namespace logic {
@@ -44,7 +44,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
 
     struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
         keywordsStruct() {
-            add("true", 1)("false", 2)("min", 3)("max", 4)("F", 5)("G", 6)("X", 7)("U", 8)("C", 9)("I", 10)("P", 11)("R", 12)("S", 13);
+            add("true", 1)("false", 2)("min", 3)("max", 4)("F", 5)("G", 6)("X", 7)("U", 8)("C", 9)("I", 10)("P", 11)("R", 12)("S", 13)("W", 14);
         }
     };
     // A parser used for recognizing the standard keywords (that also apply to e.g. PRISM). These shall not coincide with expression variables
@@ -78,13 +78,14 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     // A parser used for recognizing the optimality operators.
     optimalityOperatorStruct optimalityOperator_;
 
+    // 'printall' and 'values' are equivalent, the former is per PRISM spec, and the latter is more semantically clear.
     struct filterTypeStruct : qi::symbols<char, storm::modelchecker::FilterType> {
         filterTypeStruct() {
             add("min", storm::modelchecker::FilterType::MIN)("max", storm::modelchecker::FilterType::MAX)("sum", storm::modelchecker::FilterType::SUM)(
                 "avg", storm::modelchecker::FilterType::AVG)("count", storm::modelchecker::FilterType::COUNT)(
                 "forall", storm::modelchecker::FilterType::FORALL)("exists", storm::modelchecker::FilterType::EXISTS)(
-                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)("values",
-                                                                                                                      storm::modelchecker::FilterType::VALUES);
+                "argmin", storm::modelchecker::FilterType::ARGMIN)("argmax", storm::modelchecker::FilterType::ARGMAX)(
+                "printall", storm::modelchecker::FilterType::VALUES)("values", storm::modelchecker::FilterType::VALUES);
         }
     };
 
@@ -98,6 +99,20 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
         }
     };
     operatorKeyword operatorKeyword_;
+
+    // U, W, R are binary path ops supported in PRISM
+    enum class BinaryPathOperator { Until, WeakUntil, Release };
+
+    struct binaryPathOperatorStruct : qi::symbols<char, BinaryPathOperator> {
+        binaryPathOperatorStruct() {
+            add("U", BinaryPathOperator::Until)       //
+                ("W", BinaryPathOperator::WeakUntil)  //
+                ("R", BinaryPathOperator::Release);
+        }
+    };
+    binaryPathOperatorStruct binaryPathOperator_;
+
+    static std::string toString(BinaryPathOperator op);
 
     enum class FormulaKind {
         State,  /// PCTL*-like (boolean) state formula
@@ -119,7 +134,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     // Rules
 
     // Auxiliary helpers
-    qi::rule<Iterator, qi::unused_type(std::shared_ptr<storm::logic::Formula const>, std::string), Skipper> noAmbiguousNonAssociativeOperator;
+    qi::rule<Iterator, qi::unused_type(std::shared_ptr<storm::logic::Formula const>), Skipper> noAmbiguousNonAssociativeOperator;
     qi::rule<Iterator, std::string(), Skipper> identifier;
     qi::rule<Iterator, std::string(), Skipper> label;
     qi::rule<Iterator, std::string(), Skipper> quotedString;
@@ -161,7 +176,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> multiBoundedPathFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> prefixOperatorPathFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> basicPathFormula;
-    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> untilLevelPathFormula;
+    qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> binaryLevelPathFormula;
     qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> pathFormula;
 
     // Quantitative path operators (reward)
@@ -235,11 +250,11 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
         storm::logic::FormulaContext context, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
     std::shared_ptr<storm::logic::Formula const> createGloballyFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
     std::shared_ptr<storm::logic::Formula const> createNextFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
-    std::shared_ptr<storm::logic::Formula const> createUntilFormula(
-        std::shared_ptr<storm::logic::Formula const> const& leftSubformula,
+    std::shared_ptr<storm::logic::Formula const> createBinaryPathFormula(
+        std::shared_ptr<storm::logic::Formula const> const& leftSubformula, BinaryPathOperator op,
         boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>,
                                                std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds,
-        std::shared_ptr<storm::logic::Formula const> const& rightSubformula);
+        std::shared_ptr<storm::logic::Formula const> const& rightSubformula) const;
     std::shared_ptr<storm::logic::Formula const> createHOAPathFormula(const std::string& automataFile) const;
     std::shared_ptr<storm::logic::Formula const> createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula,
                                                                           boost::optional<std::shared_ptr<storm::logic::Formula const>> const& rightSubformula,
@@ -294,7 +309,7 @@ class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<storm::jan
                                                                        std::shared_ptr<storm::logic::Formula const> const& formula);
 
     bool isBooleanReturnType(std::shared_ptr<storm::logic::Formula const> const& formula, bool raiseErrorMessage = false);
-    bool raiseAmbiguousNonAssociativeOperatorError(std::shared_ptr<storm::logic::Formula const> const& formula, std::string const& op);
+    bool raiseAmbiguousNonAssociativeOperatorError(std::shared_ptr<storm::logic::Formula const> const& formula, BinaryPathOperator op) const;
 
     // An error handler function.
     phoenix::function<SpiritErrorHandler> handler;

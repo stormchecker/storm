@@ -9,13 +9,12 @@
 #include "storm/builder/StateAndChoiceInformationBuilder.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/expressions/ExpressionManager.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/generator/PrismNextStateGenerator.h"
+#include "storm/languages/jani/Model.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
-#include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/storage/jani/Model.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
@@ -40,13 +39,9 @@ uint64_t ExplicitStateLookup<StateType>::size() const {
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
-ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() {
-    auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-    explorationOrder = buildSettings.getExplorationOrder();
-    fixDeadlocks = !buildSettings.isDontFixDeadlocksSet();
-    if (buildSettings.isExplorationStateLimitSet()) {
-        explorationStateLimit = buildSettings.getExplorationStateLimit();
-    }
+ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options()
+    : explorationOrder(ExplorationOrder::Bfs), fixDeadlocks(true), explorationStateLimit(std::nullopt) {
+    // Intentionally left empty.
 }
 
 template<typename ValueType, typename RewardModelType, typename StateType>
@@ -162,6 +157,9 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
     uint64_t numberOfExploredStates = 0;
     uint64_t numberOfExploredStatesSinceLastMessage = 0;
 
+    // The behavior of states that are not expanded due to exceeding the exploration state limit.
+    storm::generator::StateBehavior<ValueType, StateType> const emptyBehavior;
+
     // Perform a search through the model.
     while (!statesToExplore.empty()) {
         // Get the first state in the queue.
@@ -184,12 +182,10 @@ void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(
             generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuations());
         }
 
-        storm::generator::StateBehavior<ValueType, StateType> behavior;
         // If the exploration state limit is set and the limit is reached, we stop the exploration.
         bool const stateLimitExceeded = options.explorationStateLimit.has_value() && stateStorage.getNumberOfStates() >= options.explorationStateLimit.value();
-        if (!stateLimitExceeded) {
-            behavior = generator->expand(stateToIdCallback);
-        }
+        // Note that the reference returned by expand is only valid until the next call of expand.
+        storm::generator::StateBehavior<ValueType, StateType> const& behavior = stateLimitExceeded ? emptyBehavior : generator->expand(stateToIdCallback);
 
         if (behavior.empty()) {
             // There are three possible cases for missing behavior:
@@ -372,6 +368,13 @@ storm::storage::sparse::ModelComponents<ValueType, RewardModelType> ExplicitMode
     storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(
         transitionMatrixBuilder.build(0, transitionMatrixBuilder.getCurrentRowGroupCount()), buildStateLabeling(),
         std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel());
+
+    // Carry over the stochastic tolerance so that the model can validate its components accordingly. Exact value types are always compared exactly.
+    if constexpr (!storm::NumberTraits<ValueType>::IsExact) {
+        if (generator->getOptions().getStochasticTolerance() != 0.0) {
+            modelComponents.stochasticTolerance = storm::utility::convertNumber<ValueType>(generator->getOptions().getStochasticTolerance());
+        }
+    }
 
     uint_fast64_t numStates = modelComponents.transitionMatrix.getColumnCount();
     uint_fast64_t numChoices = modelComponents.transitionMatrix.getRowCount();

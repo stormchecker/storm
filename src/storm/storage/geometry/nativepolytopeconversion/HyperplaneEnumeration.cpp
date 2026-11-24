@@ -22,7 +22,8 @@ void HyperplaneEnumeration<ValueType>::generateVerticesFromConstraints(EigenMatr
         return;
     }
     std::unordered_map<EigenVector, std::set<uint_fast64_t>> vertexCollector;
-    storm::storage::geometry::SubsetEnumerator<EigenMatrix> subsetEnum(constraintMatrix.rows(), dimension, constraintMatrix, this->linearDependenciesFilter);
+    storm::storage::geometry::SubsetEnumerator<EigenMatrix> subsetEnum(constraintMatrix.rows(), dimension, constraintMatrix,
+                                                                       HyperplaneEnumeration<ValueType>::linearDependenciesFilter);
     if (subsetEnum.setToFirstSubset()) {
         do {
             std::vector<uint_fast64_t> const& subset = subsetEnum.getCurrentSubset();

@@ -145,14 +145,14 @@ class LraViHelper {
     storm::storage::BitVector const* _timedStates;  // e.g. Markovian states of a Markov automaton.
     bool _hasInstantStates;
     ValueType _uniformizationRate;
-    storm::storage::SparseMatrix<ValueType> _TsTransitions, _TsToIsTransitions, _IsTransitions, _IsToTsTransitions;
-    std::vector<ValueType> _Tsx1, _Tsx2, _TsChoiceValues;
-    bool _Tsx1IsCurrent;
-    std::vector<ValueType> _Isx, _Isb, _IsChoiceValues;
-    std::unique_ptr<storm::solver::Multiplier<ValueType>> _TsMultiplier, _TsToIsMultiplier, _IsToTsMultiplier;
-    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> _NondetIsSolver;
-    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> _DetIsSolver;
-    std::unique_ptr<storm::Environment> _IsSolverEnv;
+    storm::storage::SparseMatrix<ValueType> _tsTransitions, _tsToIsTransitions, _isTransitions, _isToTsTransitions;
+    std::vector<ValueType> _tsx1, _tsx2, _tsChoiceValues;
+    bool _tsx1IsCurrent;
+    std::vector<ValueType> _isx, _isb, _isChoiceValues;
+    std::unique_ptr<storm::solver::Multiplier<ValueType>> _tsMultiplier, _tsToIsMultiplier, _isToTsMultiplier;
+    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> _nondetIsSolver;
+    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> _detIsSolver;
+    std::unique_ptr<storm::Environment> _isSolverEnv;
 };
 }  // namespace internal
 }  // namespace helper

@@ -18,8 +18,9 @@ double DFTExplorationHeuristicProbability<ValueType>::getPriority() const {
 
 template<>
 double DFTExplorationHeuristicBoundDifference<double>::getPriority() const {
-    double difference = lowerBound - upperBound;  // Lower bound is larger than upper bound
-    difference = 2 * difference / (upperBound + lowerBound);
+    STORM_LOG_ASSERT(lowerBound && upperBound, "Bounds have not been set for this heuristic.");
+    double difference = *lowerBound - *upperBound;  // Lower bound is larger than upper bound
+    difference = 2 * difference / (*upperBound + *lowerBound);
     return probability * difference;
 }
 

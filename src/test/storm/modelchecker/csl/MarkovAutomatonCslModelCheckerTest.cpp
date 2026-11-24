@@ -6,9 +6,11 @@
 #include "storm-parsers/api/properties.h"
 #include "storm/api/builder.h"
 #include "storm/api/properties.h"
+#include "storm/dd/DdManager.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/languages/jani/Property.h"
 #include "storm/logic/Formulas.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
@@ -21,8 +23,6 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/jani/Property.h"
 
 namespace {
 
@@ -181,7 +181,7 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         program = program.preprocess(constantDefinitionString);
         auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
         result.second = storm::api::extractFormulasFromProperties(janiData.second);
-        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
+        result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(this->env(), janiData.first, result.second)->template as<MT>();
         return result;
     }
 
@@ -233,8 +233,8 @@ class MarkovAutomatonCslModelCheckerTest : public ::testing::Test {
         return result->asQualitativeCheckResult().forallTrue();
     }
 
-    ValueType getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
-                                                  std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+    storm::utility::ExtendedValueType<ValueType> getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model,
+                                                                                     std::unique_ptr<storm::modelchecker::CheckResult>& result) {
         auto filter = getInitialStateFilter(model);
         result->filter(*filter);
         return result->asQuantitativeCheckResult<ValueType>().getMin();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/storage/SparseMatrix.h"
 
 namespace storm {
@@ -13,7 +15,7 @@ namespace parser {
  *	The second pass then parses the file data and constructs a SparseMatrix representing it.
  */
 template<typename ValueType = double>
-class DeterministicSparseTransitionParser {
+class STORM_PARSERS_API DeterministicSparseTransitionParser {
    public:
     /*!
      * A structure representing the result of the first pass of this parser. It contains the number of non-zero entries in the model and the highest state
@@ -44,7 +46,8 @@ class DeterministicSparseTransitionParser {
      * file.
      * @return A SparseMatrix containing the parsed transition system.
      */
-    static storm::storage::SparseMatrix<ValueType> parseDeterministicTransitions(std::string const& filename);
+    static storm::storage::SparseMatrix<ValueType> parseDeterministicTransitions(std::string const& filename,
+                                                                                 ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
     /*!
      * Load the transition rewards for a deterministic transition system from file and create a
@@ -83,7 +86,8 @@ class DeterministicSparseTransitionParser {
      */
     template<typename MatrixValueType>
     static storm::storage::SparseMatrix<ValueType> parse(std::string const& filename, bool isRewardFile,
-                                                         storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix);
+                                                         storm::storage::SparseMatrix<MatrixValueType> const& transitionMatrix,
+                                                         ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 }  // namespace parser

@@ -148,11 +148,36 @@ void SolveGoal<ValueType, SolutionType>::setRelevantValues(storm::storage::BitVe
     relevantValueVector = std::move(values);
 }
 
+template<typename ValueType, typename MatrixType, typename SolutionType>
+std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(
+    Environment const& env, SolveGoal<ValueType, SolutionType>&& goal, storm::solver::LinearEquationSolverFactory<ValueType> const& factory,
+    MatrixType&& matrix) {
+    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(env, std::forward<MatrixType>(matrix));
+    if constexpr (!std::is_same_v<ValueType, storm::RationalFunction>) {
+        if (goal.isBounded()) {
+            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(
+                goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
+        }
+    }
+    return solver;
+}
+
 template class SolveGoal<double>;
 template class SolveGoal<storm::RationalNumber>;
 template class SolveGoal<storm::RationalFunction>;
 template class SolveGoal<storm::Interval, double>;
 template class SolveGoal<storm::RationalInterval, storm::RationalNumber>;
+
+template std::unique_ptr<storm::solver::LinearEquationSolver<double>> configureLinearEquationSolver<double, storm::storage::SparseMatrix<double>, double>(
+    Environment const&, SolveGoal<double, double>&&, storm::solver::LinearEquationSolverFactory<double> const&, storm::storage::SparseMatrix<double>&&);
+template std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>>
+configureLinearEquationSolver<storm::RationalNumber, storm::storage::SparseMatrix<storm::RationalNumber>, storm::RationalNumber>(
+    Environment const&, SolveGoal<storm::RationalNumber, storm::RationalNumber>&&, storm::solver::LinearEquationSolverFactory<storm::RationalNumber> const&,
+    storm::storage::SparseMatrix<storm::RationalNumber>&&);
+template std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>>
+configureLinearEquationSolver<storm::RationalFunction, storm::storage::SparseMatrix<storm::RationalFunction>, storm::RationalFunction>(
+    Environment const&, SolveGoal<storm::RationalFunction, storm::RationalFunction>&&,
+    storm::solver::LinearEquationSolverFactory<storm::RationalFunction> const&, storm::storage::SparseMatrix<storm::RationalFunction>&&);
 
 }  // namespace solver
 }  // namespace storm

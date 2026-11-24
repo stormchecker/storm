@@ -77,7 +77,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb0or
             return analyseProb1Max(subformula->asUntilFormula());
         }
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidPropertyException, "Prob0or1 analysis is not supported for the property " << formula << ".");
 }
 
 template<typename ValueType>
@@ -153,7 +153,7 @@ storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Ma
                     // Check whether all actions lead with a positive probabilty to a goal, and with zero probability to another (non-goal) state.
                     bool hasGoalEntry = false;
                     for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
-                        assert(!storm::utility::isZero(entry.getValue()));
+                        STORM_LOG_ASSERT(!storm::utility::isZero(entry.getValue()), "Expected non-zero entry value.");
                         if (newGoalStates.get(entry.getColumn())) {
                             STORM_LOG_TRACE("Reaches state " << entry.getColumn() << " which is a PROB1e state");
                             hasGoalEntry = true;

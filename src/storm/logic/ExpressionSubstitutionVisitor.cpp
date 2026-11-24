@@ -1,5 +1,6 @@
 #include "storm/logic/ExpressionSubstitutionVisitor.h"
 #include <boost/any.hpp>
+#include <optional>
 
 #include "storm/logic/Formulas.h"
 
@@ -52,7 +53,7 @@ boost::any ExpressionSubstitutionVisitor::visit(RewardOperatorFormula const& f, 
 
 boost::any ExpressionSubstitutionVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
     auto const& substitutionFunction = *boost::any_cast<std::function<storm::expressions::Expression(storm::expressions::Expression const&)> const*>(data);
-    std::vector<boost::optional<TimeBound>> lowerBounds, upperBounds;
+    std::vector<std::optional<TimeBound>> lowerBounds, upperBounds;
     std::vector<TimeBoundReference> timeBoundReferences;
     for (uint64_t i = 0; i < f.getDimension(); ++i) {
         if (f.hasLowerBound(i)) {

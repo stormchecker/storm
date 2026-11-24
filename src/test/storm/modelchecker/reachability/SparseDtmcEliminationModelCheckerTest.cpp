@@ -107,7 +107,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
-TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
+STORM_EXPENSIVE_TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel =
         storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/leader4_8.tra", STORM_TEST_RESOURCES_DIR "/lab/leader4_8.lab", "",
                                                 STORM_TEST_RESOURCES_DIR "/rew/leader4_8.pick.trans.rew");

@@ -3,7 +3,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
-#include "storm/settings/SettingMemento.h"
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"

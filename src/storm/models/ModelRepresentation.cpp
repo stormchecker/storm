@@ -1,24 +1,17 @@
 #include "storm/models/ModelRepresentation.h"
 
-#include "storm/exceptions/InvalidTypeException.h"
-#include "storm/utility/macros.h"
+#include "storm/dd/backend/BackendTraits.h"
+#include "storm/dd/backend/DdBackends.h"
 
 namespace storm {
 namespace models {
 
 std::ostream& operator<<(std::ostream& os, ModelRepresentation const& representation) {
-    switch (representation) {
-        case ModelRepresentation::Sparse:
-            os << "sparse";
-            break;
-        case ModelRepresentation::DdCudd:
-            os << "DD (Cudd)";
-            break;
-        case ModelRepresentation::DdSylvan:
-            os << "DD (Sylvan)";
-            break;
-        default:
-            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unknown model representation.");
+    if (representation == ModelRepresentation::Sparse) {
+        os << "sparse";
+    } else {
+        storm::dd::dispatchDdType(static_cast<storm::dd::DdType>(static_cast<int>(representation) - 1),
+                                  [&os](auto ddType) { os << "DD (" << storm::dd::BackendTraits<decltype(ddType)::value>::name << ")"; });
     }
     return os;
 }

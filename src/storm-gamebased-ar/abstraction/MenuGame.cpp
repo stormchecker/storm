@@ -1,12 +1,12 @@
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
 
 namespace storm::gbar {
 namespace abstraction {

@@ -1,24 +1,19 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GmmxxEquationSolverSettings.h"
+#include <limits>
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
 
-GmmxxSolverEnvironment::GmmxxSolverEnvironment() {
-    auto const& gmmxxSettings = storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>();
-
-    method = gmmxxSettings.getLinearEquationSystemMethod();
-    preconditioner = gmmxxSettings.getPreconditioningMethod();
-    restartThreshold = gmmxxSettings.getRestartIterationCount();
-    if (gmmxxSettings.isMaximalIterationCountSet()) {
-        maxIterationCount = gmmxxSettings.getMaximalIterationCount();
-    } else {
-        maxIterationCount = std::numeric_limits<uint_fast64_t>::max();
-    }
-    precision = storm::utility::convertNumber<storm::RationalNumber>(gmmxxSettings.getPrecision());
+GmmxxSolverEnvironment::GmmxxSolverEnvironment()
+    : method(storm::solver::GmmxxLinearEquationSolverMethod::Gmres),
+      preconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu),
+      restartThreshold(50),
+      maxIterationCount(std::numeric_limits<uint64_t>::max()),
+      precision(storm::utility::convertNumber<storm::RationalNumber>(1e-06)) {
+    // Intentionally left empty.
 }
 
 GmmxxSolverEnvironment::~GmmxxSolverEnvironment() {

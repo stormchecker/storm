@@ -6,6 +6,9 @@
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResult.h"
 #include "storm-gamebased-ar/abstraction/SymbolicQualitativeMdpResultMinMax.h"
 #include "storm-gamebased-ar/abstraction/SymbolicStateSet.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/logic/Formulas.h"
@@ -21,12 +24,7 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/solver/SymbolicGameSolver.h"
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -35,14 +33,10 @@ namespace storm::gbar {
 namespace modelchecker {
 
 template<typename ModelType>
-AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker()
-    : storm::modelchecker::AbstractModelChecker<ModelType>(), checkTask(nullptr) {
-    storm::settings::modules::AbstractionSettings::ReuseMode reuseMode =
-        storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getReuseMode();
-    reuseQualitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                              reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Qualitative;
-    reuseQuantitativeResults = reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::All ||
-                               reuseMode == storm::settings::modules::AbstractionSettings::ReuseMode::Quantitative;
+AbstractAbstractionRefinementModelChecker<ModelType>::AbstractAbstractionRefinementModelChecker(abstraction::AbstractionOptions const& options)
+    : storm::modelchecker::AbstractModelChecker<ModelType>(), checkTask(nullptr), precision(options.precision) {
+    reuseQualitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Qualitative;
+    reuseQuantitativeResults = options.reuseMode == abstraction::ReuseMode::All || options.reuseMode == abstraction::ReuseMode::Quantitative;
 }
 
 template<typename ModelType>
@@ -51,7 +45,7 @@ AbstractAbstractionRefinementModelChecker<ModelType>::~AbstractAbstractionRefine
 }
 
 template<typename ModelType>
-bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula> const& checkTask) const {
+bool AbstractAbstractionRefinementModelChecker<ModelType>::canHandle(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
     storm::logic::Formula const& formula = checkTask.getFormula();
     bool enableRewards = this->supportsReachabilityRewards();
     storm::logic::FragmentSpecification fragment =
@@ -213,21 +207,21 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::checkForResultAfterQu
 
         if (lowerBounds) {
             if (storm::logic::isLowerBound(comparisonType)) {
-                ValueType minimalLowerBound = quantitativeResult.getMin();
+                auto minimalLowerBound = quantitativeResult.getMin();
                 result = (storm::logic::isStrict(comparisonType) && minimalLowerBound > threshold) ||
                          (!storm::logic::isStrict(comparisonType) && minimalLowerBound >= threshold);
             } else {
-                ValueType maximalLowerBound = quantitativeResult.getMax();
+                auto maximalLowerBound = quantitativeResult.getMax();
                 result = (storm::logic::isStrict(comparisonType) && maximalLowerBound >= threshold) ||
                          (!storm::logic::isStrict(comparisonType) && maximalLowerBound > threshold);
             }
         } else {
             if (storm::logic::isLowerBound(comparisonType)) {
-                ValueType minimalUpperBound = quantitativeResult.getMin();
+                auto minimalUpperBound = quantitativeResult.getMin();
                 result = (storm::logic::isStrict(comparisonType) && minimalUpperBound <= threshold) ||
                          (!storm::logic::isStrict(comparisonType) && minimalUpperBound < threshold);
             } else {
-                ValueType maximalUpperBound = quantitativeResult.getMax();
+                auto maximalUpperBound = quantitativeResult.getMax();
                 result = (storm::logic::isStrict(comparisonType) && maximalUpperBound < threshold) ||
                          (!storm::logic::isStrict(comparisonType) && maximalUpperBound <= threshold);
             }
@@ -596,7 +590,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>
@@ -732,7 +726,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     }
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>
@@ -797,7 +791,7 @@ std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> AbstractAbstr
     auto timeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     STORM_LOG_DEBUG("Computed qualitative solution in " << timeInMilliseconds << "ms.");
 
-    return std::move(result);  // move() required by, e.g., clang 3.8
+    return result;
 }
 
 template<typename ModelType>
@@ -979,8 +973,7 @@ bool AbstractAbstractionRefinementModelChecker<ModelType>::boundsAreSufficiently
     storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType> const& upperBounds =
         bounds.second->asSymbolicQuantitativeCheckResult<DdType, ValueType>();
 
-    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(),
-                                                             storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision(), false);
+    return lowerBounds.getValueVector().equalModuloPrecision(upperBounds.getValueVector(), this->precision, false);
 }
 
 template<typename ModelType>
@@ -1003,6 +996,8 @@ template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
 template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+template class AbstractAbstractionRefinementModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
 
 }  // namespace modelchecker
 }  // namespace storm::gbar

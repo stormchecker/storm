@@ -2,6 +2,7 @@
 
 #include "storm-pars/modelchecker/region/AnnotatedRegion.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
@@ -16,6 +17,9 @@ std::shared_ptr<storm::analysis::Order> extendOrder(storm::analysis::OrderExtend
                                                     std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
     auto [orderPtr, unknState1, unknState2] = orderExtender.extendOrder(order, region);
     order = orderPtr;
+    // An inconsistent order carries the same "done" sentinel as a successfully built one, so the
+    // sentinel alone must not be trusted. Refuse to derive monotonicity from a contradictory order.
+    STORM_LOG_THROW(!order->isInvalid(), storm::exceptions::InvalidStateException, "Order-based monotonicity analysis produced an inconsistent order.");
     if (unknState1 != order->getNumberOfStates()) {
         orderExtender.setUnknownStates(order, unknState1, unknState2);
     }
@@ -75,7 +79,7 @@ void extendLocalMonotonicityResult(
             // Simply add the states we couldn't add sofar between =) and =( as we could find local monotonicity for all parametric states
             order->add(order->getNextStateNumber().second);
         }
-        assert(order->getDoneBuilding());
+        STORM_LOG_ASSERT(order->getDoneBuilding(), "Order should be done building.");
     }
 }
 }  // namespace detail
@@ -102,17 +106,18 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::initializeMono
     if (useBounds) {
         STORM_LOG_ASSERT(plaBoundFunction, "PLA bound function not registered.");
         orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Maximize));
-        orderExtender->setMaxValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
+        orderExtender->setMinValuesInit(plaBoundFunction(env, region, storm::solver::OptimizationDirection::Minimize));
     }
     typename MonotonicityAnnotation<ParametricType>::OrderBasedMonotonicityAnnotation annotation;
     annotation.stateOrder = detail::extendOrder(*this->orderExtender, nullptr, region.region);
     annotation.localMonotonicityResult = std::make_shared<storm::analysis::LocalMonotonicityResult<VariableType>>(annotation.stateOrder->getNumberOfStates());
 
     for (auto& [var, kind] : this->globallyKnownMonotonicityInformation) {
-        if (kind == MonotonicityKind::Incr || kind == MonotonicityKind::Constant)
+        if (kind == MonotonicityKind::Incr || kind == MonotonicityKind::Constant) {
             annotation.localMonotonicityResult->setMonotoneIncreasing(var);
-        else if (kind == MonotonicityKind::Decr)
+        } else if (kind == MonotonicityKind::Decr) {
             annotation.localMonotonicityResult->setMonotoneDecreasing(var);
+        }
     }
 
     detail::extendLocalMonotonicityResult(region.region, annotation.stateOrder, *annotation.localMonotonicityResult, *this->monotonicityChecker,
@@ -128,11 +133,9 @@ void OrderBasedMonotonicityBackend<ParametricType, ConstantType>::updateMonotoni
     // Copy order only if it will potentially change and if it is shared with another region
     bool const changeOrder = !annotation->stateOrder->getDoneBuilding() && orderExtender->isHope(annotation->stateOrder);
     if (changeOrder && annotation->stateOrder.use_count() > 1) {
-        // TODO: orderExtender currently uses shared_ptr<Order> which likely interferes with the use_count() > 1 check above
         // TODO: Make sure that only annotated regions own the order
         auto newOrder = annotation->stateOrder->copy();
-        orderExtender->setUnknownStates(annotation->stateOrder, newOrder);
-        orderExtender->copyMinMax(annotation->stateOrder, newOrder);
+        orderExtender->copyContext(annotation->stateOrder, newOrder);
         annotation->stateOrder = newOrder;
     }
     if (changeOrder) {

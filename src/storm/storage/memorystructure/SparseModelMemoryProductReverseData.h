@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructure.h"
+#include "storm/storage/scheduler/Scheduler.h"
 
 namespace storm {
 namespace storage {

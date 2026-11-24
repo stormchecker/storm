@@ -7,6 +7,7 @@
 #include "storm-dft/modelchecker/SFTBDDChecker.h"
 #include "storm-dft/storage/DFT.h"
 #include "storm-dft/storage/SylvanBddManager.h"
+#include "storm/environment/Environment.h"
 #include "storm/logic/AtomicLabelFormula.h"
 #include "storm/logic/BinaryBooleanStateFormula.h"
 #include "storm/logic/BoundedUntilFormula.h"
@@ -31,20 +32,21 @@ class SFTBDDPropertyFormulaAdapter {
 
    public:
 #ifdef STORM_HAVE_SYLVAN
-    SFTBDDPropertyFormulaAdapter(
-        std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas, storm::dft::utility::RelevantEvents relevantEvents = {},
-        std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>())
+    SFTBDDPropertyFormulaAdapter(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas,
+                                 std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager,
+                                 storm::dft::utility::RelevantEvents relevantEvents = {})
         : formulas{formulas} {
         checkForm(formulas);
 
-        relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end());
+        // Claiming labels are not supported by BDD-based analysis.
+        relevantEvents.insertNamesFromProperties(formulas.begin(), formulas.end(), false);
         auto const transformator{std::make_shared<storm::dft::transformations::SftToBddTransformator<ValueType>>(dft, sylvanBddManager, relevantEvents)};
         checker = std::make_shared<storm::dft::modelchecker::SFTBDDChecker>(transformator);
     }
 #else
-    SFTBDDPropertyFormulaAdapter(
-        std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas, storm::dft::utility::RelevantEvents relevantEvents = {},
-        std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager = std::make_shared<storm::dft::storage::SylvanBddManager>()) {
+    SFTBDDPropertyFormulaAdapter(std::shared_ptr<storm::dft::storage::DFT<ValueType>> dft, FormulaVector const &formulas,
+                                 std::shared_ptr<storm::dft::storage::SylvanBddManager> sylvanBddManager,
+                                 storm::dft::utility::RelevantEvents relevantEvents = {}) {
         STORM_LOG_THROW(false, storm::exceptions::MissingLibraryException,
                         "This version of Storm was compiled without support for Sylvan. Yet, a method was called that requires this support. Please choose a "
                         "version of Storm with Sylvan support.");

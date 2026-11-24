@@ -1,5 +1,7 @@
 #pragma once
 
+#include "storm-parsers/parser/ExplicitModelParserOptions.h"
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -13,7 +15,7 @@ namespace parser {
  * it loads the files, parses them and returns the desired model.
  */
 template<typename ValueType = double, typename RewardValueType = double>
-class NondeterministicModelParser {
+class STORM_PARSERS_API NondeterministicModelParser {
    public:
     /*!
      * Parse a Mdp.
@@ -33,7 +35,8 @@ class NondeterministicModelParser {
      */
     static storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseMdp(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 
    private:
     /*!
@@ -52,7 +55,8 @@ class NondeterministicModelParser {
      */
     static storm::storage::sparse::ModelComponents<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>> parseNondeterministicModel(
         std::string const& transitionsFilename, std::string const& labelingFilename, std::string const& stateRewardFilename = "",
-        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "");
+        std::string const& transitionRewardFilename = "", std::string const& choiceLabelingFilename = "",
+        ExplicitModelParserOptions const& options = ExplicitModelParserOptions());
 };
 
 } /* namespace parser */

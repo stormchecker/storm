@@ -1,0 +1,19 @@
+// Reference copy: these properties are embedded in cpp file directly.
+
+Pmax=? [ F (s = 3) ]; // existence of 'success', pick 'send'
+
+Pmax=? [ (s<=1) U (s=3) ]; // 'try' until 'success', pick 'send'
+Pmin=? [ (s<=1) U (s=3) ]; // 'try' until 'success', pick 'wait'
+
+Pmax=? [ (s<=1) W (s=3) ]; // weak 'try' until 'success', pick 'wait'
+Pmin=? [ (s<=1) W (s=3) ]; // weak 'try' until 'sucesss', pick 'send'
+Pmax=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; // 1 - P dual of the above
+
+Pmax=? [ !(s=2) W ((s=3 & !(s=2))) ]; // existence of 'success' before any 'fail', pick 'wait'
+Pmin=? [ !(s=2) W ((s=3 & !(s=2))) ]; // existence of 'success' before any 'fail', pick 'send'
+
+Pmax=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; // bounded existence, 'fail' at most twice, pick 'wait'
+Pmin=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; // bounded existence, 'fail' at most twice, pick 'send'
+
+Pmax=? [ (s=2) R !(s=3) ]; // no 'success' without a prior 'fail', pick 'wait'
+Pmin=? [ (s=2) R !(s=3) ]; // no 'success' without a prior 'fail', pick 'send'

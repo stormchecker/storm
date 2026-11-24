@@ -3,7 +3,13 @@
 
 #include <boost/math/distributions/weibull.hpp>
 
-#include "storm-dft/storage/elements/DFTElements.h"
+#include "storm-dft/storage/elements/BEConst.h"
+#include "storm-dft/storage/elements/BEErlang.h"
+#include "storm-dft/storage/elements/BEExponential.h"
+#include "storm-dft/storage/elements/BELogNormal.h"
+#include "storm-dft/storage/elements/BEProbability.h"
+#include "storm-dft/storage/elements/BESamples.h"
+#include "storm-dft/storage/elements/BEWeibull.h"
 
 namespace {
 
@@ -107,7 +113,7 @@ TEST(DftBETest, FailureWeibullExponential) {
         EXPECT_NEAR(boost::math::cdf(dist2, t), be2.getUnreliability(t), 1e-10);
     }
 
-    // Decreasing faiure rate
+    // Decreasing failure rate
     storm::dft::storage::elements::BEWeibull<double> be3(0, "TestBE", 0.4, 2);
 
     EXPECT_TRUE(be3.canFail());

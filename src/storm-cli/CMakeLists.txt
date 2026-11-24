@@ -1,6 +1,7 @@
 # Create main binary storm.
 add_executable(storm-cli ${PROJECT_SOURCE_DIR}/src/storm-cli/storm-cli.cpp)
-target_link_libraries(storm-cli storm storm-cli-utilities)
+target_link_libraries(storm-cli storm storm-cli-utilities storm-counterexamples storm-gamebased-ar)
+target_include_directories(storm-cli PRIVATE "${PROJECT_SOURCE_DIR}/src")
 set_target_properties(storm-cli PROPERTIES OUTPUT_NAME "storm")
 set_target_properties(storm-cli PROPERTIES VERSION ${STORM_VERSION} SOVERSION ${STORM_VERSION})
 storm_target_precompile_headers(storm-cli PRIVATE ${STORM_PRECOMPILED_HEADERS})

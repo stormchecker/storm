@@ -1,14 +1,14 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
+#include "storm-dft/api/io.h"
 #include "storm-dft/transformations/DftInstantiator.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 namespace {
 
 TEST(DftInstantiatorTest, InstantiateSimple) {
-    carl::VariablePool::getInstance().clear();
+    storm::clearRFVariablePool();
 
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/and_param.dft";
     std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTGalileoFile<storm::RationalFunction>(file);
@@ -18,8 +18,8 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
     storm::dft::transformations::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
 
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-    storm::RationalFunctionVariable const& x = carl::VariablePool::getInstance().findVariableWithName("x");
-    ASSERT_NE(x, carl::Variable::NO_VARIABLE);
+    storm::RationalFunctionVariable const& x = storm::findRFVariable("x");
+    ASSERT_NE(x, storm::RationalFunctionVariable::NO_VARIABLE);
 
     valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.5)));
     std::shared_ptr<storm::dft::storage::DFT<double>> instDft = instantiator.instantiate(valuation);
@@ -36,7 +36,7 @@ TEST(DftInstantiatorTest, InstantiateSimple) {
 }
 
 TEST(DftInstantiatorTest, InstantiateSymmetry) {
-    carl::VariablePool::getInstance().clear();
+    storm::clearRFVariablePool();
 
     std::string file = STORM_TEST_RESOURCES_DIR "/dft/symmetry_param.dft";
     std::shared_ptr<storm::dft::storage::DFT<storm::RationalFunction>> dft = storm::dft::api::loadDFTGalileoFile<storm::RationalFunction>(file);
@@ -46,10 +46,10 @@ TEST(DftInstantiatorTest, InstantiateSymmetry) {
     storm::dft::transformations::DftInstantiator<storm::RationalFunction, double> instantiator(*dft);
 
     std::map<storm::RationalFunctionVariable, storm::RationalFunctionCoefficient> valuation;
-    storm::RationalFunctionVariable const& x = carl::VariablePool::getInstance().findVariableWithName("x");
-    ASSERT_NE(x, carl::Variable::NO_VARIABLE);
-    storm::RationalFunctionVariable const& y = carl::VariablePool::getInstance().findVariableWithName("y");
-    ASSERT_NE(y, carl::Variable::NO_VARIABLE);
+    storm::RationalFunctionVariable const& x = storm::findRFVariable("x");
+    ASSERT_NE(x, storm::RationalFunctionVariable::NO_VARIABLE);
+    storm::RationalFunctionVariable const& y = storm::findRFVariable("y");
+    ASSERT_NE(y, storm::RationalFunctionVariable::NO_VARIABLE);
 
     valuation.insert(std::make_pair(x, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(5)));
     valuation.insert(std::make_pair(y, storm::utility::convertNumber<storm::RationalFunctionCoefficient>(0.01)));

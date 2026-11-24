@@ -1,0 +1,14 @@
+// Reference copy: these properties are embedded in cpp file directly.
+
+P=? [ F (s = 3) ]; // existence of 'success'
+
+P=? [ (s<=1) U (s=3) ]; // 'try' until 'success'
+
+P=? [ (s<=1) W (s=3) ]; // weak 'try' until 'success'
+P=? [ !(s=3) U (!(s<=1) & !(s=3)) ]; // 1 - P dual of the above
+
+P=? [ !(s=2) W ((s=3 & !(s=2))) ]; // existence of 'success' before any 'fail'
+
+P=? [(!(s=2) W ((s=2) W (!(s=2) W ((s=2) W G !(s=2)))))]; // bounded existence, 'fail' at most twice
+
+P=? [ (s=2) R !(s=3) ]; // no 'success' without a prior 'fail'

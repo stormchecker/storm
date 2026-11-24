@@ -74,6 +74,13 @@ class CoreSettings : public ModuleSettings {
     storm::solver::SmtSolverType getSmtSolver() const;
 
     /*!
+     * Retrieves whether the smt solver has been set from its default value.
+     *
+     * @return True iff it has been set from its default value.
+     */
+    bool isSmtSolverSetFromDefaultValue() const;
+
+    /*!
      * Retrieves the selected library for DD-related operations.
      *
      * @return The selected library.

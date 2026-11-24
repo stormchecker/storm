@@ -38,7 +38,7 @@ std::vector<storm::storage::FlatSet<uint_fast64_t>> getGuaranteedLabelSets(storm
     storm::storage::BitVector markedStates(model.getNumberOfStates());
 
     // Initially, put all predecessors of target states in the worklist and empty the analysis information them.
-    for (auto state : psiStates) {
+    for (uint64_t state : psiStates) {
         analysisInformation[state] = storm::storage::FlatSet<uint_fast64_t>();
         for (auto const& predecessorEntry : backwardTransitions.getRow(state)) {
             if (predecessorEntry.getColumn() != state && !statesInWorkList.get(predecessorEntry.getColumn()) && !psiStates.get(predecessorEntry.getColumn())) {
@@ -124,6 +124,7 @@ storm::storage::FlatSet<uint_fast64_t> getGuaranteedLabelSet(storm::models::spar
     storm::storage::FlatSet<uint_fast64_t> knownLabels(relevantLabels);
     storm::storage::FlatSet<uint_fast64_t> tempIntersection;
     for (auto initialState : model.getInitialStates()) {
+        tempIntersection.clear();
         std::set_intersection(knownLabels.begin(), knownLabels.end(), guaranteedLabels[initialState].begin(), guaranteedLabels[initialState].end(),
                               std::inserter(tempIntersection, tempIntersection.end()));
         std::swap(knownLabels, tempIntersection);

@@ -3,6 +3,7 @@
 #include "storm-pars/modelchecker/region/RegionResult.h"
 #include "storm-pars/modelchecker/region/monotonicity/MonotonicityAnnotation.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "storm/utility/ExtendedNumber.h"
 #include "storm/utility/Extremum.h"
 
 namespace storm::modelchecker {
@@ -11,6 +12,7 @@ struct AnnotatedRegion {
     using Region = storm::storage::ParameterRegion<ParametricType>;
     using VariableType = typename Region::VariableType;
     using CoefficientType = typename Region::CoefficientType;
+    using ExtendedCoefficientType = storm::utility::ExtendedValueType<CoefficientType>;
 
     explicit AnnotatedRegion(Region const& region);
 
@@ -39,7 +41,7 @@ struct AnnotatedRegion {
 
     storm::modelchecker::MonotonicityAnnotation<ParametricType> monotonicityAnnotation;  /// what is known about this region in terms of monotonicity
 
-    bool updateValueBound(CoefficientType const& newValue, storm::OptimizationDirection dir);
+    bool updateValueBound(ExtendedCoefficientType const& newValue, storm::OptimizationDirection dir);
 
     storm::utility::Maximum<CoefficientType> knownLowerValueBound;  // Maximal known lower bound on the value of the region
     storm::utility::Minimum<CoefficientType> knownUpperValueBound;  // Minimal known upper bound on the value of the region

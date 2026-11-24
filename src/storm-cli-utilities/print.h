@@ -1,7 +1,27 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <string>
+
+#include "storm/utility/macros.h"
+
+/*!
+ * Define the macros that print information to stdout and optionally also log it.
+ * These are CLI-only: library code must not write directly to stdout, so that
+ * downstream consumers (e.g. Python bindings) can control output purely through logging.
+ */
+#define STORM_PRINT(message)  \
+    do {                      \
+        std::cout << message; \
+        std::cout.flush();    \
+    } while (false)
+
+#define STORM_PRINT_AND_LOG(message) \
+    do {                             \
+        STORM_LOG_INFO(message);     \
+        STORM_PRINT(message);        \
+    } while (false)
 
 namespace storm {
 namespace cli {

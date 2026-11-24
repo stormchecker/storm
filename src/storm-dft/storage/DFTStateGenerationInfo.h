@@ -57,7 +57,7 @@ class DFTStateGenerationInfo {
 
     void addStateIndex(size_t id, size_t index) {
         STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mIdToStateIndex[id] = index;
     }
 
@@ -97,12 +97,12 @@ class DFTStateGenerationInfo {
     }
 
     void addSpareActivationIndex(size_t id, size_t index) {
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mSpareActivationIndex[id] = index;
     }
 
     void addSpareUsageIndex(size_t id, size_t index) {
-        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid");
+        STORM_LOG_ASSERT(index < stateIndexSize, "Index invalid.");
         mSpareUsageIndex[id] = index;
     }
 

@@ -52,7 +52,7 @@ struct BinaryPomdpTransformerRowGroup {
     }
 
     std::vector<BinaryPomdpTransformerRowGroup> split() const {
-        assert(size() > 1);
+        STORM_LOG_ASSERT(size() > 1, "Expected at least 2 rows to split.");
         uint64_t midRow = firstRow + size() / 2;
         std::vector<BinaryPomdpTransformerRowGroup> res;
         res.emplace_back(origState, firstRow, midRow, origStateObservation);

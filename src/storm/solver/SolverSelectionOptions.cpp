@@ -78,14 +78,16 @@ std::string toString(MaBoundedReachabilityMethod m) {
 
 std::string toString(LpSolverType t) {
     switch (t) {
-        case LpSolverType::Gurobi:
-            return "Gurobi";
         case LpSolverType::Glpk:
             return "Glpk";
-        case LpSolverType::Z3:
-            return "Z3";
+        case LpSolverType::Gurobi:
+            return "Gurobi";
+        case LpSolverType::Highs:
+            return "Highs";
         case LpSolverType::Soplex:
             return "Soplex";
+        case LpSolverType::Z3:
+            return "Z3";
     }
     return "invalid";
 }
@@ -114,6 +116,8 @@ std::string toString(SmtSolverType t) {
             return "Z3";
         case SmtSolverType::Mathsat:
             return "Mathsat";
+        case SmtSolverType::Cvc5:
+            return "cvc5";
     }
     return "invalid";
 }

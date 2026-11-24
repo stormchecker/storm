@@ -8,6 +8,9 @@
 namespace storm {
 namespace utility {
 
+// The default minimal delay (in seconds) between two progress messages, used when no specific delay is requested.
+constexpr uint64_t defaultProgressMeasurementDelay = 5;
+
 /*!
  * A class that provides convenience operations to display run times.
  */
@@ -20,8 +23,10 @@ class ProgressMeasurement {
     /*!
      * Initializes progress measurement.
      * @param itemName the name of what we are counting (iterations, states, ...).
+     * @param delay the minimal delay (in seconds) between two progress messages. Defaults to a
+     *              sensible value (defaultProgressMeasurementDelay) if not specified.
      */
-    ProgressMeasurement(std::string const& itemName = "items");
+    ProgressMeasurement(std::string const& itemName, uint64_t delay = defaultProgressMeasurementDelay);
 
     /*!
      * Starts a new measurement, dropping all progress information collected so far.
@@ -30,17 +35,15 @@ class ProgressMeasurement {
     void startNewMeasurement(uint64_t startCount);
 
     /*!
-     * Updates the progress to the current count and prints it if the delay passed.
-     * The progress is only updated and printed if the ShowProgress setting is enabled.
+     * Updates the progress to the current count and logs it (on the progress log channel) if the delay passed.
      *
      * @param count The currently achieved count.
-     * @return True iff the progress was printed (i.e., the delay passed and showProgress setting enabled).
+     * @return True iff the progress was logged (i.e., the delay passed).
      */
     bool updateProgress(uint64_t count);
 
     /*!
      * Updates the progress to the current count.
-     * The update and printing is done independently of the showProgress setting.
      *
      * @param count The currently achieved count.
      * @param outstream The stream to which the progress is printed (if the delay passed)
@@ -91,9 +94,6 @@ class ProgressMeasurement {
     void setItemName(std::string const& name);
 
    private:
-    // Whether progress should be printed to standard output.
-    bool showProgress;
-
     // The delay (in seconds) between progress emission.
     uint64_t delay;
     // A name for what this is measuring (iterations, states, ...)

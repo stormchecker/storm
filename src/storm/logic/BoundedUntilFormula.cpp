@@ -14,7 +14,7 @@
 namespace storm {
 namespace logic {
 BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                                         boost::optional<TimeBound> const& lowerBound, boost::optional<TimeBound> const& upperBound,
+                                         std::optional<TimeBound> const& lowerBound, std::optional<TimeBound> const& upperBound,
                                          TimeBoundReference const& timeBoundReference)
     : PathFormula(),
       leftSubformula({leftSubformula}),
@@ -26,7 +26,7 @@ BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& l
 }
 
 BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula,
-                                         std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                                         std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                                          std::vector<TimeBoundReference> const& timeBoundReferences)
     : PathFormula(),
       leftSubformula({leftSubformula}),
@@ -34,13 +34,13 @@ BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& l
       timeBoundReference(timeBoundReferences),
       lowerBound(lowerBounds),
       upperBound(upperBounds) {
-    assert(timeBoundReferences.size() == upperBound.size());
-    assert(timeBoundReferences.size() == lowerBound.size());
+    STORM_LOG_ASSERT(timeBoundReferences.size() == upperBound.size(), "Time bound reference/upper bound size mismatch.");
+    STORM_LOG_ASSERT(timeBoundReferences.size() == lowerBound.size(), "Time bound reference/lower bound size mismatch.");
 }
 
 BoundedUntilFormula::BoundedUntilFormula(std::vector<std::shared_ptr<Formula const>> const& leftSubformulas,
                                          std::vector<std::shared_ptr<Formula const>> const& rightSubformulas,
-                                         std::vector<boost::optional<TimeBound>> const& lowerBounds, std::vector<boost::optional<TimeBound>> const& upperBounds,
+                                         std::vector<std::optional<TimeBound>> const& lowerBounds, std::vector<std::optional<TimeBound>> const& upperBounds,
                                          std::vector<TimeBoundReference> const& timeBoundReferences)
     : PathFormula(),
       leftSubformula(leftSubformulas),
@@ -48,10 +48,10 @@ BoundedUntilFormula::BoundedUntilFormula(std::vector<std::shared_ptr<Formula con
       timeBoundReference(timeBoundReferences),
       lowerBound(lowerBounds),
       upperBound(upperBounds) {
-    assert(leftSubformula.size() == rightSubformula.size());
-    assert(rightSubformula.size() == timeBoundReference.size());
-    assert(timeBoundReference.size() == lowerBound.size());
-    assert(lowerBound.size() == upperBound.size());
+    STORM_LOG_ASSERT(leftSubformula.size() == rightSubformula.size(), "Left/right subformula size mismatch.");
+    STORM_LOG_ASSERT(rightSubformula.size() == timeBoundReference.size(), "Subformula/time bound reference size mismatch.");
+    STORM_LOG_ASSERT(timeBoundReference.size() == lowerBound.size(), "Time bound reference/lower bound size mismatch.");
+    STORM_LOG_ASSERT(lowerBound.size() == upperBound.size(), "Lower/upper bound size mismatch.");
     STORM_LOG_THROW(this->getDimension() != 0, storm::exceptions::InvalidArgumentException, "Bounded until formula requires at least one dimension.");
     for (unsigned i = 0; i < timeBoundReferences.size(); ++i) {
         STORM_LOG_THROW(hasLowerBound(i) || hasUpperBound(i), storm::exceptions::InvalidArgumentException,
@@ -149,13 +149,13 @@ bool BoundedUntilFormula::hasQuantitativeResult() const {
 }
 
 bool BoundedUntilFormula::isMultiDimensional() const {
-    assert(timeBoundReference.size() != 0);
+    STORM_LOG_ASSERT(timeBoundReference.size() != 0, "Time bound reference is empty.");
     return timeBoundReference.size() > 1;
 }
 
 bool BoundedUntilFormula::hasMultiDimensionalSubformulas() const {
-    assert(leftSubformula.size() != 0);
-    assert(leftSubformula.size() == rightSubformula.size());
+    STORM_LOG_ASSERT(leftSubformula.size() != 0, "Left subformula is empty.");
+    STORM_LOG_ASSERT(leftSubformula.size() == rightSubformula.size(), "Left/right subformula size mismatch.");
     return leftSubformula.size() > 1;
 }
 
@@ -190,16 +190,16 @@ Formula const& BoundedUntilFormula::getRightSubformula(unsigned i) const {
 }
 
 TimeBoundReference const& BoundedUntilFormula::getTimeBoundReference(unsigned i) const {
-    assert(i < timeBoundReference.size());
+    STORM_LOG_ASSERT(i < timeBoundReference.size(), "Time bound reference index out of range.");
     return timeBoundReference.at(i);
 }
 
 bool BoundedUntilFormula::isLowerBoundStrict(unsigned i) const {
-    assert(i < lowerBound.size());
+    STORM_LOG_ASSERT(i < lowerBound.size(), "Lower bound index out of range.");
     if (!hasLowerBound(i)) {
         return false;
     }
-    return lowerBound.at(i).get().isStrict();
+    return lowerBound.at(i).value().isStrict();
 }
 
 bool BoundedUntilFormula::hasLowerBound() const {
@@ -219,11 +219,11 @@ bool BoundedUntilFormula::hasIntegerLowerBound(unsigned i) const {
     if (!hasLowerBound(i)) {
         return true;
     }
-    return lowerBound.at(i).get().getBound().hasIntegerType();
+    return lowerBound.at(i).value().getBound().hasIntegerType();
 }
 
 bool BoundedUntilFormula::isUpperBoundStrict(unsigned i) const {
-    return upperBound.at(i).get().isStrict();
+    return upperBound.at(i).value().isStrict();
 }
 
 bool BoundedUntilFormula::hasUpperBound() const {
@@ -240,15 +240,23 @@ bool BoundedUntilFormula::hasUpperBound(unsigned i) const {
 }
 
 bool BoundedUntilFormula::hasIntegerUpperBound(unsigned i) const {
-    return upperBound.at(i).get().getBound().hasIntegerType();
+    return upperBound.at(i).value().getBound().hasIntegerType();
 }
 
 storm::expressions::Expression const& BoundedUntilFormula::getLowerBound(unsigned i) const {
-    return lowerBound.at(i).get().getBound();
+    return lowerBound.at(i).value().getBound();
 }
 
 storm::expressions::Expression const& BoundedUntilFormula::getUpperBound(unsigned i) const {
-    return upperBound.at(i).get().getBound();
+    return upperBound.at(i).value().getBound();
+}
+
+std::optional<TimeBound> BoundedUntilFormula::getLowerBoundAsOptionalTimeBound(unsigned i) const {
+    return lowerBound.at(i);
+}
+
+std::optional<TimeBound> BoundedUntilFormula::getUpperBoundAsOptionalTimeBound(unsigned i) const {
+    return upperBound.at(i);
 }
 
 template<>

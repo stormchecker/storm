@@ -6,9 +6,9 @@
 #include "storm/models/symbolic/Model.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
-#include "storm/storage/dd/Add.h"
-#include "storm/storage/dd/Bdd.h"
-#include "storm/storage/dd/DdManager.h"
+#include "storm/dd/Add.h"
+#include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
 
 namespace storm {
 class Environment;
@@ -28,7 +28,7 @@ class SparseInfiniteHorizonHelper;
 /*!
  * Helper class for model checking queries that depend on the long run behavior of the (nondeterministic) system.
  */
-template<typename ValueType, storm::dd::DdType DdType, bool Nondeterministic>
+template<storm::dd::DdType DdType, typename ValueType, bool Nondeterministic>
 class HybridInfiniteHorizonHelper : public SingleValueModelCheckerHelper<ValueType, storm::models::GetModelRepresentation<DdType>::representation> {
    public:
     /*!

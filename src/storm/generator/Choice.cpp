@@ -19,6 +19,18 @@ Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian)
 }
 
 template<typename ValueType, typename StateType>
+void Choice<ValueType, StateType>::reset(uint_fast64_t newActionIndex, bool newMarkovian) {
+    markovian = newMarkovian;
+    actionIndex = newActionIndex;
+    distribution.clear();
+    totalMass = storm::utility::zero<ValueType>();
+    rewards.clear();
+    originData = boost::none;
+    labels = boost::none;
+    playerIndex = boost::none;
+}
+
+template<typename ValueType, typename StateType>
 void Choice<ValueType, StateType>::add(Choice const& other) {
     STORM_LOG_THROW(this->markovian == other.markovian, storm::exceptions::InvalidOperationException, "Type of choices do not match.");
     STORM_LOG_THROW(this->actionIndex == other.actionIndex, storm::exceptions::InvalidOperationException, "Action index of choices do not match.");
@@ -34,6 +46,7 @@ void Choice<ValueType, StateType>::add(Choice const& other) {
     auto otherRewIt = other.rewards.begin();
     for (auto& rewardValue : this->rewards) {
         rewardValue += *otherRewIt;
+        ++otherRewIt;
     }
 
     // Join label sets and origin data if given.
@@ -172,6 +185,11 @@ void Choice<ValueType, StateType>::addRewards(std::vector<ValueType>&& values) {
 
 template<typename ValueType, typename StateType>
 std::vector<ValueType> const& Choice<ValueType, StateType>::getRewards() const {
+    return rewards;
+}
+
+template<typename ValueType, typename StateType>
+std::vector<ValueType>& Choice<ValueType, StateType>::getRewards() {
     return rewards;
 }
 

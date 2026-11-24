@@ -5,12 +5,14 @@
 #include "storm/adapters/IntervalAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/Add.h"
 #include "storm/environment/Environment.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/exceptions/InternalTypeErrorException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/NotImplementedException.h"
+#include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FormulaInformation.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
@@ -28,7 +30,6 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
-#include "storm/storage/dd/Add.h"
 #include "storm/utility/macros.h"
 
 namespace storm {
@@ -152,8 +153,13 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormul
     } else {
         STORM_LOG_ASSERT(resultPointer->isSymbolicQualitativeCheckResult(), "Unexpected result type.");
         STORM_LOG_ASSERT(ModelType::Representation != storm::models::ModelRepresentation::Sparse, "Unexpected model type.");
-        auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType>();
-        return std::make_unique<SymbolicQuantitativeCheckResult<storm::models::GetDdType<ModelType::Representation>::ddType, SolutionType>>(qualRes);
+        if constexpr (ModelType::Representation != storm::models::ModelRepresentation::Sparse) {
+            constexpr storm::dd::DdType ddType = storm::models::GetDdType<ModelType::Representation>::ddType;
+            auto const& qualRes = resultPointer->asSymbolicQualitativeCheckResult<ddType>();
+            return std::make_unique<SymbolicQuantitativeCheckResult<ddType, SolutionType>>(qualRes);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected symbolic check result for a sparse model.");
+        }
     }
 }
 
@@ -284,8 +290,6 @@ std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkStateFormula(
         return this->checkAtomicExpressionFormula(env, checkTask.substituteFormula(stateFormula.asAtomicExpressionFormula()));
     } else if (stateFormula.isAtomicLabelFormula()) {
         return this->checkAtomicLabelFormula(env, checkTask.substituteFormula(stateFormula.asAtomicLabelFormula()));
-    } else if (stateFormula.isBooleanLiteralFormula()) {
-        return this->checkBooleanLiteralFormula(env, checkTask.substituteFormula(stateFormula.asBooleanLiteralFormula()));
     } else if (stateFormula.isGameFormula()) {
         return this->checkGameFormula(env, checkTask.substituteFormula(stateFormula.asGameFormula()));
     } else if (stateFormula.isMultiObjectiveFormula()) {
@@ -500,9 +504,11 @@ template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalFu
 template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 
+template class AbstractModelChecker<storm::models::sparse::Model<storm::Interval>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::Interval>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::Interval>>;
 
+template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalInterval>>;
 template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalInterval>>;
 template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalInterval>>;
 

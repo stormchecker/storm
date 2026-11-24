@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "storm-dft/parser/DFTGalileoParser.h"
+#include "storm-dft/storage/DFT.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/io/file.h"

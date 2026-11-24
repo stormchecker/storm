@@ -1,24 +1,33 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
-#include "storm-dft/api/storm-dft.h"
-#include "storm-parsers/api/storm-parsers.h"
+#include "storm-dft/api/analysis.h"
+#include "storm-dft/api/io.h"
+#include "storm-dft/api/transformation.h"
+#include "storm-dft/environment/AnalysisEnvironment.h"
+#include "storm-dft/environment/DftEnvironment.h"
+#include "storm-dft/environment/ModelBuilderEnvironment.h"
+#include "storm-parsers/api/properties.h"
+#include "storm/api/properties.h"
+#include "storm/languages/jani/Property.h"
 
 namespace {
 
 // Configurations for DFT analysis
-struct DftAnalysisConfig {
-    bool useSR;
-    bool useMod;
-    bool useDC;
-};
-
 class NoOptimizationsConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{false, false, false};
+    static bool useDC() {
+        return false;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(false);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(false);
+        return env;
     }
 };
 
@@ -26,8 +35,16 @@ class DontCareOnlyConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{false, false, true};
+    static bool useDC() {
+        return true;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(false);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(false);
+        return env;
     }
 };
 
@@ -35,8 +52,16 @@ class ModularisationOnlyConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{false, true, false};
+    static bool useDC() {
+        return false;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(false);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(true);
+        return env;
     }
 };
 
@@ -44,8 +69,16 @@ class SymmetryReductionOnlyConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{true, false, false};
+    static bool useDC() {
+        return false;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(true);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(false);
+        return env;
     }
 };
 
@@ -53,8 +86,16 @@ class ModularisationConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{false, true, true};
+    static bool useDC() {
+        return true;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(false);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(true);
+        return env;
     }
 };
 
@@ -62,8 +103,16 @@ class SymmetryReductionConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{true, false, true};
+    static bool useDC() {
+        return true;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(true);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(false);
+        return env;
     }
 };
 
@@ -71,8 +120,16 @@ class AllOptimizationsConfig {
    public:
     typedef double ValueType;
 
-    static DftAnalysisConfig createConfig() {
-        return DftAnalysisConfig{true, true, true};
+    static bool useDC() {
+        return true;
+    }
+
+    static storm::dft::DftEnvironment createEnvironment() {
+        storm::dft::DftEnvironment env;
+        env.modelBuilder().setUseSymmetryReduction(true);
+        env.modelBuilder().setAllowDCForRelevantEvents(false);
+        env.analysis().setUseModularisation(true);
+        return env;
     }
 };
 
@@ -82,13 +139,17 @@ class DftModelCheckerTest : public ::testing::Test {
    public:
     typedef typename TestType::ValueType ValueType;
 
-    DftModelCheckerTest() : config(TestType::createConfig()) {}
+    DftModelCheckerTest() : _environment(TestType::createEnvironment()), _useDC(TestType::useDC()) {}
 
-    DftAnalysisConfig const& getConfig() const {
-        return config;
+    storm::dft::DftEnvironment const& env() const {
+        return _environment;
     }
 
-    double analyze(std::string const& file, std::string const& property) {
+    bool useDC() const {
+        return _useDC;
+    }
+
+    double analyze(std::string const& file, std::string const& property) const {
         // Load, build and prepare DFT
         std::shared_ptr<storm::dft::storage::DFT<double>> dft =
             storm::dft::api::prepareForMarkovAnalysis<double>(*(storm::dft::api::loadDFTGalileoFile<double>(file)));
@@ -99,42 +160,43 @@ class DftModelCheckerTest : public ::testing::Test {
 
         // Create relevant names
         std::vector<std::string> relevantNames;
-        if (!config.useDC) {
+        if (!useDC()) {
             relevantNames.push_back("all");
         }
-        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(properties, relevantNames);
+        storm::dft::utility::RelevantEvents relevantEvents = storm::dft::api::computeRelevantEvents(properties, relevantNames, false);
 
         // Perform model checking
         typename storm::dft::modelchecker::DFTModelChecker<double>::dft_results results =
-            storm::dft::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, relevantEvents, false);
-        return boost::get<double>(results[0]);
+            storm::dft::api::analyzeDFT<double>(env(), *dft, properties, relevantEvents);
+        return boost::get<typename storm::dft::modelchecker::DFTModelChecker<double>::ExtendedValueType>(results[0]);
     }
 
-    double analyzeMTTF(std::string const& file) {
+    double analyzeMTTF(std::string const& file) const {
         std::string property = "Tmin=? [F \"failed\"]";
         return analyze(file, property);
     }
 
-    double analyzeReliability(std::string const& file, double bound) {
+    double analyzeReliability(std::string const& file, double bound) const {
         std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
         return analyze(file, property);
     }
 
-    double analyzeReachability(std::string const& file) {
+    double analyzeReachability(std::string const& file) const {
         std::string property = "Pmin=? [F \"failed\"]";
         return analyze(file, property);
     }
 
-    double precision() {
+    double precision() const {
         return 1e-12;
     }
 
-    double precisionReliability() {
+    double precisionReliability() const {
         return 1e-10;
     }
 
    private:
-    DftAnalysisConfig config;
+    storm::dft::DftEnvironment _environment;
+    bool _useDC;
 };
 
 typedef ::testing::Types<NoOptimizationsConfig, DontCareOnlyConfig, ModularisationOnlyConfig, SymmetryReductionOnlyConfig, ModularisationConfig,
@@ -166,12 +228,12 @@ TYPED_TEST(DftModelCheckerTest, VotingMTTF) {
 
 TYPED_TEST(DftModelCheckerTest, PandMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pand.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
 }
 
 TYPED_TEST(DftModelCheckerTest, PorMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/por.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
 }
 
 TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
@@ -182,13 +244,13 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep7.dft");
     EXPECT_NEAR(result, 5 / 12.0, this->precision());
 
-    if (this->getConfig().useMod) {
+    if (this->env().analysis().isUseModularisation()) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep6.dft"), storm::exceptions::NotSupportedException);
     } else {
-        double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
         EXPECT_NEAR(result, 2 / 3.0, this->precision());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft");
         EXPECT_NEAR(result, 1, this->precision());
@@ -202,7 +264,7 @@ TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
 TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
     double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
     EXPECT_NEAR(result, 8 / 3.0, this->precision());
-    if (this->getConfig().useMod && !this->getConfig().useDC) {
+    if (this->env().analysis().isUseModularisation() && !this->useDC()) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
     } else {
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
@@ -211,11 +273,11 @@ TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
     EXPECT_NEAR(result, 67 / 24.0, this->precision());
 
-    if (this->getConfig().useMod) {
+    if (this->env().analysis().isUseModularisation()) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
     } else {
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft");
-        EXPECT_EQ(result, storm::utility::infinity<double>());
+        EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     }
 }
 
@@ -255,15 +317,15 @@ TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq4.dft");
     EXPECT_NEAR(result, 6, this->precision());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
     EXPECT_NEAR(result, 30000, this->precision());
 
-    if (this->getConfig().useMod) {
+    if (this->env().analysis().isUseModularisation()) {
         STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft"), storm::exceptions::NotSupportedException);
     } else {
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft");
-        EXPECT_EQ(result, storm::utility::infinity<double>());
+        EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     }
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/seq7.dft", 1.0);
     EXPECT_NEAR(result, 0.08, this->precision());
@@ -282,21 +344,21 @@ TYPED_TEST(DftModelCheckerTest, Mutex) {
     EXPECT_NEAR(result, 1, this->precision());
 
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft", 1.0);
     EXPECT_NEAR(result, 0, this->precision());
     result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex2.dft");
     EXPECT_NEAR(result, 0, this->precision());
 
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft", 1.0);
     EXPECT_NEAR(result, 0, this->precision());
     result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
     EXPECT_NEAR(result, 0, this->precision());
 
     result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
-    EXPECT_EQ(result, storm::utility::infinity<double>());
+    EXPECT_EQ(result, storm::utility::positiveInfinity<double>());
     result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft", 1.0);
     EXPECT_NEAR(result, 0.5842978146, this->precisionReliability());
     result = this->analyzeReachability(STORM_TEST_RESOURCES_DIR "/dft/mutex4.dft");
@@ -316,7 +378,7 @@ TYPED_TEST(DftModelCheckerTest, Symmetry) {
 }
 
 TYPED_TEST(DftModelCheckerTest, HecsReliability) {
-    if (!this->getConfig().useDC) {
+    if (!this->useDC()) {
         // Skip configurations because it takes too long
         GTEST_SKIP();
         return;

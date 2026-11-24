@@ -1,7 +1,9 @@
 #pragma once
 
+#include "storm/dd/DdType.h"
 #include "storm/modelchecker/AbstractModelChecker.h"
-#include "storm/storage/dd/DdType.h"
+
+#include "storm-gamebased-ar/abstraction/AbstractionOptions.h"
 
 namespace storm {
 
@@ -76,12 +78,12 @@ class AbstractAbstractionRefinementModelChecker : public storm::modelchecker::Ab
     /*!
      * Constructs a model checker for the given model.
      */
-    explicit AbstractAbstractionRefinementModelChecker();
+    explicit AbstractAbstractionRefinementModelChecker(abstraction::AbstractionOptions const& options = abstraction::AbstractionOptions());
 
     virtual ~AbstractAbstractionRefinementModelChecker();
 
     /// Overridden methods from super class.
-    virtual bool canHandle(storm::modelchecker::CheckTask<storm::logic::Formula> const& checkTask) const override;
+    virtual bool canHandle(storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeUntilProbabilities(
         Environment const& env, storm::modelchecker::CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) override;
     virtual std::unique_ptr<storm::modelchecker::CheckResult> computeReachabilityProbabilities(
@@ -222,6 +224,9 @@ class AbstractAbstractionRefinementModelChecker : public storm::modelchecker::Ab
 
     /// A flag indicating whether to reuse the quantitative results.
     bool reuseQuantitativeResults;
+
+    /// The precision used to detect convergence of the bounds.
+    double precision;
 
     /// The last qualitative results.
     std::unique_ptr<storm::gbar::abstraction::QualitativeResultMinMax> lastQualitativeResults;

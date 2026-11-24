@@ -1,6 +1,7 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/dd/DdManager.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -14,7 +15,6 @@
 #include "storm/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
-#include "storm/storage/dd/DdManager.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
 #include "storm/utility/FilteredRewardModel.h"
 
@@ -181,7 +181,8 @@ std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::checkMultiOb
                 this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().getBddZero()));
         }
     } else if (explicitResult->isExplicitQuantitativeCheckResult()) {
-        ValueType const& res = explicitResult->template asExplicitQuantitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()];
+        ValueType const res = storm::utility::toSentinel<ValueType>(
+            explicitResult->template asExplicitQuantitativeCheckResult<ValueType>()[*sparseModel->getInitialStates().begin()]);
         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType, ValueType>(
             this->getModel().getReachableStates(), this->getModel().getInitialStates(), this->getModel().getManager().template getConstant<ValueType>(res)));
     } else if (explicitResult->isExplicitParetoCurveCheckResult()) {

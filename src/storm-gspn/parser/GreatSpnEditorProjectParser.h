@@ -8,7 +8,7 @@
 #include <xercesc/util/XMLString.hpp>
 
 #include "storm-parsers/parser/ExpressionParser.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/expressions/ExpressionManager.h"
 
 #include "storm-gspn/storage/gspn/GSPN.h"
 

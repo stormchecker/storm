@@ -21,7 +21,7 @@ ModelExportFormat getModelExportFormatFromString(std::string const& input) {
     } else if (input == "umb") {
         return ModelExportFormat::Umb;
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model export format '" << input << "' does not match any known format.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "The model export format '" << input << "' does not match any known format.");
 }
 
 std::string toString(ModelExportFormat const& input) {
@@ -37,7 +37,7 @@ std::string toString(ModelExportFormat const& input) {
         case ModelExportFormat::Umb:
             return "umb";
     }
-    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
+    STORM_LOG_THROW_UNCONDITIONALLY(storm::exceptions::InvalidArgumentException, "Unhandled model export format.");
 }
 
 ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filename) {
@@ -48,8 +48,8 @@ ModelExportFormat getModelExportFormatFromFileExtension(std::string const& filen
     try {
         return getModelExportFormatFromString(extension.substr(1));
     } catch (storm::exceptions::InvalidArgumentException&) {
-        STORM_LOG_THROW(
-            false, storm::exceptions::InvalidArgumentException,
+        STORM_LOG_THROW_UNCONDITIONALLY(
+            storm::exceptions::InvalidArgumentException,
             "The file '" << filename
                          << "' does not have an extension to determine the model export format from. Add a file extension or specify the format explicitly.");
     }

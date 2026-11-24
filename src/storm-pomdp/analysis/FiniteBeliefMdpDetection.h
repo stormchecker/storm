@@ -4,7 +4,7 @@
 
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/BitVector.h"
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/decomposition/StronglyConnectedComponentDecomposition.h"
 
 namespace storm {
 namespace pomdp {

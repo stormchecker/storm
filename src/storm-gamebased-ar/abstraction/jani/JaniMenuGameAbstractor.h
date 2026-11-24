@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/dd/DdType.h"
 
 #include "storm-gamebased-ar/abstraction/AbstractionInformation.h"
 #include "storm-gamebased-ar/abstraction/MenuGame.h"
@@ -9,11 +9,9 @@
 #include "storm-gamebased-ar/abstraction/ValidBlockAbstractor.h"
 #include "storm-gamebased-ar/abstraction/jani/AutomatonAbstractor.h"
 
-#include "storm/storage/dd/Add.h"
+#include "storm/dd/Add.h"
 
-#include "storm/storage/expressions/Expression.h"
-
-#include "storm/settings/modules/AbstractionSettings.h"
+#include "storm/expressions/Expression.h"
 
 namespace storm {
 namespace utility {
@@ -21,6 +19,8 @@ namespace solver {
 class SmtSolverFactory;
 }
 }  // namespace utility
+
+class Environment;
 
 namespace models {
 namespace symbolic {
@@ -45,11 +45,13 @@ class JaniMenuGameAbstractor : public MenuGameAbstractor<DdType, ValueType> {
     /*!
      * Constructs an abstractor for the given model.
      *
+     * @param env The environment providing the settings for the DD manager.
      * @param model The concrete model for which to build the abstraction.
      * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
      */
-    JaniMenuGameAbstractor(storm::jani::Model const& model, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
-                           MenuGameAbstractorOptions const& options = MenuGameAbstractorOptions());
+    JaniMenuGameAbstractor(storm::Environment const& env, storm::jani::Model const& model,
+                           std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory,
+                           AbstractionOptions const& options = AbstractionOptions());
 
     JaniMenuGameAbstractor(JaniMenuGameAbstractor const&) = default;
     JaniMenuGameAbstractor& operator=(JaniMenuGameAbstractor const&) = default;

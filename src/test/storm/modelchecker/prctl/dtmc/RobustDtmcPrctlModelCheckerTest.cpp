@@ -160,8 +160,8 @@ std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilt
     return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
 }
 
-storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model,
-                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+storm::ExtendedRationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> const& model,
+                                                                  std::unique_ptr<storm::modelchecker::CheckResult>& result) {
     auto filter = getInitialStateFilter(model);
     result->filter(*filter);
     return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
@@ -172,8 +172,8 @@ std::unique_ptr<storm::modelchecker::QualitativeCheckResult> getInitialStateFilt
     return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult<storm::RationalNumber>>(model->getInitialStates());
 }
 
-storm::RationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model,
-                                                          std::unique_ptr<storm::modelchecker::CheckResult>& result) {
+storm::ExtendedRationalNumber getQuantitativeResultAtInitialState(std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> const& model,
+                                                                  std::unique_ptr<storm::modelchecker::CheckResult>& result) {
     auto filter = getInitialStateFilter(model);
     result->filter(*filter);
     return result->asQuantitativeCheckResult<storm::RationalNumber>().getMin();
@@ -199,8 +199,8 @@ void expectThrowRational(std::string const& path, std::string const& formulaStri
     STORM_SILENT_EXPECT_THROW(checker.check(env, task), storm::exceptions::BaseException);
 }
 
-void checkExplicitModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::RationalNumber min,
-                                                     storm::RationalNumber max) {
+void checkExplicitModelForQuantitativeResultRational(std::string const& path, std::string const& formulaString, storm::ExtendedRationalNumber min,
+                                                     storm::ExtendedRationalNumber max) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalInterval>> modelPtr = storm::parser::parseDirectEncodingModel<storm::RationalInterval>(path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
     storm::Environment env;
@@ -261,7 +261,7 @@ void makeUncertainAndCheckRational(std::string const& path, std::string const& f
     auto taskCertain = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
     auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>(*dtmc);
     auto exresult = checker.check(env, taskCertain);
-    storm::RationalNumber certainValue = getQuantitativeResultAtInitialState(modelPtr, exresult);
+    auto const certainValue = getQuantitativeResultAtInitialState(modelPtr, exresult);
 
     storm::Environment envIntervals;
     envIntervals.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -272,13 +272,13 @@ void makeUncertainAndCheckRational(std::string const& path, std::string const& f
     auto taskMin = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
     taskMin.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Minimize);
     auto iresultMin = ichecker.check(envIntervals, taskMin);
-    storm::RationalNumber minValue = getQuantitativeResultAtInitialState(idtmc, iresultMin);
+    auto const minValue = getQuantitativeResultAtInitialState(idtmc, iresultMin);
     EXPECT_LE(minValue, certainValue);
 
     auto taskMax = storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber>(*formulas[0]);
     taskMax.setUncertaintyResolutionMode(storm::UncertaintyResolutionMode::Maximize);
     auto iresultMax = ichecker.check(envIntervals, taskMax);
-    storm::RationalNumber maxValue = getQuantitativeResultAtInitialState(idtmc, iresultMax);
+    auto const maxValue = getQuantitativeResultAtInitialState(idtmc, iresultMax);
     EXPECT_LE(certainValue, maxValue);
 }
 
@@ -305,16 +305,16 @@ TEST(RobustDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]", 9.0 / 189.0, 72.0 / 189.0);
 }
 
 TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability probabilities using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
@@ -322,8 +322,8 @@ TEST(RobustDtmcModelCheckerTest, BrpIntervalsMaxMin) {
 }
 
 TEST(RobustDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     // Maxima reachability rewards using PRISM format.
     checkPrismModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]", 3.25, 4.6);
@@ -343,6 +343,86 @@ TEST(RobustDtmcModelCheckerTest, Tiny04MaxMinRewards) {
     // Maxima reachability rewards using explicit format - infinite reward case.
     checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
                                             std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewards) {
+    // Rewards are collected in the first k states of a path, starting at the initial state (which has reward 0).
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=0 ];R=? [ C<=0 ]", 0, 0);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=1 ];R=? [ C<=1 ]", 0, 0);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", 6.5, 8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=10 ];R=? [ C<=10 ]", 6.5, 8.5);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny04CumulativeRewards) {
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", 6.5, 8.5);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=3 ];R=? [ C<=3 ]", 6.8, 9.2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=4 ];R=? [ C<=4 ]", 7.1, 9.9);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewardsNoUncertaintyResolutionMode) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustDtmcModelCheckerTest, Tiny03CumulativeRewardsRobust) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Robust);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimes) {
+    // The self-loop probability p is in [0.2, 0.5], i.e., the expected time 1 / (1 - p) is in [1.25, 2].
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 1.25, 2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 2, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesAndRewardsTargetStateBeforeMaybeStates) {
+    // The target state has a smaller index than the other state. The values of target states must not be mixed up with the values of the remaining states.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-07.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 1.25, 2);
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-07.drn", "R=? [ F \"target\" ];R=? [ F \"target\" ]", 1.25, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, SolutionBoundsTargetStateBeforeSeveralMaybeStates) {
+    // The bounds of the maybe states must not be mixed up, otherwise state 2 would get the larger bound of state 1.
+    std::shared_ptr<storm::models::sparse::Model<storm::Interval>> modelPtr =
+        storm::parser::parseDirectEncodingModel<storm::Interval>(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-10.drn");
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::Interval>> dtmc = modelPtr->as<storm::models::sparse::Dtmc<storm::Interval>>();
+    storm::Environment env;
+    env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+    env.solver().setForceSoundness(true);
+    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::Interval>>(*dtmc);
+    std::vector<std::pair<storm::UncertaintyResolutionMode, double>> const modesAndExpectedValues = {{storm::UncertaintyResolutionMode::Maximize, 3},
+                                                                                                     {storm::UncertaintyResolutionMode::Minimize, 2.25}};
+    for (std::string const formulaString : {"R=? [ F \"target\" ]", "T=? [ F \"target\" ]"}) {
+        std::vector<std::shared_ptr<storm::logic::Formula const>> formulas =
+            storm::api::extractFormulasFromProperties(storm::api::parseProperties(formulaString));
+        for (auto const& [mode, expected] : modesAndExpectedValues) {
+            auto task = storm::modelchecker::CheckTask<storm::logic::Formula, double>(*formulas[0]);
+            task.setUncertaintyResolutionMode(mode);
+            auto result = checker.check(env, task);
+            auto const& explicitResult = result->asExplicitQuantitativeCheckResult<double>();
+            ASSERT_TRUE(explicitResult.hasLowerBounds() || explicitResult.hasUpperBounds()) << "No bound on the solution was reported.";
+            EXPECT_TRUE(explicitResult.getSolutionBounds().encloses(explicitResult.getValueVector())) << "The bounds do not enclose the values of all states.";
+            EXPECT_NEAR(expected, getQuantitativeResultAtInitialState(dtmc, result), 0.0001);
+        }
+    }
+}
+
+TEST(RobustDtmcModelCheckerTest, GraphPreservationRequired) {
+    // The self-loop interval [0, 1] allows to never reach the target, i.e., the graph of the model is not preserved.
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "R=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-08.drn", "P=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Maximize);
+}
+
+TEST(RobustDtmcModelCheckerTest, GraphPreservationAfterTightening) {
+    // The self-loop interval [0, 0.5] is tightened to [0.5, 0.5] as the other transition has probability at most 0.5. The model is graph preserving.
+    checkExplicitModelForQuantitativeResult(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-09.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]", 2, 2);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesNoUncertaintyResolutionMode) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustDtmcModelCheckerTest, ReachabilityTimesRobust) {
+    expectThrow(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-06.drn", "T=? [ F \"target\" ]", storm::UncertaintyResolutionMode::Robust);
 }
 
 TEST(RobustDtmcModelCheckerTest, CrowdsQuotientIDTMC) {
@@ -409,16 +489,16 @@ TEST(RobustRationalDtmcModelCheckerTest, Tiny02GloballyMaxMinProbs) {
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "P=? [ F \"one\"];P=? [ F \"one\"]",
                                                  storm::RationalNumber("4483008223/94143178827"), storm::RationalNumber("35864065784/94143178827"));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(
         STORM_TEST_RESOURCES_DIR "/idtmc/brp-32-2-intervals.pm", "P=? [ F \"error\" ];P=? [ F \"error\" ]",
@@ -438,8 +518,8 @@ TEST(RobustRationalDtmcModelCheckerTest, BrpIntervalsMaxMin) {
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, DieIntervalsMaxMinRewards) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     checkPrismModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/die-intervals.pm", "R=? [ F \"done\"];R=? [ F \"done\"]",
                                                  storm::RationalNumber("15544649/4782969"), storm::RationalNumber("76715008330675523/16677181699666569"));
@@ -456,12 +536,35 @@ TEST(RobustRationalDtmcModelCheckerTest, Tiny03RewardsNoUncertaintyResolutionMod
 
 TEST(RobustRationalDtmcModelCheckerTest, Tiny04MaxMinRewards) {
     checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ F \"target\"];R=? [ F \"target\"]",
-                                                    storm::utility::infinity<storm::RationalNumber>(), storm::utility::infinity<storm::RationalNumber>());
+                                                    storm::utility::positiveInfinity<storm::RationalNumber>(),
+                                                    storm::utility::positiveInfinity<storm::RationalNumber>());
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03CumulativeRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=1 ];R=? [ C<=1 ]", storm::RationalNumber(0),
+                                                    storm::RationalNumber(0));
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ];R=? [ C<=2 ]", storm::RationalNumber("13/2"),
+                                                    storm::RationalNumber("17/2"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny04CumulativeRewards) {
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-04.drn", "R=? [ C<=3 ];R=? [ C<=3 ]", storm::RationalNumber("34/5"),
+                                                    storm::RationalNumber("46/5"));
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, Tiny03CumulativeRewardsNoUncertaintyResolutionMode) {
+    expectThrowRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "R=? [ C<=2 ]", storm::UncertaintyResolutionMode::Unset);
+}
+
+TEST(RobustRationalDtmcModelCheckerTest, ReachabilityTimes) {
+    // Value iteration reaches the exact value after finitely many steps as the model is acyclic (apart from the target).
+    checkExplicitModelForQuantitativeResultRational(STORM_TEST_RESOURCES_DIR "/idtmc/tiny-03.drn", "T=? [ F \"target\" ];T=? [ F \"target\" ]",
+                                                    storm::RationalNumber(2), storm::RationalNumber(2));
 }
 
 TEST(RobustRationalDtmcModelCheckerTest, AddUncertaintyBrpMax) {
-#ifndef STORM_HAVE_Z3
-    GTEST_SKIP() << "Z3 not available.";
+#ifndef STORM_HAVE_SMT_SOLVER
+    GTEST_SKIP() << "No SMT solver available.";
 #endif
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/10"));
     makeUncertainAndCheckRational(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm", "P=? [ F \"target\"]", storm::RationalNumber("1/20"));

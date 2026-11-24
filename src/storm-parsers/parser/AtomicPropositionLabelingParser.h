@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+
+#include "storm-parsers/storm-parsers-api.h"
 #include "storm/models/sparse/StateLabeling.h"
 
 namespace storm {
@@ -11,7 +13,7 @@ namespace parser {
  *
  * Since the labeling is state based, the same label parser can be used for all models.
  */
-class AtomicPropositionLabelingParser {
+class STORM_PARSERS_API AtomicPropositionLabelingParser {
    public:
     /*!
      * Reads a label file and puts the result in an AtomicPropositionsLabeling object.

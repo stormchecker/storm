@@ -2,7 +2,7 @@
 
 #include "SingleValueModelCheckerHelper.h"
 #include "storm/solver/helper/ValueIterationOperator.h"
-#include "storm/storage/Scheduler.h"
+#include "storm/storage/scheduler/Scheduler.h"
 #include "storm/utility/ProgressMeasurement.h"
 
 namespace storm {
