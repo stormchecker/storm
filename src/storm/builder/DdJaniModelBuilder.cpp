@@ -23,6 +23,7 @@
 #include "storm/languages/jani/ParallelComposition.h"
 #include "storm/languages/jani/Variable.h"
 #include "storm/languages/jani/eliminator/ArrayEliminator.h"
+#include "storm/languages/jani/traverser/AssignmentLevelAnalysis.h"
 #include "storm/languages/jani/types/AllJaniTypes.h"
 #include "storm/languages/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/logic/Formulas.h"
@@ -38,153 +39,7 @@ namespace storm {
 namespace builder {
 
 namespace {
-/*!
- * The assignment levels of a JANI model as needed by the symbolic builder.
- *
- * The symbolic builder requires every variable to be assigned at no more than one level. The value of a variable x
- * that is read at level k is then statically known: it is the successor value of x if x is assigned at a level below
- * k, and otherwise the predecessor value (or, for a transient variable, its initial value).
- *
- * A transient variable whose value is read at a level above the one where it is written is called "passed". The
- * builder treats it like a global variable that is only ever read in its successor version: when it is not written
- * in a step, it takes its initial value (instead of keeping its predecessor value), and after composition its
- * successor version is summed out.
- */
-struct AssignmentLevels {
-    // All levels at which assignments occur.
-    std::set<int64_t> levels;
-    // The (unique) level at which each variable is assigned.
-    std::map<storm::expressions::Variable, int64_t> writeLevel;
-    // The initial values of all transient variables (with defined constants substituted).
-    std::map<storm::expressions::Variable, storm::expressions::Expression> transientInitialValues;
-    // The passed transient variables (see above).
-    std::set<storm::expressions::Variable> passedTransientVariables;
-    // If non-empty, the reason why the symbolic builder can not handle the model's assignment levels.
-    std::string error;
-
-    int64_t lowestLevel() const {
-        return levels.empty() ? 0 : *levels.begin();
-    }
-
-    bool isPassed(storm::expressions::Variable const& variable) const {
-        return passedTransientVariables.count(variable) > 0;
-    }
-
-    /*!
-     * Retrieves whether the given variable is read in its successor version when read at the given level.
-     */
-    bool isReadAsSuccessor(storm::expressions::Variable const& variable, int64_t level) const {
-        auto it = writeLevel.find(variable);
-        return it != writeLevel.end() && it->second < level;
-    }
-};
-
-template<typename Callback>
-void forEachAssignment(storm::jani::Model const& model, Callback const& callback) {
-    for (auto const& automaton : model.getAutomata()) {
-        for (auto const& edge : automaton.getEdges()) {
-            // Edge assignments are performed in every destination of the edge.
-            for (auto const& assignment : edge.getAssignments()) {
-                callback(assignment);
-            }
-            for (auto const& destination : edge.getDestinations()) {
-                for (auto const& assignment : destination.getOrderedAssignments()) {
-                    callback(assignment);
-                }
-            }
-        }
-    }
-}
-
-template<typename Callback>
-void forEachTransientVariable(storm::jani::Model const& model, Callback const& callback) {
-    for (auto const& variable : model.getGlobalVariables().getTransientVariables()) {
-        callback(variable);
-    }
-    for (auto const& automaton : model.getAutomata()) {
-        for (auto const& variable : automaton.getVariables().getTransientVariables()) {
-            callback(variable);
-        }
-    }
-}
-
-AssignmentLevels analyzeAssignmentLevels(storm::jani::Model const& model) {
-    AssignmentLevels info;
-
-    std::map<storm::expressions::Variable, storm::jani::Variable const*> transientVariables;
-    forEachTransientVariable(model, [&](storm::jani::Variable const& variable) { transientVariables.emplace(variable.getExpressionVariable(), &variable); });
-    auto constantsSubstitution = model.getConstantsSubstitution();
-    for (auto const& [expressionVariable, variable] : transientVariables) {
-        if (variable->hasInitExpression()) {
-            info.transientInitialValues.emplace(expressionVariable, variable->getInitExpression().substitute(constantsSubstitution));
-        }
-    }
-
-    if (model.usesAssignmentLevels() && model.getModelType() == storm::jani::ModelType::MA) {
-        info.error = "Markov automata with assignment levels are not supported.";
-        return info;
-    }
-
-    // Determine the unique write level of every variable.
-    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
-        info.levels.insert(assignment.getLevel());
-        auto it = info.writeLevel.emplace(assignment.getExpressionVariable(), assignment.getLevel()).first;
-        if (it->second != assignment.getLevel() && info.error.empty()) {
-            info.error = "Variable '" + assignment.getExpressionVariable().getName() + "' is assigned at levels " +
-                         std::to_string(std::min(it->second, assignment.getLevel())) + " and " + std::to_string(std::max(it->second, assignment.getLevel())) +
-                         ", but the symbolic engine requires every variable to be assigned at a single level.";
-        }
-    });
-    if (!info.error.empty()) {
-        return info;
-    }
-
-    // Determine the passed transient variables.
-    auto passedValuesReadBy = [&](storm::jani::Assignment const& assignment) {
-        std::set<storm::expressions::Variable> result;
-        for (auto const& variable : assignment.getAssignedExpression().getVariables()) {
-            if (transientVariables.count(variable) > 0 && info.isReadAsSuccessor(variable, assignment.getLevel())) {
-                result.insert(variable);
-            }
-        }
-        return result;
-    };
-    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
-        auto passed = passedValuesReadBy(assignment);
-        info.passedTransientVariables.insert(passed.begin(), passed.end());
-    });
-
-    for (auto const& expressionVariable : info.passedTransientVariables) {
-        auto const* variable = transientVariables.at(expressionVariable);
-        auto const& type = variable->getType();
-        bool supportedType = (type.isBasicType() && type.asBasicType().isBooleanType()) || (type.isBoundedType() && type.asBoundedType().isIntegerType());
-        if (!supportedType) {
-            info.error = "Transient variable '" + variable->getName() +
-                         "' is read at a level above the one where it is written, which the symbolic engine only supports for Boolean and bounded integer "
-                         "variables.";
-            return info;
-        }
-        if (!variable->hasInitExpression()) {
-            info.error = "Transient variable '" + variable->getName() + "' has no initial value.";
-            return info;
-        }
-    }
-
-    // Transient variables that are not passed on (for example reward variables) may not depend on passed values.
-    forEachAssignment(model, [&](storm::jani::Assignment const& assignment) {
-        if (!info.error.empty() || !assignment.isTransient() || info.isPassed(assignment.getExpressionVariable())) {
-            return;
-        }
-        auto passed = passedValuesReadBy(assignment);
-        if (!passed.empty()) {
-            info.error = "Transient variable '" + assignment.getExpressionVariable().getName() + "' is assigned a value that depends on '" +
-                         passed.begin()->getName() +
-                         "', which is written at a lower level within the same step. The symbolic engine does not support this for transient variables "
-                         "that are not read at a higher level (such as reward variables).";
-        }
-    });
-    return info;
-}
+using storm::jani::AssignmentLevels;
 
 /*!
  * Performs the edge assignments in the destinations and lifts the transient assignments of the lowest level that are
@@ -239,7 +94,7 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
     }
     // Check assignment levels and transient assignments
     if (model.usesAssignmentLevels() || model.hasTransientEdgeDestinationAssignments()) {
-        auto levels = analyzeAssignmentLevels(model);
+        auto levels = storm::jani::analyzeAssignmentLevels(model);
         if (levels.error.empty()) {
             storm::jani::Model preparedModel = model;
             levels.error = prepareTransientAssignments(preparedModel, levels);
@@ -554,11 +409,17 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
         // The meta variables of passed transient variables are created first, i.e., at the top of the variable order.
         // Before they are summed out, the factors of all readers depend on them; with these variables at the bottom,
         // the intermediate DDs would have to keep track of all sets of consistent values.
-        forEachTransientVariable(this->model, [&](storm::jani::Variable const& variable) {
-            if (assignmentLevels.isPassed(variable.getExpressionVariable())) {
-                createPassedTransientVariable(variable, result);
+        auto createPassedTransientVariables = [&](storm::jani::VariableSet const& variableSet) {
+            for (auto const& variable : variableSet.getTransientVariables()) {
+                if (assignmentLevels.isPassed(variable.getExpressionVariable())) {
+                    createPassedTransientVariable(variable, result);
+                }
             }
-        });
+        };
+        createPassedTransientVariables(this->model.getGlobalVariables());
+        for (auto const& automaton : this->model.getAutomata()) {
+            createPassedTransientVariables(automaton.getVariables());
+        }
 
         for (auto const& nonSilentActionIndex : actionInformation.getNonSilentActionIndices()) {
             std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair =
@@ -2722,7 +2583,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuil
     STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidStateException,
                     "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
-    AssignmentLevels assignmentLevels = analyzeAssignmentLevels(preparedModel);
+    AssignmentLevels assignmentLevels = storm::jani::analyzeAssignmentLevels(preparedModel);
     STORM_LOG_THROW(assignmentLevels.error.empty(), storm::exceptions::NotSupportedException,
                     "The symbolic JANI model builder can not handle the assignment levels of this model: " << assignmentLevels.error);
 

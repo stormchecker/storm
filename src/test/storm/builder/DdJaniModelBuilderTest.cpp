@@ -472,6 +472,11 @@ TYPED_TEST(DdJaniModelBuilderTest, AssignmentLevelsUnsupported) {
 
     // An edge assignment to a reward variable at a level above the lowest one.
     STORM_SILENT_EXPECT_THROW(build("levels_edge_reward_level"), storm::exceptions::NotSupportedException);
+
+    // A location's transient value that depends on a passed transient variable.
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/levels_location_reads_passed.jani").first;
+    EXPECT_FALSE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(janiModel)));
+    STORM_SILENT_EXPECT_THROW(build("levels_location_reads_passed"), storm::exceptions::NotSupportedException);
 }
 
 }  // namespace
