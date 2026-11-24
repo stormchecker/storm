@@ -1,6 +1,11 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include <atomic>
+#include <memory>
+#include <thread>
+#include <vector>
+
 #include "storm/utility/SignalHandler.h"
 
 using storm::utility::resources::ScopedTerminationCallback;
@@ -137,4 +142,55 @@ TEST_F(SignalHandlerTest, NestedGuardReplacesAndRestoresOuterCallback) {
     }  // innerGuard destroyed: outerGuard's callback is installed again
     EXPECT_FALSE(storm::utility::resources::isTerminate());
     EXPECT_GE(outerInvocations, 1);
+}
+
+TEST_F(SignalHandlerTest, OutOfOrderGuardDestructionKeepsLiveCallback) {
+    int firstInvocations = 0;
+    int secondInvocations = 0;
+    auto firstGuard = std::make_unique<ScopedTerminationCallback>([&firstInvocations]() {
+        ++firstInvocations;
+        return false;
+    });
+    auto secondGuard = std::make_unique<ScopedTerminationCallback>([&secondInvocations]() {
+        ++secondInvocations;
+        return false;
+    });
+    // Destroy the outer guard first
+    firstGuard.reset();
+    EXPECT_FALSE(storm::utility::resources::isTerminate());
+    EXPECT_EQ(firstInvocations, 0);
+    EXPECT_EQ(secondInvocations, 1);
+    secondGuard.reset();
+    EXPECT_FALSE(storm::utility::resources::isTerminate());
+    EXPECT_EQ(firstInvocations, 0);
+    EXPECT_EQ(secondInvocations, 1);
+}
+
+TEST_F(SignalHandlerTest, CallbackIsNeverExecutedConcurrently) {
+    std::atomic<int> activeInvocations{0};
+    std::atomic<bool> overlapDetected{false};
+    int invocationCount = 0;  // Non-atomic: only modified while the callback runs exclusively
+    ScopedTerminationCallback guard([&]() {
+        if (activeInvocations.fetch_add(1) != 0) {
+            overlapDetected = true;
+        }
+        ++invocationCount;
+        std::this_thread::yield();
+        activeInvocations.fetch_sub(1);
+        return false;
+    });
+    std::vector<std::thread> threads;
+    for (int t = 0; t < 4; ++t) {
+        threads.emplace_back([]() {
+            for (int i = 0; i < 1000; ++i) {
+                storm::utility::resources::isTerminate();
+            }
+        });
+    }
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    EXPECT_FALSE(overlapDetected);
+    EXPECT_GE(invocationCount, 1);
+    EXPECT_FALSE(storm::utility::resources::isTerminate());
 }

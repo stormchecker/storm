@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <functional>
 #include <mutex>
+#include <utility>
+#include <vector>
 
 #include "storm-config.h"
 #include "storm/utility/OsDetection.h"
@@ -42,6 +44,9 @@ class SignalInformation {
      * the nested call does not re-invoke the callback. It is detected via a thread-local flag and simply
      * returns the current value of the terminate flag instead.
      *
+     * The callback is never executed concurrently. If another thread is currently executing the callback,
+     * this call does not wait for it but simply returns the current value of the terminate flag instead.
+     *
      * @return True iff program should terminate.
      */
     bool isTerminate();
@@ -56,10 +61,12 @@ class SignalInformation {
     }
 
     /*!
-     * Clears the terminate flag, without touching any pending alarm or the termination callback.
+     * Clears the terminate flag (and the information whether a signal was received),
+     * without touching any pending alarm or the termination callback.
      */
     inline void resetTerminate() {
         terminate.store(false, std::memory_order_relaxed);
+        signalReceived.store(false, std::memory_order_relaxed);
     }
 
     /*! Get the error code.
@@ -84,28 +91,29 @@ class SignalInformation {
     friend void signalHandler(int signal);
 
     /*!
-     * Check whether the program should terminate, without ever invoking the termination callback.
-     * This is the only variant that may be called from the asynchronous signal handler itself, since the callback
-     * is not guaranteed to be async-signal-safe.
+     * Check whether a signal was already received (and not reset since).
      *
-     * @return True iff the termination flag is set.
+     * @return True iff a signal was received.
      */
-    inline bool isTerminateFlagOnly() const {
-        return terminate.load(std::memory_order_relaxed);
+    inline bool isSignalReceived() const {
+        return signalReceived.load(std::memory_order_relaxed);
     }
 
     /*!
-     * Installs `callback` as the new termination callback, used only by ScopedTerminationCallback.
+     * Installs `callback` as the new (innermost) termination callback, used only by ScopedTerminationCallback.
      *
-     * @return Whatever callback was previously installed (possibly empty), to be handed back to
-     *         restoreCallback() when the corresponding guard is destroyed.
+     * @return Unique id of the installed callback, to be handed to removeCallback() when the corresponding guard is destroyed.
      */
-    std::function<bool()> installCallback(std::function<bool()> callback);
+    uint64_t installCallback(std::function<bool()> callback);
 
     /*!
-     * Restores the callback that was installed before the corresponding installCallback() call.
+     * Removes the callback with the given id.
+     * The most recently installed callback which is still present becomes active.
+     * Guards can be destroyed in arbitrary order.
+     *
+     * @param id Id of the callback as returned by installCallback().
      */
-    void restoreCallback(std::function<bool()> previous);
+    void removeCallback(uint64_t id);
 
     /*!
      * Constructs new signal information. This constructor is private to forbid instantiation of this class. The only
@@ -123,13 +131,19 @@ class SignalInformation {
 
     // Flag whether the program should terminate.
     std::atomic<bool> terminate;
+    // Flag whether a signal was received.
+    std::atomic<bool> signalReceived;
     // Store last signal code
     int lastSignal;
 
-    // Guards currentCallback
+    // Guards callbacks and nextCallbackId
     std::mutex callbackMutex;
-    // Pluggable termination callback
-    std::function<bool()> currentCallback;
+    // Ensures that the termination callback is never executed concurrently
+    std::mutex invocationMutex;
+    // Stack of installed termination callbacks together with their ids. The last entry is the active callback.
+    std::vector<std::pair<uint64_t, std::function<bool()>>> callbacks;
+    // Id for the next installed callback
+    uint64_t nextCallbackId;
 };
 
 /*!
@@ -138,13 +152,14 @@ class SignalInformation {
  *
  * When nesting two guards the innermost guard's callback is invoked.
  * Destroying the inner guard restores the outer guard's callback.
+ * Guards may be destroyed in any order; destroying a guard only removes its own callback.
  */
 class ScopedTerminationCallback {
    public:
-    explicit ScopedTerminationCallback(std::function<bool()> callback) : previousCallback(SignalInformation::infos().installCallback(std::move(callback))) {}
+    explicit ScopedTerminationCallback(std::function<bool()> callback) : callbackId(SignalInformation::infos().installCallback(std::move(callback))) {}
 
     ~ScopedTerminationCallback() {
-        SignalInformation::infos().restoreCallback(std::move(previousCallback));
+        SignalInformation::infos().removeCallback(callbackId);
     }
 
     ScopedTerminationCallback(ScopedTerminationCallback const&) = delete;
@@ -153,7 +168,8 @@ class ScopedTerminationCallback {
     ScopedTerminationCallback& operator=(ScopedTerminationCallback&&) = delete;
 
    private:
-    std::function<bool()> previousCallback;
+    // Id of the installed callback
+    uint64_t callbackId;
 };
 
 /*!
