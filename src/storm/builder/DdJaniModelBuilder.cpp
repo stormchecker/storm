@@ -93,8 +93,9 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
         return false;
     }
     // Check assignment levels and transient assignments
+    storm::jani::AssignmentLevels levels;
     if (model.usesAssignmentLevels() || model.hasTransientEdgeDestinationAssignments()) {
-        auto levels = storm::jani::analyzeAssignmentLevels(model);
+        levels = storm::jani::analyzeAssignmentLevels(model);
         if (levels.error.empty()) {
             storm::jani::Model preparedModel = model;
             levels.error = prepareTransientAssignments(preparedModel, levels);
@@ -120,6 +121,32 @@ bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& mo
         if (model.hasNonTrivialRewardExpression()) {
             STORM_LOG_INFO("Symbolic engine can not build Jani model due to non-trivial reward expressions.");
             return false;
+        }
+    }
+
+    // Check reward models that refer to passed transient variables. Build only rejects the ones referenced by a
+    // property (if all reward models are built, it skips passed transient variables).
+    if (properties && !levels.passedTransientVariables.empty()) {
+        std::set<std::string> rewardModels;
+        for (auto const& p : properties.value()) {
+            p.gatherReferencedRewardModels(rewardModels);
+        }
+        for (auto const& r : rewardModels) {
+            boost::optional<storm::expressions::Expression> rewardExpression;
+            if (model.getGlobalVariables().hasVariable(r)) {
+                rewardExpression = model.getGlobalVariables().getVariable(r).getExpressionVariable().getExpression();
+            } else if (r.empty()) {
+                // The default reward model, as resolved by Model::getRewardModelExpression (build reports ambiguity).
+                auto allRewardModels = model.getAllRewardModelExpressions();
+                if (allRewardModels.size() == 1) {
+                    rewardExpression = allRewardModels.front().second;
+                }
+            }
+            if (rewardExpression && rewardExpression->containsVariable(levels.passedTransientVariables)) {
+                STORM_LOG_INFO("Symbolic engine can not build Jani model due to reward model '"
+                               << r << "', which refers to a transient variable that is read at a level above the one where it is written.");
+                return false;
+            }
         }
     }
 
@@ -2382,13 +2409,21 @@ storm::dd::Bdd<Type> doFixDeadlocks(storm::jani::ModelType const& modelType, sto
 
 template<storm::dd::DdType Type, typename ValueType>
 std::vector<storm::expressions::Variable> selectRewardVariables(storm::jani::Model const& model,
-                                                                typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+                                                                typename DdJaniModelBuilder<Type, ValueType>::Options const& options,
+                                                                AssignmentLevels const& assignmentLevels) {
     std::vector<storm::expressions::Variable> rewardVariables;
     if (options.isBuildAllRewardModelsSet()) {
         for (auto const& rewExpr : model.getAllRewardModelExpressions()) {
             STORM_LOG_THROW(!model.isNonTrivialRewardModelExpression(rewExpr.first), storm::exceptions::NotSupportedException,
                             "The DD-builder can not build the non-trivial reward expression '" << rewExpr.second << "'.");
-            rewardVariables.push_back(rewExpr.second.getBaseExpression().asVariableExpression().getVariable());
+            auto const& rewardVariable = rewExpr.second.getBaseExpression().asVariableExpression().getVariable();
+            // A passed transient variable passes a value between assignment levels and is not built as a reward model.
+            if (assignmentLevels.isPassed(rewardVariable)) {
+                STORM_LOG_WARN("Not building reward model '" << rewExpr.first
+                                                             << "', because its transient variable is read at a level above the one where it is written.");
+                continue;
+            }
+            rewardVariables.push_back(rewardVariable);
         }
     } else {
         for (auto const& rewardModelName : options.getRewardModelNames()) {
@@ -2478,7 +2513,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
     CompositionVariables<Type, ValueType> variables = variableCreator.create(manager);
 
     // Determine which transient assignments need to be considered in the building process.
-    std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options);
+    std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(model, options, assignmentLevels);
     for (auto const& rewardVariable : rewardVariables) {
         STORM_LOG_THROW(!assignmentLevels.isPassed(rewardVariable), storm::exceptions::NotSupportedException,
                         "The symbolic JANI model builder does not support reward models that refer to transient variable '"

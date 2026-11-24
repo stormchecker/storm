@@ -444,6 +444,9 @@ TYPED_TEST(DdJaniModelBuilderTest, AssignmentLevels) {
     for (auto const& [file, expectedValues] : expected) {
         auto janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/" + file + ".jani").first;
         EXPECT_TRUE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(janiModel))) << file;
+        storm::Environment env;
+        typename storm::builder::DdJaniModelBuilder<DdType, double>::Options allRewardModels(true, true);
+        EXPECT_NO_THROW((storm::builder::DdJaniModelBuilder<DdType, double>().build(env, janiModel, allRewardModels))) << file;
         auto values = checkJaniPropertiesWithDdEngine<DdType>("mdp/" + file + ".jani");
         ASSERT_EQ(expectedValues.size(), values.size()) << file;
         for (auto const& [property, value] : expectedValues) {
@@ -468,6 +471,10 @@ TYPED_TEST(DdJaniModelBuilderTest, AssignmentLevelsUnsupported) {
     STORM_SILENT_EXPECT_THROW(build("levels_reward_depends_on_passed"), storm::exceptions::NotSupportedException);
 
     // A reward model that refers to a passed transient variable.
+    auto rewardIsPassed = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/levels_reward_is_passed.jani");
+    EXPECT_FALSE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(rewardIsPassed.first, rewardIsPassed.second)));
+    // Without properties, all reward models are built, and passed transient variables are skipped.
+    EXPECT_TRUE((storm::builder::DdJaniModelBuilder<DdType, double>::canHandle(rewardIsPassed.first)));
     STORM_SILENT_EXPECT_THROW(build("levels_reward_is_passed"), storm::exceptions::NotSupportedException);
 
     // An edge assignment to a reward variable at a level above the lowest one.
