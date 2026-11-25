@@ -6,6 +6,9 @@
 #include "storm-pomdp/beliefs/storage/Belief.h"
 #include "storm-pomdp/beliefs/storage/BeliefBuilder.h"
 #include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/api/verification.h"
+#include "storm/environment/Environment.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 namespace {
 using namespace storm::pomdp::beliefs;
@@ -258,5 +261,57 @@ TYPED_TEST(BeliefMdpBuilderTest, AccumulatesTerminalRewardsAndClippingPenalties)
     TestFixture::checkRow(mdp->getTransitionMatrix(), 0, {{1, n(0.25)}, {2, n(0.25)}, {3, n(0.5)}});
     TestFixture::checkRow(mdp->getTransitionMatrix(), 1, {{3, n(1)}});
     EXPECT_EQ((std::vector<TypeParam>{n(6.5), n(6), n(3), n(0.75), n(0), n(0)}), mdp->getRewardModel("reward").getStateActionRewardVector());
+}
+
+TYPED_TEST(BeliefMdpBuilderTest, RoutesInfiniteRewardCutOffsToBottom) {
+    // Minimizing expected rewards, a cut-off with an infinite upper bound must not put an infinite reward on a choice, which the model checker does
+    // not handle; the choice leads to a bottom state instead.
+    auto info = TestFixture::template makeInfo<typename TestFixture::StandardInfo>(3);
+    auto const n = TestFixture::value;
+    info.initialBeliefId = 0;
+    info.exploredBeliefs = {{0, 0}};
+    for (BeliefId frontier : {1ul, 2ul}) {
+        info.matrix.transitions.push_back({n(1), frontier});
+        info.matrix.endCurrentRow();
+    }
+    info.matrix.endCurrentRowGroup();
+    info.actionRewards = {n(1), n(2)};
+    auto property = TestFixture::property(PropertyInformation::Kind::ExpectedTotalReachabilityReward);
+    property.dir = storm::OptimizationDirection::Minimize;
+    property.rewardModelName = "reward";
+    std::function<std::unordered_map<std::string, TypeParam>(typename TestFixture::BeliefType const&)> cutOff =
+        [&n](typename TestFixture::BeliefType const& belief) {
+            return std::unordered_map<std::string, TypeParam>{{"cutoff", belief.observation() == 1 ? storm::utility::infinity<TypeParam>() : n(5)}};
+        };
+
+    auto const [mdp, mapping] = buildBeliefMdp(info, property, cutOff);
+    // States: the explored belief, two frontier beliefs, target, bottom. Choices: two explored, one cut-off per frontier belief, two self-loops.
+    ASSERT_EQ(5ul, mdp->getNumberOfStates());
+    ASSERT_EQ(6ul, mdp->getNumberOfChoices());
+    uint64_t const target = 3;
+    uint64_t const bottom = 4;
+    EXPECT_TRUE(mdp->getStateLabeling().getStateHasLabel("target", target));
+    EXPECT_TRUE(mdp->getStateLabeling().getStateHasLabel("bottom", bottom));
+    auto const& rewards = mdp->getRewardModel("reward").getStateActionRewardVector();
+    for (uint64_t state : {1ul, 2ul}) {
+        uint64_t const cutOffChoice = mdp->getTransitionMatrix().getRowGroupIndices()[state];
+        if (mapping.at(state) == 1) {
+            TestFixture::checkRow(mdp->getTransitionMatrix(), cutOffChoice, {{bottom, n(1)}});
+            EXPECT_EQ(n(0), rewards[cutOffChoice]);
+        } else {
+            TestFixture::checkRow(mdp->getTransitionMatrix(), cutOffChoice, {{target, n(1)}});
+            EXPECT_EQ(n(5), rewards[cutOffChoice]);
+        }
+    }
+    TestFixture::checkRow(mdp->getTransitionMatrix(), 5, {{bottom, n(1)}});
+
+    if constexpr (std::is_same_v<TypeParam, double>) {
+        // Model checking takes the finite cut-off: 2 + 5.
+        auto const formula = createFormulaForBeliefMdp(property);
+        storm::Environment env;
+        auto result = storm::api::verifyWithSparseEngine<double>(env, mdp, storm::api::createTask<double>(formula, true));
+        ASSERT_TRUE(result && result->isExplicitQuantitativeCheckResult());
+        EXPECT_NEAR(7.0, result->template asExplicitQuantitativeCheckResult<double>()[0], 1e-6);
+    }
 }
 }  // namespace
