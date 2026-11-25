@@ -82,7 +82,7 @@ void analyzeMonotonicity(storm::Environment const& env, std::shared_ptr<storm::m
 
             storm::analysis::MonotonicityResult<storm::RationalFunctionVariable> monRes;
             for (auto& var : storm::models::sparse::getProbabilityParameters(*model)) {
-                auto res = storm::analysis::MonotonicityChecker<ValueType>::checkDerivative(valuation.derivative(var), regions[0]);
+                auto res = storm::analysis::MonotonicityChecker<ValueType>::checkDerivative(env, valuation.derivative(var), regions[0]);
 
                 if (res.first && res.second) {
                     monRes.addMonotonicityResult(var, storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Constant);

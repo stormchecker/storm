@@ -67,14 +67,17 @@ class AssumptionChecker {
     /*!
      * Tries to validate an assumption based on the order and underlying transition matrix.
      *
+     * @param env The environment (selecting the SMT solver).
      * @param assumption The assumption to validate.
      * @param order The order.
      * @param region The region of the considered model.
      * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
      */
-    AssumptionStatus validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
-                                        std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
-    AssumptionStatus validateAssumption(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
+    AssumptionStatus validateAssumption(Environment const& env, Assumption const& assumption, std::shared_ptr<Order> order,
+                                        storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues,
+                                        std::vector<ConstantType> const maxValue) const;
+    AssumptionStatus validateAssumption(Environment const& env, Assumption const& assumption, std::shared_ptr<Order> order,
+                                        storage::ParameterRegion<ValueType> region) const;
 
    private:
     bool useSamples;
@@ -83,8 +86,9 @@ class AssumptionChecker {
 
     storage::SparseMatrix<ValueType> matrix;
 
-    AssumptionStatus validateAssumptionSMTSolver(Assumption const& assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,
-                                                 std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+    AssumptionStatus validateAssumptionSMTSolver(Environment const& env, Assumption const& assumption, std::shared_ptr<Order> order,
+                                                 storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues,
+                                                 std::vector<ConstantType> const maxValue) const;
 
     AssumptionStatus checkOnSamples(Assumption const& assumption) const;
 };
