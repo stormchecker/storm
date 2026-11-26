@@ -36,6 +36,8 @@ class AddExpressionAdapter : public storm::expressions::ExpressionVisitor {
     virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data) override;
 
    private:
+    boost::any translate(storm::expressions::BaseExpression const& expression, boost::any const& data);
+
     // The manager responsible for the DDs built by this adapter.
     std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
 

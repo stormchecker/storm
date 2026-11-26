@@ -9,6 +9,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "storm/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionEvaluator.h"
 #include "storm/expressions/ExpressionManager.h"
@@ -16,7 +17,11 @@
 #include "storm/expressions/LinearityCheckVisitor.h"
 #include "storm/expressions/RationalFunctionToExpression.h"
 #include "storm/expressions/SimpleValuation.h"
+#include "storm/expressions/SubstitutionVisitor.h"
 #include "storm/expressions/ToRationalFunctionVisitor.h"
+#include "storm/languages/jani/Model.h"
+#include "storm/languages/jani/eliminator/FunctionEliminator.h"
+#include "storm/languages/jani/traverser/FunctionCallExpressionFinder.h"
 
 TEST(Expression, FactoryMethodTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
@@ -620,4 +625,86 @@ TEST(Expression, LinearCoefficientsTest) {
     EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() / manager->integer(0)).has_value());
     EXPECT_FALSE(visitor.tryGetLinearCoefficients(x.getExpression() <= y.getExpression()).has_value());
     EXPECT_THROW(visitor.getLinearCoefficients(x.getExpression() * y.getExpression()), storm::exceptions::InvalidArgumentException);
+}
+
+namespace {
+class CountedSharedExpression : public storm::expressions::BinaryNumericalFunctionExpression {
+   public:
+    CountedSharedExpression(storm::expressions::Expression const& child, uint64_t& accepts, uint64_t& simplifications)
+        : BinaryNumericalFunctionExpression(child.getManager(), child.getType(), child.getBaseExpressionPointer(), child.getBaseExpressionPointer(),
+                                            OperatorType::Plus),
+          accepts(accepts),
+          simplifications(simplifications) {}
+
+    boost::any accept(storm::expressions::ExpressionVisitor& visitor, boost::any const& data) const override {
+        ++accepts;
+        return BinaryNumericalFunctionExpression::accept(visitor, data);
+    }
+
+    std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override {
+        ++simplifications;
+        return BinaryNumericalFunctionExpression::simplifyImpl(cache);
+    }
+
+    void gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const override {
+        ++accepts;
+        BinaryNumericalFunctionExpression::gatherVariablesImpl(variables, cache);
+    }
+
+   private:
+    uint64_t& accepts;
+    uint64_t& simplifications;
+};
+}  // namespace
+
+TEST(Expression, SharedDagTransformations) {
+    auto manager = std::make_shared<storm::expressions::ExpressionManager>();
+    auto x = manager->declareIntegerVariable("x");
+    uint64_t accepts = 0, simplifications = 0;
+    auto expression = x.getExpression();
+    constexpr uint64_t depth = 28;
+    for (uint64_t i = 0; i < depth; ++i) {
+        expression = storm::expressions::Expression(std::make_shared<CountedSharedExpression>(expression, accepts, simplifications));
+    }
+    EXPECT_EQ(std::set<storm::expressions::Variable>{x}, expression.getVariables());
+    EXPECT_EQ(depth, accepts);
+    accepts = 0;
+    storm::expressions::BinaryNumericalFunctionExpression stackNode(*manager, expression.getType(), expression.getBaseExpressionPointer(),
+                                                                    expression.getBaseExpressionPointer(),
+                                                                    storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus);
+    std::set<storm::expressions::Variable> stackVariables;
+    stackNode.gatherVariables(stackVariables);
+    EXPECT_EQ(std::set<storm::expressions::Variable>{x}, stackVariables);
+    EXPECT_EQ(depth, accepts);
+    accepts = 0;
+    // Count actual visits, rather than asserting a machine-dependent wall time.
+    EXPECT_EQ(expression.getBaseExpressionPointer().get(), expression.simplify().getBaseExpressionPointer().get());
+    EXPECT_EQ(depth, simplifications);
+    EXPECT_TRUE(storm::jani::getOccurringFunctionCalls(expression).empty());
+    EXPECT_EQ(depth, accepts);
+    accepts = 0;
+    storm::jani::Model model("shared", storm::jani::ModelType::MDP, 1, manager);
+    model.getModelFeatures().add(storm::jani::ModelFeature::Functions);
+    auto eliminated = storm::jani::eliminateFunctionCallsInExpression(expression, model);
+    EXPECT_EQ(expression.getBaseExpressionPointer().get(), eliminated.getBaseExpressionPointer().get());
+    EXPECT_EQ(depth, accepts);
+    accepts = 0;
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> mapping;
+    storm::expressions::SubstitutionVisitor<decltype(mapping)> visitor(mapping);
+    EXPECT_EQ(expression.getBaseExpressionPointer().get(), visitor.substitute(expression).getBaseExpressionPointer().get());
+    EXPECT_EQ(depth, accepts);
+    accepts = 0;
+    mapping.emplace(x, manager->integer(1));
+    auto substituted = visitor.substitute(expression);
+    EXPECT_EQ(depth, accepts);
+    EXPECT_EQ(int64_t(1) << depth, substituted.simplify().evaluateAsInt());
+    for (uint64_t i = 0; i < depth; ++i) {
+        auto const& node = substituted.getBaseExpression();
+        EXPECT_EQ(node.getOperand(0).get(), node.getOperand(1).get());
+        substituted = storm::expressions::Expression(node.getOperand(0));
+    }
+    // A reused visitor must not retain results from an earlier substitution map.
+    mapping[x] = manager->integer(0);
+    EXPECT_EQ(0, visitor.substitute(expression).simplify().evaluateAsInt());
 }

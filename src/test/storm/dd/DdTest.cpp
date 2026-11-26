@@ -1,6 +1,7 @@
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
+#include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/DdManager.h"
 #include "storm/dd/DdMetaVariable.h"
@@ -8,6 +9,7 @@
 #include "storm/dd/Odd.h"
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/expressions/BinaryNumericalFunctionExpression.h"
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionManager.h"
 #include "storm/settings/SettingsManager.h"
@@ -877,5 +879,65 @@ TYPED_TEST(Dd, BddToExpressionTest) {
         storm::expressions::Variable d = manager->declareBooleanVariable("d");
 
         auto result = bdd.toExpression(*manager);
+    });
+}
+
+namespace {
+class CountedDdExpression : public storm::expressions::BinaryNumericalFunctionExpression {
+   public:
+    CountedDdExpression(storm::expressions::Expression const& child, uint64_t& visits)
+        : BinaryNumericalFunctionExpression(child.getManager(), child.getType(), child.getBaseExpressionPointer(), child.getBaseExpressionPointer(),
+                                            OperatorType::Plus),
+          visits(visits) {}
+    boost::any accept(storm::expressions::ExpressionVisitor& visitor, boost::any const& data) const override {
+        ++visits;
+        return BinaryNumericalFunctionExpression::accept(visitor, data);
+    }
+
+   private:
+    uint64_t& visits;
+};
+}  // namespace
+
+TYPED_TEST(Dd, SharedExpressionTranslation) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    auto manager = std::make_shared<storm::dd::DdManager<DdType>>(this->env);
+    manager->execute([&]() {
+        auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+        auto x = expressionManager->declareIntegerVariable("x");
+        auto metaX = manager->addMetaVariable("x", 0, 1);
+        auto metaY = manager->addMetaVariable("y", 0, 1);
+        auto mapping = std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>();
+        mapping->emplace(x, metaX.first);
+        storm::adapters::AddExpressionAdapter<DdType, double> adapter(manager, mapping);
+        uint64_t visits = 0;
+        constexpr uint64_t depth = 28;
+        auto expression = x.getExpression();
+        for (uint64_t i = 0; i < depth; ++i) {
+            expression = storm::expressions::Expression(std::make_shared<CountedDdExpression>(expression, visits));
+        }
+        auto scale = double(uint64_t(1) << depth);
+        auto translated = adapter.translateExpression(expression);
+        EXPECT_EQ(depth, visits);
+        EXPECT_TRUE(translated == manager->template getIdentity<double>(metaX.first) * manager->getConstant(scale));
+        visits = 0;
+        auto predicate = expression > expressionManager->integer(0);
+        auto boolean = adapter.translateBooleanExpression(predicate);
+        EXPECT_EQ(depth, visits);
+        EXPECT_TRUE(boolean == manager->template getIdentity<double>(metaX.first).toBdd());
+        auto numericBoolean = adapter.translateExpression(predicate);
+        EXPECT_TRUE(numericBoolean == boolean.template toAdd<double>());
+        // External owners may change the mapping between translations.
+        (*mapping)[x] = metaY.first;
+        EXPECT_TRUE(adapter.translateExpression(expression) == manager->template getIdentity<double>(metaY.first) * manager->getConstant(scale));
+        // setValue() must also take effect in a reused adapter.
+        adapter.setValue(x, 1.0);
+        EXPECT_EQ(scale, adapter.translateExpression(expression).getMin());
+        adapter.setValue(x, 0.0);
+        EXPECT_TRUE(adapter.translateExpression(expression).isZero());
+        // Independently translating the same expression in another environment must not reuse results.
+        (*mapping)[x] = metaX.first;
+        storm::adapters::AddExpressionAdapter<DdType, double> other(manager, mapping);
+        EXPECT_TRUE(other.translateExpression(expression) == translated);
     });
 }

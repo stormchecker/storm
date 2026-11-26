@@ -20,8 +20,13 @@ bool BinaryExpression::containsVariables() const {
 }
 
 void BinaryExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
-    this->getFirstOperand()->gatherVariables(variables);
-    this->getSecondOperand()->gatherVariables(variables);
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void BinaryExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
+    this->getFirstOperand()->gatherVariablesCached(variables, cache);
+    this->getSecondOperand()->gatherVariablesCached(variables, cache);
 }
 
 std::shared_ptr<BaseExpression const> const& BinaryExpression::getFirstOperand() const {

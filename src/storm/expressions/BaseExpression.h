@@ -5,9 +5,11 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_map>
 
 #include "storm/adapters/RationalNumberForward.h"
 #include "storm/expressions/Type.h"
+#include "storm/expressions/Variable.h"
 #include "storm/utility/OsDetection.h"
 
 namespace boost {
@@ -181,12 +183,28 @@ class BaseExpression : public std::enable_shared_from_this<BaseExpression> {
      */
     virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const = 0;
 
+    using VariableGatheringCache = std::unordered_map<std::shared_ptr<BaseExpression const>, std::set<storm::expressions::Variable>>;
+
+    /*! Gather variables using a cache of each subexpression's free variables for this pass. */
+    void gatherVariablesCached(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const;
+
+    /*! Gather this node's free variables, using the supplied cache for its children. */
+    virtual void gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const;
+
+    using SimplificationCache = std::unordered_map<std::shared_ptr<BaseExpression const>, std::shared_ptr<BaseExpression const>>;
+
     /*!
-     * Simplifies the expression according to some simple rules.
+     * Simplifies the expression according to some simple rules, visiting each shared node once.
      *
      * @return A pointer to the simplified expression.
      */
-    virtual std::shared_ptr<BaseExpression const> simplify() const = 0;
+    std::shared_ptr<BaseExpression const> simplify() const;
+
+    /*! Simplify with a cache shared by the recursive calls of this pass. */
+    std::shared_ptr<BaseExpression const> simplify(SimplificationCache& cache) const;
+
+    /*! Simplify this node, using the supplied cache for its operands. */
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const = 0;
 
     /*!
      * Tries to flatten the syntax tree of the expression, e.g., 1 + (2 + (3 + 4)) becomes (1 + 2) + (3 + 4)

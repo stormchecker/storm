@@ -18,10 +18,15 @@ ConstructorArrayExpression::ConstructorArrayExpression(ExpressionManager const& 
 }
 
 void ConstructorArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void ConstructorArrayExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
     // The indexVar should not be gathered (unless it is already contained).
     bool indexVarContained = variables.find(indexVar) != variables.end();
-    sizeExpression->gatherVariables(variables);
-    elementExpression->gatherVariables(variables);
+    sizeExpression->gatherVariablesCached(variables, cache);
+    elementExpression->gatherVariablesCached(variables, cache);
     if (!indexVarContained) {
         variables.erase(indexVar);
     }
@@ -38,9 +43,9 @@ bool ConstructorArrayExpression::containsVariables() const {
     return !variables.empty();
 }
 
-std::shared_ptr<BaseExpression const> ConstructorArrayExpression::simplify() const {
+std::shared_ptr<BaseExpression const> ConstructorArrayExpression::simplifyImpl(SimplificationCache& cache) const {
     return std::shared_ptr<BaseExpression const>(
-        new ConstructorArrayExpression(getManager(), getType(), sizeExpression->simplify(), indexVar, elementExpression->simplify()));
+        new ConstructorArrayExpression(getManager(), getType(), sizeExpression->simplify(cache), indexVar, elementExpression->simplify(cache)));
 }
 
 boost::any ConstructorArrayExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {

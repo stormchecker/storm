@@ -33,7 +33,7 @@ class TranscendentalNumberLiteralExpression : public BaseExpression {
     virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
     virtual bool isLiteral() const override;
     virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override;
     virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
 
     /*!

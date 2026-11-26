@@ -71,9 +71,9 @@ bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const 
     return result;
 }
 
-std::shared_ptr<BaseExpression const> BinaryRelationExpression::simplify() const {
-    std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
-    std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
+std::shared_ptr<BaseExpression const> BinaryRelationExpression::simplifyImpl(SimplificationCache& cache) const {
+    std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify(cache);
+    std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify(cache);
 
     if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
         storm::RationalNumber firstOperandEvaluation;

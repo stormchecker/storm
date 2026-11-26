@@ -12,28 +12,35 @@ namespace detail {
 class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
    public:
     using storm::expressions::ExpressionVisitor::visit;
+
+    void find(storm::expressions::BaseExpression const& expression, boost::any const& data) {
+        if (visited.insert(&expression).second) {
+            expression.accept(*this, data);
+        }
+    }
+
     virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
-        expression.getCondition()->accept(*this, data);
-        expression.getThenExpression()->accept(*this, data);
-        expression.getElseExpression()->accept(*this, data);
+        find(*expression.getCondition(), data);
+        find(*expression.getThenExpression(), data);
+        find(*expression.getElseExpression(), data);
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-        expression.getFirstOperand()->accept(*this, data);
-        expression.getSecondOperand()->accept(*this, data);
+        find(*expression.getFirstOperand(), data);
+        find(*expression.getSecondOperand(), data);
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-        expression.getFirstOperand()->accept(*this, data);
-        expression.getSecondOperand()->accept(*this, data);
+        find(*expression.getFirstOperand(), data);
+        find(*expression.getSecondOperand(), data);
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
-        expression.getFirstOperand()->accept(*this, data);
-        expression.getSecondOperand()->accept(*this, data);
+        find(*expression.getFirstOperand(), data);
+        find(*expression.getSecondOperand(), data);
         return boost::any();
     }
 
@@ -42,12 +49,12 @@ class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions:
     }
 
     virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-        expression.getOperand()->accept(*this, data);
+        find(*expression.getOperand(), data);
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-        expression.getOperand()->accept(*this, data);
+        find(*expression.getOperand(), data);
         return boost::any();
     }
 
@@ -68,20 +75,20 @@ class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions:
                          "Unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
         uint64_t size = expression.size()->evaluateAsInt();
         for (uint64_t i = 0; i < size; ++i) {
-            expression.at(i)->accept(*this, data);
+            find(*expression.at(i), data);
         }
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-        expression.getElementExpression()->accept(*this, data);
-        expression.size()->accept(*this, data);
+        find(*expression.getElementExpression(), data);
+        find(*expression.size(), data);
         return boost::any();
     }
 
     virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
-        expression.getFirstOperand()->accept(*this, data);
-        expression.getSecondOperand()->accept(*this, data);
+        find(*expression.getFirstOperand(), data);
+        find(*expression.getSecondOperand(), data);
         return boost::any();
     }
 
@@ -89,7 +96,7 @@ class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions:
         auto& set = *boost::any_cast<std::unordered_set<std::string>*>(data);
         set.insert(expression.getFunctionIdentifier());
         for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
-            expression.getArgument(i)->accept(*this, data);
+            find(*expression.getArgument(i), data);
         }
         return boost::any();
     }
@@ -97,6 +104,9 @@ class FunctionCallExpressionFinderExpressionVisitor : public storm::expressions:
     virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const&, boost::any const&) override {
         return boost::any();
     }
+
+   private:
+    std::unordered_set<storm::expressions::BaseExpression const*> visited;
 };
 
 class FunctionCallExpressionFinderTraverser : public ConstJaniTraverser {
@@ -121,7 +131,7 @@ bool containsFunctionCallExpression(Model const& model) {
 std::unordered_set<std::string> getOccurringFunctionCalls(storm::expressions::Expression const& expression) {
     detail::FunctionCallExpressionFinderExpressionVisitor v;
     std::unordered_set<std::string> result;
-    expression.accept(v, &result);
+    v.find(expression.getBaseExpression(), &result);
     return result;
 }
 }  // namespace jani

@@ -31,7 +31,7 @@ class PredicateExpression : public BaseExpression {
 
     virtual bool evaluateAsBool(Valuation const *valuation = nullptr) const override;
 
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache &cache) const override;
 
     virtual boost::any accept(ExpressionVisitor &visitor, boost::any const &data) const override;
 
@@ -46,6 +46,7 @@ class PredicateExpression : public BaseExpression {
     virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
 
     virtual void gatherVariables(std::set<storm::expressions::Variable> &variables) const override;
+    void gatherVariablesImpl(std::set<storm::expressions::Variable> &variables, VariableGatheringCache &cache) const override;
 
     /*!
      * Retrieves the relation associated with the expression.

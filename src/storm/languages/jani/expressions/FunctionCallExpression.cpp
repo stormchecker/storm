@@ -16,8 +16,13 @@ FunctionCallExpression::FunctionCallExpression(ExpressionManager const& manager,
 }
 
 void FunctionCallExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void FunctionCallExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
     for (auto const& a : arguments) {
-        a->gatherVariables(variables);
+        a->gatherVariablesCached(variables, cache);
     }
 }
 
@@ -30,11 +35,11 @@ bool FunctionCallExpression::containsVariables() const {
     return false;
 }
 
-std::shared_ptr<BaseExpression const> FunctionCallExpression::simplify() const {
+std::shared_ptr<BaseExpression const> FunctionCallExpression::simplifyImpl(SimplificationCache& cache) const {
     std::vector<std::shared_ptr<BaseExpression const>> simplifiedArguments;
     simplifiedArguments.reserve(arguments.size());
     for (auto const& a : arguments) {
-        simplifiedArguments.push_back(a->simplify());
+        simplifiedArguments.push_back(a->simplify(cache));
     }
     return std::shared_ptr<BaseExpression const>(new FunctionCallExpression(getManager(), getType(), identifier, simplifiedArguments));
 }

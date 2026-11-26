@@ -16,8 +16,13 @@ ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Typ
 }
 
 void ValueArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void ValueArrayExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
     for (auto const& e : elements) {
-        e->gatherVariables(variables);
+        e->gatherVariablesCached(variables, cache);
     }
 }
 
@@ -30,11 +35,11 @@ bool ValueArrayExpression::containsVariables() const {
     return false;
 }
 
-std::shared_ptr<BaseExpression const> ValueArrayExpression::simplify() const {
+std::shared_ptr<BaseExpression const> ValueArrayExpression::simplifyImpl(SimplificationCache& cache) const {
     std::vector<std::shared_ptr<BaseExpression const>> simplifiedElements;
     simplifiedElements.reserve(elements.size());
     for (auto const& e : elements) {
-        simplifiedElements.push_back(e->simplify());
+        simplifiedElements.push_back(e->simplify(cache));
     }
     return std::shared_ptr<BaseExpression const>(new ValueArrayExpression(getManager(), getType(), simplifiedElements));
 }

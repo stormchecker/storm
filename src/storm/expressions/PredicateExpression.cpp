@@ -49,11 +49,11 @@ bool PredicateExpression::evaluateAsBool(Valuation const* valuation) const {
     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Predicate type not supported.");
 }
 
-std::shared_ptr<BaseExpression const> PredicateExpression::simplify() const {
+std::shared_ptr<BaseExpression const> PredicateExpression::simplifyImpl(SimplificationCache& cache) const {
     std::vector<std::shared_ptr<BaseExpression const>> simplifiedOperands;
     uint64_t trueCount = 0;
     for (auto const& operand : operands) {
-        auto res = operand->simplify();
+        auto res = operand->simplify(cache);
         if (res->isLiteral()) {
             if (res->isTrue()) {
                 if (predicate == PredicateType::AtLeastOneOf) {
@@ -128,8 +128,13 @@ std::shared_ptr<BaseExpression const> PredicateExpression::getOperand(uint_fast6
 }
 
 void PredicateExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void PredicateExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
     for (auto const& operand : operands) {
-        operand->gatherVariables(variables);
+        operand->gatherVariablesCached(variables, cache);
     }
 }
 

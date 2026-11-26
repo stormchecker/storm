@@ -33,7 +33,7 @@ void TranscendentalNumberLiteralExpression::gatherVariables(std::set<storm::expr
     // A constant value is not supposed to have any variable
 }
 
-std::shared_ptr<BaseExpression const> TranscendentalNumberLiteralExpression::simplify() const {
+std::shared_ptr<BaseExpression const> TranscendentalNumberLiteralExpression::simplifyImpl(SimplificationCache& cache) const {
     // No further simplification for constant values
     return this->shared_from_this();
 }

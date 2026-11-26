@@ -19,7 +19,12 @@ bool UnaryExpression::containsVariables() const {
 }
 
 void UnaryExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
-    this->getOperand()->gatherVariables(variables);
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
+}
+
+void UnaryExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
+    this->getOperand()->gatherVariablesCached(variables, cache);
 }
 
 std::shared_ptr<BaseExpression const> const& UnaryExpression::getOperand() const {

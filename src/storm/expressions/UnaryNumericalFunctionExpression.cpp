@@ -91,8 +91,8 @@ double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valua
     return result;
 }
 
-std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplify() const {
-    std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
+std::shared_ptr<BaseExpression const> UnaryNumericalFunctionExpression::simplifyImpl(SimplificationCache& cache) const {
+    std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify(cache);
 
     if (operandSimplified->isLiteral()) {
         if (operandSimplified->hasIntegerType()) {

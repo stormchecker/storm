@@ -15,6 +15,44 @@ BaseExpression::BaseExpression(ExpressionManager const& manager, Type const& typ
     // Intentionally left empty.
 }
 
+void BaseExpression::gatherVariablesCached(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
+    auto self = weak_from_this().lock();
+    if (self.get() == nullptr) {
+        // Direct gatherVariables() calls also support nodes not owned by a shared_ptr.
+        gatherVariablesImpl(variables, cache);
+        return;
+    }
+    auto it = cache.find(self);
+    if (it == cache.end()) {
+        std::set<storm::expressions::Variable> freeVariables;
+        gatherVariablesImpl(freeVariables, cache);
+        it = cache.emplace(std::move(self), std::move(freeVariables)).first;
+    }
+    variables.insert(it->second.begin(), it->second.end());
+}
+
+void BaseExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache&) const {
+    // Leaves and custom expression classes retain their existing implementation.
+    gatherVariables(variables);
+}
+
+std::shared_ptr<BaseExpression const> BaseExpression::simplify() const {
+    SimplificationCache cache;
+    return simplify(cache);
+}
+
+std::shared_ptr<BaseExpression const> BaseExpression::simplify(SimplificationCache& cache) const {
+    auto self = getSharedPointer();
+    auto it = cache.find(self);
+    if (it != cache.end()) {
+        return it->second;
+    }
+    auto result = simplifyImpl(cache);
+    // Own the key as well as the result: simplification can discard input subexpressions.
+    cache.emplace(std::move(self), result);
+    return result;
+}
+
 Expression BaseExpression::toExpression() const {
     return Expression(shared_from_this());
 }
