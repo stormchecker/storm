@@ -40,7 +40,7 @@ jobs:
   deploy_docker:
     # Create Docker images for tag
     needs: check_version
-    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@ghrc
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v2
     permissions:
       contents: read
       packages: write  # to push to GHCR
@@ -165,7 +165,7 @@ jobs:
     needs: [deploy_docker, update_stable, build_deb, upload_deb, update_stormpy, set_storm_dev]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'stormchecker' && always()
-    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v2
     with:
       title: Release
     secrets: inherit

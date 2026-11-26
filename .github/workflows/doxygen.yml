@@ -47,7 +47,7 @@ jobs:
     needs: [deploy]
     # Only run in main repo and even if previous step failed
     if: github.repository_owner == 'stormchecker' && always()
-    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v2
     with:
       title: Doxygen generation
     secrets: inherit

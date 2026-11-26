@@ -186,7 +186,7 @@ jobs:
     concurrency:
       group: deploy-${{ github.ref }}
       cancel-in-progress: false
-    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@ghrc
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v2
     permissions:
       contents: read
       packages: write  # to push to GHCR
@@ -213,7 +213,7 @@ jobs:
     needs: [linuxTests, macTests, deploy]
     # Only run in main repo (not for pull requests) and even if previous step failed
     if: github.repository_owner == 'stormchecker' && github.event_name != 'pull_request' && always()
-    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v1
+    uses: stormchecker/ci-workflows/.github/workflows/notify_email.yml@v2
     with:
       title: ${{ github.event_name == 'schedule' && 'CI Weekly' || 'CI' }}
     secrets: inherit
