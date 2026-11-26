@@ -22,8 +22,9 @@ class ConstructorArrayExpression : public ArrayExpression {
     virtual ~ConstructorArrayExpression() = default;
 
     virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
+    void gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const override;
     virtual bool containsVariables() const override;
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override;
     virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
 
     // Returns the size of the array

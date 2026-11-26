@@ -20,7 +20,7 @@ class ArrayAccessExpression : public BinaryExpression {
 
     virtual ~ArrayAccessExpression() = default;
 
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override;
     virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
 
    protected:

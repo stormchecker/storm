@@ -69,20 +69,25 @@ double IfThenElseExpression::evaluateAsDouble(Valuation const* valuation) const 
 }
 
 void IfThenElseExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
-    this->condition->gatherVariables(variables);
-    this->thenExpression->gatherVariables(variables);
-    this->elseExpression->gatherVariables(variables);
+    VariableGatheringCache cache;
+    gatherVariablesCached(variables, cache);
 }
 
-std::shared_ptr<BaseExpression const> IfThenElseExpression::simplify() const {
-    std::shared_ptr<BaseExpression const> conditionSimplified = this->condition->simplify();
+void IfThenElseExpression::gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const {
+    this->condition->gatherVariablesCached(variables, cache);
+    this->thenExpression->gatherVariablesCached(variables, cache);
+    this->elseExpression->gatherVariablesCached(variables, cache);
+}
+
+std::shared_ptr<BaseExpression const> IfThenElseExpression::simplifyImpl(SimplificationCache& cache) const {
+    std::shared_ptr<BaseExpression const> conditionSimplified = this->condition->simplify(cache);
     if (conditionSimplified->isTrue()) {
-        return this->thenExpression->simplify();
+        return this->thenExpression->simplify(cache);
     } else if (conditionSimplified->isFalse()) {
-        return this->elseExpression->simplify();
+        return this->elseExpression->simplify(cache);
     } else {
-        std::shared_ptr<BaseExpression const> thenExpressionSimplified = this->thenExpression->simplify();
-        std::shared_ptr<BaseExpression const> elseExpressionSimplified = this->elseExpression->simplify();
+        std::shared_ptr<BaseExpression const> thenExpressionSimplified = this->thenExpression->simplify(cache);
+        std::shared_ptr<BaseExpression const> elseExpressionSimplified = this->elseExpression->simplify(cache);
 
         if (conditionSimplified.get() == this->condition.get() && thenExpressionSimplified.get() == this->thenExpression.get() &&
             elseExpressionSimplified.get() == this->elseExpression.get()) {

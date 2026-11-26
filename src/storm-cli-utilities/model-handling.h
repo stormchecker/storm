@@ -495,9 +495,16 @@ std::shared_ptr<storm::models::ModelBase> buildModelDd(storm::Environment const&
         STORM_PRINT_AND_LOG("Using Sylvan with " << numThreads << " parallel threads.\n");
     }
     auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+    std::vector<storm::expressions::Variable> variableOrder;
+    auto names = buildSettings.getDdVariableOrder();
+    STORM_LOG_THROW(names.empty() || input.model.get().isJaniModel(), storm::exceptions::OptionParserException,
+                    "--dd-variable-order is supported for JANI models only.");
+    for (auto const& name : names) {
+        variableOrder.push_back(input.model.get().asJaniModel().getExpressionManager().getVariable(name));
+    }
     return storm::api::buildSymbolicModel<DdType, ValueType>(env, input.model.get(), createFormulasToRespect(input.properties),
                                                              buildSettings.isBuildFullModelSet(), !buildSettings.isApplyNoMaximumProgressAssumptionSet(),
-                                                             !buildSettings.isDontFixDeadlocksSet());
+                                                             !buildSettings.isDontFixDeadlocksSet(), variableOrder);
 }
 
 inline storm::builder::BuilderOptions createBuildOptionsSparseFromSettings(SymbolicInput const& input) {

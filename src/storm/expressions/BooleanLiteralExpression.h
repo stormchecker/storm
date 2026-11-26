@@ -29,7 +29,7 @@ class BooleanLiteralExpression : public BaseExpression {
     virtual bool isTrue() const override;
     virtual bool isFalse() const override;
     virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override;
     virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
     virtual bool isBooleanLiteralExpression() const override;
     /*!

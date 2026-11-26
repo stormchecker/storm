@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stack>
+#include <unordered_map>
 
 #include "storm/expressions/Expression.h"
 #include "storm/expressions/ExpressionVisitor.h"
@@ -40,6 +41,11 @@ class SubstitutionVisitor : public ExpressionVisitor {
     virtual boost::any visit(PredicateExpression const& expression, boost::any const& data) override;
 
    protected:
+    boost::any visitExpression(BaseExpression const& expression, boost::any const& data);
+
+    // Keys keep their nodes alive, including nodes discarded by rewriting.
+    std::unordered_map<std::shared_ptr<BaseExpression const>, std::shared_ptr<BaseExpression const>> substitutionCache;
+
     // A mapping of variables to expressions with which they shall be replaced.
     MapType const& variableToExpressionMapping;
 };

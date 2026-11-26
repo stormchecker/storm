@@ -37,8 +37,9 @@ template<storm::dd::DdType LibraryType, typename ValueType>
 std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(
     storm::Environment const& env, storm::languages::SymbolicModelDescription const& model,
     std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false, bool applyMaximumProgress = true,
-    bool fixDeadlocks = true) {
+    bool fixDeadlocks = true, std::vector<storm::expressions::Variable> const& variableOrder = {}) {
     if (model.isPrismProgram()) {
+        STORM_LOG_THROW(variableOrder.empty(), storm::exceptions::NotSupportedException, "Explicit DD variable ordering is supported for JANI models only.");
         typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
         options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
         options.fixDeadlocks = fixDeadlocks;
@@ -54,6 +55,7 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
         STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Building symbolic model from this model description is unsupported.");
         typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options(formulas);
         options.fixDeadlocks = fixDeadlocks;
+        options.variableOrder = variableOrder;
 
         if (buildFullModel) {
             options.buildAllLabels = true;
@@ -73,14 +75,14 @@ std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSym
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(
     storm::Environment const&, storm::languages::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
-    bool) {
+    bool, std::vector<storm::expressions::Variable> const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
 }
 
 template<>
 inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(
     storm::Environment const&, storm::languages::SymbolicModelDescription const&, std::vector<std::shared_ptr<storm::logic::Formula const>> const&, bool, bool,
-    bool) {
+    bool, std::vector<storm::expressions::Variable> const&) {
     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
 }
 

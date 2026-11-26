@@ -39,7 +39,7 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpressio
     newElements.reserve(size);
     bool changed = false;
     for (uint64_t i = 0; i < size; ++i) {
-        newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.at(i)->accept(*this, data)));
+        newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.at(i), data)));
         changed = changed || expression.at(i).get() != newElements.back().get();
     }
 
@@ -53,9 +53,9 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpressio
 
 template<typename MapType>
 boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
-    std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
+    std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.size(), data));
     std::shared_ptr<BaseExpression const> elementExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.getElementExpression(), data));
     STORM_LOG_THROW(this->variableToExpressionMapping.find(expression.getIndexVar()) == this->variableToExpressionMapping.end(),
                     storm::exceptions::InvalidArgumentException, "Substitution of the index variable of a constructorArrayExpression is not possible.");
     // If the arguments did not change, we simply push the expression itself.
@@ -70,9 +70,9 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ConstructorArrayExp
 template<typename MapType>
 boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ArrayAccessExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> firstExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.getFirstOperand(), data));
     std::shared_ptr<BaseExpression const> secondExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.getSecondOperand(), data));
 
     // If the arguments did not change, we simply push the expression itself.
     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -88,7 +88,7 @@ boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(FunctionCallExpress
     std::vector<std::shared_ptr<BaseExpression const>> newArguments;
     newArguments.reserve(expression.getNumberOfArguments());
     for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
-        newArguments.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getArgument(i)->accept(*this, data)));
+        newArguments.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(this->visitExpression(*expression.getArgument(i), data)));
     }
     return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(
         new FunctionCallExpression(expression.getManager(), expression.getType(), expression.getFunctionIdentifier(), newArguments)));

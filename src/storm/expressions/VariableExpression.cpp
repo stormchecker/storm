@@ -59,7 +59,7 @@ void VariableExpression::gatherVariables(std::set<storm::expressions::Variable>&
     variables.insert(this->getVariable());
 }
 
-std::shared_ptr<BaseExpression const> VariableExpression::simplify() const {
+std::shared_ptr<BaseExpression const> VariableExpression::simplifyImpl(SimplificationCache& cache) const {
     return this->shared_from_this();
 }
 

@@ -150,9 +150,9 @@ double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valu
     return result;
 }
 
-std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplify() const {
-    std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
-    std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
+std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplifyImpl(SimplificationCache& cache) const {
+    std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify(cache);
+    std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify(cache);
 
     if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
         if (this->hasIntegerType()) {

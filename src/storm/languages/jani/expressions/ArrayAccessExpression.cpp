@@ -16,9 +16,9 @@ ArrayAccessExpression::ArrayAccessExpression(ExpressionManager const& manager, T
     STORM_LOG_ASSERT(getSecondOperand()->getType().isIntegerType(), "The index expression does not have an integer type.");
 }
 
-std::shared_ptr<BaseExpression const> ArrayAccessExpression::simplify() const {
+std::shared_ptr<BaseExpression const> ArrayAccessExpression::simplifyImpl(SimplificationCache& cache) const {
     return std::shared_ptr<BaseExpression const>(
-        new ArrayAccessExpression(getManager(), getType(), getFirstOperand()->simplify(), getSecondOperand()->simplify()));
+        new ArrayAccessExpression(getManager(), getType(), getFirstOperand()->simplify(cache), getSecondOperand()->simplify(cache)));
 }
 
 boost::any ArrayAccessExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {

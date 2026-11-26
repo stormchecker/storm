@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "storm-config.h"
 #include "storm/builder/ExplorationOrder.h"
 #include "storm/settings/modules/ModuleSettings.h"
@@ -13,6 +16,9 @@ class BuildSettings : public ModuleSettings {
      * Creates a new set of core settings.
      */
     BuildSettings();
+
+    /*! Names of JANI state variables to place first in the DD order. */
+    std::vector<std::string> getDdVariableOrder() const;
 
     /*!
      * Retrieves whether the model exploration order was set.

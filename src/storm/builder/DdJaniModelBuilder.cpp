@@ -289,8 +289,9 @@ struct CompositionVariables {
 template<storm::dd::DdType Type, typename ValueType>
 class CompositionVariableCreator : public storm::jani::CompositionVisitor {
    public:
-    CompositionVariableCreator(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation)
-        : model(model), automata(), actionInformation(actionInformation) {
+    CompositionVariableCreator(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation,
+                               std::vector<storm::expressions::Variable> const& variableOrder)
+        : model(model), automata(), actionInformation(actionInformation), variableOrder(variableOrder) {
         // Intentionally left empty.
     }
 
@@ -389,6 +390,29 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
             result.variableToRangeMap.emplace(variablePair.second, result.manager->getRange(variablePair.second));
         }
 
+        // Create explicitly prioritized state variables without changing the JANI variable sets or expression identities.
+        std::set<storm::expressions::Variable> prioritized;
+        for (auto const& expressionVariable : variableOrder) {
+            STORM_LOG_THROW(prioritized.insert(expressionVariable).second, storm::exceptions::InvalidArgumentException,
+                            "Duplicate variable in the DD variable order: " << expressionVariable.getName());
+            storm::jani::Variable const* variable = nullptr;
+            if (model.getGlobalVariables().hasVariable(expressionVariable)) {
+                variable = &model.getGlobalVariables().getVariable(expressionVariable);
+            } else {
+                for (auto const& automaton : model.getAutomata()) {
+                    if (automaton.getVariables().hasVariable(expressionVariable)) {
+                        variable = &automaton.getVariables().getVariable(expressionVariable);
+                        break;
+                    }
+                }
+            }
+            STORM_LOG_THROW(variable != nullptr, storm::exceptions::InvalidArgumentException,
+                            "The DD variable order refers to a variable outside the model: " << expressionVariable.getName());
+            STORM_LOG_THROW(!variable->isTransient(), storm::exceptions::InvalidArgumentException,
+                            "The DD variable order may only contain non-transient state variables: " << expressionVariable.getName());
+            createVariable(*variable, result);
+        }
+
         // Create global variables.
         storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
         for (auto const& variable : this->model.getGlobalVariables()) {
@@ -397,7 +421,9 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
                 continue;
             }
 
-            createVariable(variable, result);
+            if (prioritized.count(variable.getExpressionVariable()) == 0) {
+                createVariable(variable, result);
+            }
             globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
         }
         result.globalVariableRanges = globalVariableRanges.template toAdd<ValueType>();
@@ -421,7 +447,9 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
                     continue;
                 }
 
-                createVariable(variable, result);
+                if (prioritized.count(variable.getExpressionVariable()) == 0) {
+                    createVariable(variable, result);
+                }
                 identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
                 range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
             }
@@ -506,6 +534,7 @@ class CompositionVariableCreator : public storm::jani::CompositionVisitor {
     storm::jani::Model const& model;
     std::set<std::string> automata;
     storm::jani::CompositionInformation actionInformation;
+    std::vector<storm::expressions::Variable> const& variableOrder;
 };
 
 template<storm::dd::DdType Type, typename ValueType>
@@ -2333,7 +2362,7 @@ std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> buildInternal(s
     storm::jani::CompositionInformation actionInformation = visitor.getInformation();
 
     // Create all necessary variables.
-    CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation);
+    CompositionVariableCreator<Type, ValueType> variableCreator(model, actionInformation, options.variableOrder);
     CompositionVariables<Type, ValueType> variables = variableCreator.create(manager);
 
     // Determine which transient assignments need to be considered in the building process.

@@ -36,7 +36,7 @@ class BinaryNumericalFunctionExpression : public BinaryExpression {
     virtual storm::expressions::OperatorType getOperator() const override;
     virtual int_fast64_t evaluateAsInt(Valuation const* valuation = nullptr) const override;
     virtual double evaluateAsDouble(Valuation const* valuation = nullptr) const override;
-    virtual std::shared_ptr<BaseExpression const> simplify() const override;
+    virtual std::shared_ptr<BaseExpression const> simplifyImpl(SimplificationCache& cache) const override;
     virtual boost::any accept(ExpressionVisitor& visitor, boost::any const& data) const override;
     virtual bool isBinaryNumericalFunctionExpression() const override;
 

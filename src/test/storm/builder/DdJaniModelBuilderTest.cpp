@@ -5,12 +5,18 @@
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm-parsers/parser/JaniParser.h"
 #include "storm-parsers/parser/PrismParser.h"
+#include "storm/api/storm.h"
 #include "storm/builder/DdJaniModelBuilder.h"
 #include "storm/dd/Add.h"
 #include "storm/dd/Bdd.h"
+#include "storm/dd/DdManager.h"
+#include "storm/dd/DdMetaVariable.h"
+#include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/languages/SymbolicModelDescription.h"
 #include "storm/languages/jani/Compositions.h"
+#include "storm/modelchecker/results/QuantitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -403,3 +409,67 @@ TYPED_TEST(DdJaniModelBuilderTest, SynchronizationNondeterminismOffset) {
 }
 
 }  // namespace
+
+TYPED_TEST(DdJaniModelBuilderTest, SharedFunctionChain) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    auto input = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/shared_function_chain.jani");
+    input.first.substituteFunctions(input.second);
+    auto formulas = storm::api::extractFormulasFromProperties(input.second);
+    storm::Environment env;
+    auto model = storm::api::buildSymbolicModel<DdType, double>(env, input.first, formulas);
+    EXPECT_EQ(2ul, model->getNumberOfStates());
+    EXPECT_EQ(2ul, model->getNumberOfTransitions());
+    EXPECT_EQ(2ul, model->getNumberOfChoices());
+    // The two states toggle: x=1 is certain after one step and impossible at step zero.
+    std::vector<double> expected{1.0, 1.0, 0.0};
+    ASSERT_EQ(expected.size(), formulas.size());
+    for (uint64_t i = 0; i < formulas.size(); ++i) {
+        auto result = storm::api::verifyWithDdEngine<DdType, double>(env, model, storm::api::createTask<double>(formulas[i], true));
+        ASSERT_NE(nullptr, result);
+        result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<DdType>(model->getReachableStates(), model->getInitialStates()));
+        EXPECT_EQ(expected[i], result->template asQuantitativeCheckResult<double>().getMax());
+    }
+}
+
+TYPED_TEST(DdJaniModelBuilderTest, ExplicitVariableOrder) {
+    const storm::dd::DdType DdType = TestFixture::DdType;
+    auto input = storm::parser::JaniParser<double>::parseFromString(R"({
+        "jani-version":1,"name":"ordering","type":"mdp",
+        "variables":[
+            {"name":"x","type":{"kind":"bounded","base":"int","lower-bound":0,"upper-bound":1},"initial-value":0},
+            {"name":"y","type":{"kind":"bounded","base":"int","lower-bound":0,"upper-bound":1},"initial-value":0},
+            {"name":"t","type":"int","transient":true,"initial-value":0}],
+        "automata":[{"name":"main","locations":[{"name":"l"}],"initial-locations":["l"],
+            "variables":[{"name":"z","type":{"kind":"bounded","base":"int","lower-bound":0,"upper-bound":1},"initial-value":0}],
+            "edges":[{"location":"l","destinations":[{"location":"l","assignments":[
+                {"ref":"x","value":{"op":"-","left":1,"right":"x"}},
+                {"ref":"y","value":{"op":"-","left":1,"right":"y"}},
+                {"ref":"z","value":{"op":"-","left":1,"right":"z"}}]}]}]}],
+        "system":{"elements":[{"automaton":"main"}]},"properties":[]})")
+                     .first;
+    auto& expressionManager = input.getExpressionManager();
+    auto x = expressionManager.getVariable("x");
+    auto y = expressionManager.getVariable("y");
+    auto z = input.getAutomaton(0).getVariables().getVariable("z").getExpressionVariable();
+    storm::Environment env;
+    storm::builder::DdJaniModelBuilder<DdType, double> builder;
+    typename storm::builder::DdJaniModelBuilder<DdType, double>::Options options;
+    options.variableOrder = {z, x};
+    auto model = builder.build(env, input, options);
+    EXPECT_EQ(2ul, model->getNumberOfStates());
+    EXPECT_EQ(2ul, model->getNumberOfTransitions());
+    auto position = [&](storm::expressions::Variable const& v) {
+        auto meta = model->getManager().getMetaVariable(v.getName());
+        return model->getManager().getMetaVariable(meta).getLowestIndex();
+    };
+    EXPECT_LT(position(z), position(x));
+    EXPECT_LT(position(x), position(y));
+    // DD creation order must not change the input model's variable declaration order.
+    EXPECT_EQ("x", input.getGlobalVariables().begin()->getName());
+    options.variableOrder = {x, x};
+    STORM_SILENT_ASSERT_THROW(builder.build(env, input, options), storm::exceptions::InvalidArgumentException);
+    options.variableOrder = {expressionManager.getVariable("t")};
+    STORM_SILENT_ASSERT_THROW(builder.build(env, input, options), storm::exceptions::InvalidArgumentException);
+    options.variableOrder = {expressionManager.declareIntegerVariable("unused")};
+    STORM_SILENT_ASSERT_THROW(builder.build(env, input, options), storm::exceptions::InvalidArgumentException);
+}

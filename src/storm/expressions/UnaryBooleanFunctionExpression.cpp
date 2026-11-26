@@ -38,8 +38,8 @@ bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) 
     return result;
 }
 
-std::shared_ptr<BaseExpression const> UnaryBooleanFunctionExpression::simplify() const {
-    std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify();
+std::shared_ptr<BaseExpression const> UnaryBooleanFunctionExpression::simplifyImpl(SimplificationCache& cache) const {
+    std::shared_ptr<BaseExpression const> operandSimplified = this->getOperand()->simplify(cache);
     switch (this->getOperatorType()) {
         case OperatorType::Not:
             if (operandSimplified->isTrue()) {

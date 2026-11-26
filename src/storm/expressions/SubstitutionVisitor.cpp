@@ -14,17 +14,32 @@ SubstitutionVisitor<MapType>::SubstitutionVisitor(MapType const& variableToExpre
 
 template<typename MapType>
 Expression SubstitutionVisitor<MapType>::substitute(Expression const& expression) {
-    return Expression(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getBaseExpression().accept(*this, boost::none)));
+    substitutionCache.clear();
+    auto result = Expression(boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(expression.getBaseExpression(), boost::none)));
+    substitutionCache.clear();
+    return result;
+}
+
+template<typename MapType>
+boost::any SubstitutionVisitor<MapType>::visitExpression(BaseExpression const& expression, boost::any const& data) {
+    auto self = expression.getSharedPointer();
+    auto it = substitutionCache.find(self);
+    if (it != substitutionCache.end()) {
+        return it->second;
+    }
+    auto result = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.accept(*this, data));
+    substitutionCache.emplace(std::move(self), result);
+    return result;
 }
 
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(IfThenElseExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> conditionExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getCondition()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getCondition(), data));
     std::shared_ptr<BaseExpression const> thenExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getThenExpression()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getThenExpression(), data));
     std::shared_ptr<BaseExpression const> elseExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElseExpression()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getElseExpression(), data));
 
     // If the arguments did not change, we simply push the expression itself.
     if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() &&
@@ -39,9 +54,9 @@ boost::any SubstitutionVisitor<MapType>::visit(IfThenElseExpression const& expre
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> firstExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getFirstOperand(), data));
     std::shared_ptr<BaseExpression const> secondExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getSecondOperand(), data));
 
     // If the arguments did not change, we simply push the expression itself.
     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -55,9 +70,9 @@ boost::any SubstitutionVisitor<MapType>::visit(BinaryBooleanFunctionExpression c
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> firstExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getFirstOperand(), data));
     std::shared_ptr<BaseExpression const> secondExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getSecondOperand(), data));
 
     // If the arguments did not change, we simply push the expression itself.
     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -71,9 +86,9 @@ boost::any SubstitutionVisitor<MapType>::visit(BinaryNumericalFunctionExpression
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(BinaryRelationExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> firstExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getFirstOperand(), data));
     std::shared_ptr<BaseExpression const> secondExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getSecondOperand(), data));
 
     // If the arguments did not change, we simply push the expression itself.
     if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -98,7 +113,7 @@ boost::any SubstitutionVisitor<MapType>::visit(VariableExpression const& express
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> operandExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getOperand(), data));
 
     // If the argument did not change, we simply push the expression itself.
     if (operandExpression.get() == expression.getOperand().get()) {
@@ -112,7 +127,7 @@ boost::any SubstitutionVisitor<MapType>::visit(UnaryBooleanFunctionExpression co
 template<typename MapType>
 boost::any SubstitutionVisitor<MapType>::visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
     std::shared_ptr<BaseExpression const> operandExpression =
-        boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getOperand()->accept(*this, data));
+        boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getOperand(), data));
 
     // If the argument did not change, we simply push the expression itself.
     if (operandExpression.get() == expression.getOperand().get()) {
@@ -128,7 +143,7 @@ boost::any SubstitutionVisitor<MapType>::visit(PredicateExpression const& expres
     bool changed = false;
     std::vector<std::shared_ptr<BaseExpression const>> newExpressions;
     for (uint64_t i = 0; i < expression.getArity(); ++i) {
-        newExpressions.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getOperand(i)->accept(*this, data)));
+        newExpressions.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(visitExpression(*expression.getOperand(i), data)));
         if (!changed && newExpressions.back() != expression.getOperand(i)) {
             changed = true;
         }

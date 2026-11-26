@@ -38,14 +38,14 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
-        auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(expression.accept(*this, boost::any())));
+        auto res = storm::expressions::Expression(boost::any_cast<BaseExprPtr>(visitExpression(expression.getBaseExpression(), boost::any())));
         return res.simplify();
     }
 
     virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
-        BaseExprPtr conditionExpression = boost::any_cast<BaseExprPtr>(expression.getCondition()->accept(*this, data));
-        BaseExprPtr thenExpression = boost::any_cast<BaseExprPtr>(expression.getThenExpression()->accept(*this, data));
-        BaseExprPtr elseExpression = boost::any_cast<BaseExprPtr>(expression.getElseExpression()->accept(*this, data));
+        BaseExprPtr conditionExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getCondition(), data));
+        BaseExprPtr thenExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getThenExpression(), data));
+        BaseExprPtr elseExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getElseExpression(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (conditionExpression.get() == expression.getCondition().get() && thenExpression.get() == expression.getThenExpression().get() &&
@@ -59,8 +59,8 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getFirstOperand(), data));
+        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getSecondOperand(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -73,8 +73,8 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getFirstOperand(), data));
+        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getSecondOperand(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -87,8 +87,8 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) override {
-        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getFirstOperand(), data));
+        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getSecondOperand(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -105,7 +105,7 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) override {
-        BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
+        BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getOperand(), data));
 
         // If the argument did not change, we simply push the expression itself.
         if (operandExpression.get() == expression.getOperand().get()) {
@@ -118,7 +118,7 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) override {
-        BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(expression.getOperand()->accept(*this, data));
+        BaseExprPtr operandExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getOperand(), data));
 
         // If the argument did not change, we simply push the expression itself.
         if (operandExpression.get() == expression.getOperand().get()) {
@@ -149,7 +149,7 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
         std::vector<BaseExprPtr> elements;
         bool changed = false;
         for (uint64_t i = 0; i < size; ++i) {
-            BaseExprPtr element = boost::any_cast<BaseExprPtr>(expression.at(i)->accept(*this, data));
+            BaseExprPtr element = boost::any_cast<BaseExprPtr>(visitExpression(*expression.at(i), data));
             if (element.get() != expression.at(i).get()) {
                 changed = true;
             }
@@ -164,8 +164,8 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-        BaseExprPtr sizeExpression = boost::any_cast<BaseExprPtr>(expression.size()->accept(*this, data));
-        BaseExprPtr elementExpression = boost::any_cast<BaseExprPtr>(expression.getElementExpression()->accept(*this, data));
+        BaseExprPtr sizeExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.size(), data));
+        BaseExprPtr elementExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getElementExpression(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (sizeExpression.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
@@ -178,8 +178,8 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
     virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) override {
-        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(expression.getFirstOperand()->accept(*this, data));
-        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(expression.getSecondOperand()->accept(*this, data));
+        BaseExprPtr firstExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getFirstOperand(), data));
+        BaseExprPtr secondExpression = boost::any_cast<BaseExprPtr>(visitExpression(*expression.getSecondOperand(), data));
 
         // If the arguments did not change, we simply push the expression itself.
         if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
@@ -209,7 +209,7 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
         STORM_LOG_THROW(funDef != nullptr, storm::exceptions::UnexpectedException,
                         "Unable to find function definition for function call " << expression << ".");
 
-        return boost::any_cast<BaseExprPtr>(funDef->call(expression.getArguments()).getBaseExpression().accept(*this, data));
+        return boost::any_cast<BaseExprPtr>(visitExpression(funDef->call(expression.getArguments()).getBaseExpression(), data));
     }
 
     virtual boost::any visit(storm::expressions::TranscendentalNumberLiteralExpression const& expression, boost::any const&) override {
@@ -217,6 +217,19 @@ class FunctionEliminationExpressionVisitor : public storm::expressions::Expressi
     }
 
    private:
+    boost::any visitExpression(storm::expressions::BaseExpression const& expression, boost::any const& data) {
+        auto self = expression.getSharedPointer();
+        auto it = eliminationCache.find(self);
+        if (it != eliminationCache.end()) {
+            return it->second;
+        }
+        auto result = boost::any_cast<BaseExprPtr>(expression.accept(*this, data));
+        eliminationCache.emplace(std::move(self), result);
+        return result;
+    }
+
+    // Each visitor has one definition environment. Local environments get a fresh visitor.
+    std::unordered_map<BaseExprPtr, BaseExprPtr> eliminationCache;
     std::unordered_map<std::string, FunctionDefinition> const* globalFunctions;
     std::unordered_map<std::string, FunctionDefinition> const* localFunctions;
 };

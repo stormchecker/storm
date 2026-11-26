@@ -29,6 +29,7 @@ class UnaryExpression : public BaseExpression {
     virtual uint_fast64_t getArity() const override;
     virtual std::shared_ptr<BaseExpression const> getOperand(uint_fast64_t operandIndex) const override;
     virtual void gatherVariables(std::set<storm::expressions::Variable>& variables) const override;
+    void gatherVariablesImpl(std::set<storm::expressions::Variable>& variables, VariableGatheringCache& cache) const override;
 
     /*!
      * Retrieves the operand of the unary expression.

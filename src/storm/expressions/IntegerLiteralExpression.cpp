@@ -24,7 +24,7 @@ bool IntegerLiteralExpression::isLiteral() const {
 
 void IntegerLiteralExpression::gatherVariables(std::set<storm::expressions::Variable>&) const {}
 
-std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplify() const {
+std::shared_ptr<BaseExpression const> IntegerLiteralExpression::simplifyImpl(SimplificationCache& cache) const {
     return this->shared_from_this();
 }
 
