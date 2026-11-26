@@ -4,7 +4,6 @@
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/ModuleSettings.h"
 
@@ -69,14 +68,4 @@ TEST(SettingsManagerTest, ValueWithLeadingDashFollowedByKnownOption) {
 
 TEST(SettingsManagerTest, KnownOptionNotSwallowedAsValue) {
     EXPECT_THROW({ storm::settings::mutableManager().setFromExplodedString({"--optiond", "--verbose"}); }, storm::exceptions::OptionParserException);
-}
-
-TEST(SettingsManagerTest, DdVariableOrder) {
-    auto& settings = storm::settings::mutableManager().getModule(storm::settings::modules::BuildSettings::moduleName);
-    settings.restoreDefaults();
-    EXPECT_TRUE(storm::settings::getModule<storm::settings::modules::BuildSettings>().getDdVariableOrder().empty());
-    storm::settings::mutableManager().setFromExplodedString({"--dd-variable-order", "state.player.0, state.player.1"});
-    EXPECT_EQ((std::vector<std::string>{"state.player.0", "state.player.1"}),
-              storm::settings::getModule<storm::settings::modules::BuildSettings>().getDdVariableOrder());
-    settings.restoreDefaults();
 }

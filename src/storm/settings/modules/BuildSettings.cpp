@@ -17,7 +17,6 @@ namespace modules {
 
 const std::string BuildSettings::moduleName = "build";
 
-const std::string ddVariableOrderOptionName = "dd-variable-order";
 const std::string explorationOrderOptionName = "explorder";
 const std::string explorationOrderOptionShortName = "eo";
 const std::string explorationChecksOptionName = "explchecks";
@@ -43,12 +42,6 @@ const std::string performLocationElimination = "location-elimination";
 const std::string explorationStateLimitOptionName = "state-limit";
 
 BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
-    this->addOption(
-        storm::settings::OptionBuilder(moduleName, ddVariableOrderOptionName, false,
-                                       "JANI state variables to place first in the DD order; unlisted variables keep their order.")
-            .addArgument(
-                storm::settings::ArgumentBuilder::createStringArgument("names", "Comma-separated expression-variable names.").setDefaultValueString("").build())
-            .build());
     this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false,
                                                    "Enables PRISM compatibility. This may be necessary to process some PRISM models.")
                         .setShortName(prismCompatibilityOptionShortName)
@@ -133,11 +126,6 @@ BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
                         .setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "states to explore before stopping.").build())
                         .build());
-}
-
-std::vector<std::string> BuildSettings::getDdVariableOrder() const {
-    auto names = this->getOption(ddVariableOrderOptionName).getArgumentByName("names").getValueAsString();
-    return names.empty() ? std::vector<std::string>{} : storm::parser::parseCommaSeperatedValues(names);
 }
 
 bool BuildSettings::isExplorationOrderSet() const {

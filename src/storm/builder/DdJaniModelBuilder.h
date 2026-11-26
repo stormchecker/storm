@@ -123,9 +123,6 @@ class DdJaniModelBuilder {
         // A flag that indicates whether deadlock states should be fixed by inserting a self-loop. If not set,
         // an error is raised whenever a deadlock state is encountered.
         bool fixDeadlocks = true;
-
-        // State variables to create first in the DD order. Unlisted variables retain their original order.
-        std::vector<storm::expressions::Variable> variableOrder;
     };
 
     /*!
