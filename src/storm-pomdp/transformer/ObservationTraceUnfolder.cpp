@@ -58,6 +58,8 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         stateValuations.emplaceBack<false, int64_t>([this, s, t](auto, auto const& var, auto& value) { value = var == svvar ? s : t; });
     };
 
+    // The states of a layer are numbered consecutively, and they are the last states numbered so far. Row groups are created in the order of
+    // their index, as the index of a row group is the index of its state.
     std::unordered_map<uint64_t, uint64_t> unfoldedToOld;
     std::unordered_map<uint64_t, uint64_t> unfoldedToOldNextStep;
     std::unordered_map<uint64_t, uint64_t> oldToUnfolded;
@@ -98,16 +100,18 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
         unfoldedToOld = unfoldedToOldNextStep;
         unfoldedToOldNextStep.clear();
 
-        for (auto const& unfoldedToOldEntry : unfoldedToOld) {
+        uint64_t const layerEnd = newStateIndex;
+        for (uint64_t unfoldedState = layerEnd - unfoldedToOld.size(); unfoldedState < layerEnd; ++unfoldedState) {
+            uint64_t const oldState = unfoldedToOld.at(unfoldedState);
             transitionMatrixBuilder.newRowGroup(newRowGroupStart);
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
-            std::cout << "\tconsider new state " << unfoldedToOldEntry.first << '\n';
+            std::cout << "\tconsider new state " << unfoldedState << '\n';
 #endif
             STORM_LOG_ASSERT(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1,
                              "Step " << step << " newRowCount " << newRowCount << " lastRow " << transitionMatrixBuilder.getLastRow());
-            addStateValuation(unfoldedToOldEntry.second, step);
-            uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second];
-            uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second + 1];
+            addStateValuation(oldState, step);
+            uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[oldState];
+            uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[oldState + 1];
 
             for (uint64_t oldRowIndex = oldRowIndexStart; oldRowIndex != oldRowIndexEnd; oldRowIndex++) {
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
@@ -170,18 +174,19 @@ std::shared_ptr<storm::models::sparse::Mdp<ValueType>> ObservationTraceUnfolder<
     // Now, take care of the last step.
     uint64_t sinkState = newStateIndex;
     uint64_t targetState = newStateIndex + 1;
-    for (auto const& unfoldedToOldEntry : unfoldedToOldNextStep) {
-        addStateValuation(unfoldedToOldEntry.second, observations.size() - 1);
+    for (uint64_t unfoldedState = newStateIndex - unfoldedToOldNextStep.size(); unfoldedState < newStateIndex; ++unfoldedState) {
+        uint64_t const oldState = unfoldedToOldNextStep.at(unfoldedState);
+        addStateValuation(oldState, observations.size() - 1);
         transitionMatrixBuilder.newRowGroup(newRowGroupStart);
-        STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state.");
-        STORM_LOG_ASSERT(storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[unfoldedToOldEntry.second], storm::utility::one<ValueType>()),
+        STORM_LOG_ASSERT(risk.size() > oldState, "Must be a state.");
+        STORM_LOG_ASSERT(storm::utility::isBetween(storm::utility::zero<ValueType>(), risk[oldState], storm::utility::one<ValueType>()),
                          "Risk must be a probability");
-        // std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << '\n';
-        if (!storm::utility::isOne(risk[unfoldedToOldEntry.second])) {
-            transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>() - risk[unfoldedToOldEntry.second]);
+        // std::cout << "risk is" <<  risk[oldState] << '\n';
+        if (!storm::utility::isOne(risk[oldState])) {
+            transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState, storm::utility::one<ValueType>() - risk[oldState]);
         }
-        if (!storm::utility::isZero(risk[unfoldedToOldEntry.second])) {
-            transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, risk[unfoldedToOldEntry.second]);
+        if (!storm::utility::isZero(risk[oldState])) {
+            transitionMatrixBuilder.addNextValue(newRowGroupStart, targetState, risk[oldState]);
         }
         newRowGroupStart++;
     }
