@@ -11,9 +11,8 @@ on:
 jobs:
   release:
     # Only allow tags and the stable/master branches
-    # TEMPORARY: also allow the ghcr branch for testing (without pushing), remove before merging
-    if: github.ref_type == 'tag' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable' || github.ref == 'refs/heads/ghcr'
-    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@ghrc
+    if: github.ref_type == 'tag' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable'
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v2
     permissions:
       contents: read
       packages: write  # to push to GHCR
@@ -23,8 +22,6 @@ jobs:
         ghcr.io/stormchecker/storm
         movesrwth/storm
       tag: ${{ github.ref == 'refs/heads/master' && 'ci' || github.ref_name }}
-      # TEMPORARY: never push from the ghcr branch, remove before merging
-      push: ${{ github.ref != 'refs/heads/ghcr' }}
       build_args: |
         BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
         run_tests=ON
