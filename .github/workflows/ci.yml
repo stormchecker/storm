@@ -186,12 +186,15 @@ jobs:
     concurrency:
       group: deploy-${{ github.ref }}
       cancel-in-progress: false
-    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v1
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@ghrc
     permissions:
       contents: read
+      packages: write  # to push to GHCR
       id-token: write  # to sign the provenance of the images
     with:
-      image: movesrwth/storm
+      image: |
+        ghcr.io/stormchecker/storm
+        movesrwth/storm
       tag: ${{ github.ref == 'refs/heads/stable' && 'stable' || 'ci' }}
       # Always build, but only deploy for master/stable.
       # Check for forks is done in the shared workflow.

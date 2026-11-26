@@ -1,5 +1,5 @@
 name: Release Docker
-# Builds Storm and deploys images to DockerHub
+# Builds Storm and deploys images to GHCR and DockerHub
 # The images are built from the tag or branch (stable or master) selected when triggering the workflow.
 # The Docker tag is the name of the selected ref (e.g. 1.1.0 or stable), master yields the tag 'ci'.
 # Tags and stable yield release images (only installed Storm), master yields the dev image (with sources and build directory).
@@ -12,12 +12,15 @@ jobs:
   release:
     # Only allow tags and the stable/master branches
     if: github.ref_type == 'tag' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable'
-    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@v1
+    uses: stormchecker/ci-workflows/.github/workflows/release_docker.yml@ghrc
     permissions:
       contents: read
+      packages: write  # to push to GHCR
       id-token: write  # to sign the provenance of the images
     with:
-      image: movesrwth/storm
+      image: |
+        ghcr.io/stormchecker/storm
+        movesrwth/storm
       tag: ${{ github.ref == 'refs/heads/master' && 'ci' || github.ref_name }}
       build_args: |
         BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
