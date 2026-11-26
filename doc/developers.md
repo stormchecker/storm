@@ -48,7 +48,7 @@ that consumers do not instantiate the template themselves and thereby duplicate 
 
 ## Building
 
-Storm uses CMake out-of-source builds. All dependencies must be pre-installed (see [the website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html) for the exact set). The CI uses the pre-built Docker image `stormchecker/storm-dependencies:latest` which comes with most dependencies already installed.
+Storm uses CMake out-of-source builds. All dependencies must be pre-installed (see [the website](https://www.stormchecker.org/documentation/obtain-storm/dependencies.html) for the exact set). The CI uses the pre-built Docker image `ghcr.io/stormchecker/storm-dependencies:latest` which comes with most dependencies already installed.
 
 ```bash
 mkdir build && cd build

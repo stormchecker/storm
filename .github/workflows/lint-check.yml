@@ -20,7 +20,7 @@ jobs:
   lint-check:
     name: clang-format & clang-tidy
     runs-on: ubuntu-latest
-    container: movesrwth/storm-dependencies:latest
+    container: ghcr.io/stormchecker/storm-dependencies:latest
     steps:
       - uses: actions/checkout@v7
 

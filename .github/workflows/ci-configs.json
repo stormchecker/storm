@@ -30,7 +30,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest"
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest"
     },
     {
       "name": "Developer mode",
@@ -40,7 +40,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEVELOPER=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest"
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest"
     },
     {
       "name": "Minimal dependencies",
@@ -58,7 +58,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:minimal_dependencies",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:minimal_dependencies",
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
@@ -91,7 +91,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:latest",
       "ClnExact": false,
       "ClnRatfunc": false,
       "expectNotHave": [
@@ -111,7 +111,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:latest",
       "ClnExact": true,
       "ClnRatfunc": false,
       "expectNotHave": [
@@ -131,7 +131,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:latest",
       "ClnExact": false,
       "ClnRatfunc": true,
       "expectNotHave": [
@@ -154,7 +154,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:latest",
       "ClnExact": true,
       "ClnRatfunc": true,
       "expectNotHave": [
@@ -174,7 +174,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "disable_all": true,
       "ClnExact": false,
       "ClnRatfunc": false,
@@ -203,7 +203,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "CVC5",
         "MATHSAT"
@@ -217,7 +217,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_Z3=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "CVC5",
         "Z3"
@@ -231,7 +231,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "MATHSAT",
         "Z3"
@@ -245,7 +245,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CVC5=ON -DSTORM_DISABLE_MATHSAT=ON -DSTORM_DISABLE_Z3=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "CVC5",
         "MATHSAT",
@@ -260,7 +260,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DEFAULT_SMT_SOLVER=cvc5",
-      "baseImg": "movesrwth/storm-dependencies:latest"
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest"
     },
     {
       "name": "Only GLPK (LP)",
@@ -270,7 +270,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GUROBI",
         "HIGHS",
@@ -285,7 +285,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_SOPLEX=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GLPK",
         "GUROBI",
@@ -300,7 +300,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GLPK",
         "GUROBI",
@@ -315,7 +315,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GLPK",
         "GUROBI",
@@ -331,7 +331,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GLPK=ON -DSTORM_DISABLE_GUROBI=ON -DSTORM_DISABLE_HIGHS=ON -DSTORM_DISABLE_SOPLEX=ON -DSTORM_DISABLE_Z3=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GLPK",
         "GUROBI",
@@ -348,7 +348,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SYLVAN=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "SYLVAN"
       ]
@@ -361,7 +361,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "CUDD"
       ]
@@ -374,7 +374,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_CUDD=ON -DSTORM_DISABLE_SYLVAN=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "CUDD",
         "SYLVAN"
@@ -388,7 +388,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_SPOT=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "SPOT"
       ]
@@ -401,7 +401,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_XERCES=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "XERCES"
       ]
@@ -414,7 +414,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_LIBARCHIVE=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "LIBARCHIVE"
       ]
@@ -427,7 +427,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON -DSTORM_DISABLE_GMM=ON",
-      "baseImg": "movesrwth/storm-dependencies:latest",
+      "baseImg": "ghcr.io/stormchecker/storm-dependencies:latest",
       "expectNotHave": [
         "GMM"
       ]
@@ -518,7 +518,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-12",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:debian-12",
       "expectNotHave": [
         "CVC5",
         "GUROBI",
@@ -539,7 +539,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:debian-13",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:debian-13",
       "expectNotHave": [
         "CVC5",
         "GUROBI",
@@ -564,7 +564,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:ubuntu-24.04",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:ubuntu-24.04",
       "expectNotHave": [
         "CVC5",
         "GUROBI",
@@ -585,7 +585,7 @@
         ]
       },
       "cmakeArgs": "-DSTORM_PORTABLE=ON -DSTORM_WARNING_AS_ERROR=ON",
-      "baseImg": "movesrwth/storm-basesystem:ubuntu-26.04",
+      "baseImg": "ghcr.io/stormchecker/storm-basesystem:ubuntu-26.04",
       "expectNotHave": [
         "CVC5",
         "GUROBI",

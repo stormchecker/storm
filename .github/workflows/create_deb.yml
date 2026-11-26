@@ -60,7 +60,7 @@ jobs:
   build_deb:
     name: Build Debian package on ${{ matrix.distro.name }}-${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runner }}
-    container: movesrwth/storm-basesystem:${{ matrix.distro.tag }}
+    container: ghcr.io/stormchecker/storm-basesystem:${{ matrix.distro.tag }}
     defaults:
       run:
         # Use bash to support arrays
