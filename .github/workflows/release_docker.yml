@@ -20,7 +20,7 @@ jobs:
       image: movesrwth/storm
       tag: ${{ github.ref == 'refs/heads/master' && 'ci' || github.ref_name }}
       build_args: |
-        BASE_IMAGE=movesrwth/storm-dependencies:latest
+        BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
         run_tests=ON
         ${{ github.ref != 'refs/heads/master' && 'image_type=release' || '' }}
         ${{ github.ref == 'refs/heads/master' && 'carl_tag=master' || '' }}

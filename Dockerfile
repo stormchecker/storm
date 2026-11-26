@@ -11,7 +11,7 @@
 # With --build-arg run_tests=ON, the tests and further checks are run during the build.
 
 # Set base image
-ARG BASE_IMAGE=movesrwth/storm-dependencies:latest
+ARG BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
 # Type of the final image (dev or release)
 ARG image_type=dev
 

@@ -49,7 +49,7 @@ jobs:
       # Use the tag from the release
       tag: ${{ github.event.release.tag_name }}
       build_args: |
-        BASE_IMAGE=movesrwth/storm-dependencies:latest
+        BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
         run_tests=ON
         image_type=release
       debug_build_args: |

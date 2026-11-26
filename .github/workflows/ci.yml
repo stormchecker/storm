@@ -197,7 +197,7 @@ jobs:
       # Check for forks is done in the shared workflow.
       push: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/stable') }}
       build_args: |
-        BASE_IMAGE=movesrwth/storm-dependencies:latest
+        BASE_IMAGE=ghcr.io/stormchecker/storm-dependencies:latest
         run_tests=ON
         ${{ github.ref == 'refs/heads/stable' && 'image_type=release' || '' }}
         ${{ github.ref != 'refs/heads/stable' && 'carl_tag=master' || '' }}
